@@ -9,7 +9,14 @@ import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";   // ⭐ BUNU EKLE
 
 import Index from "./pages/Index";
+import Promo from "./pages/Promo";
+import Upload from "./pages/Upload";
+import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import PromoRules from "./pages/PromoRules";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import { useUser } from "@/contexts/UserContext";
@@ -21,9 +28,9 @@ const queryClient = new QueryClient();
 
 const AdminRoute = () => {
   const { user } = useUser();
-  const adminPhones = ["+6281234567890"]; // TODO: replace with real admin numbers
+  const adminIds = (import.meta.env.VITE_ADMIN_IDS ?? "").split(",").filter(Boolean);
 
-  if (!user || !adminPhones.includes(user.phone)) {
+  if (!user || !adminIds.includes(user.id)) {
     return (
       <div className="min-h-screen bg-background max-w-md mx-auto flex items-center justify-center px-4">
         <p className="text-sm text-muted-foreground">
@@ -57,7 +64,14 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/promo" element={<Promo />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/promo-rules" element={<PromoRules />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/admin/receipts" element={<AdminRoute />} />
               <Route
                 path="/receipts"

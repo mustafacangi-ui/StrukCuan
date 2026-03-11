@@ -2,18 +2,19 @@ import { ArrowLeft, Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPi
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { Switch } from "@/components/ui/switch";
+import BottomNav from "@/components/BottomNav";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto pb-8">
+    <div className="min-h-screen bg-background max-w-md mx-auto pb-28">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
         <button onClick={() => navigate("/")} className="rounded-full bg-secondary p-2">
@@ -98,6 +99,8 @@ const Settings = () => {
           <span className="text-sm font-semibold text-destructive">Keluar</span>
         </button>
       </div>
+
+      <BottomNav />
     </div>
   );
 };

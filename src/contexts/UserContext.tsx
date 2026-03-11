@@ -1,8 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
-interface UserData {
+export interface UserData {
+  id: string;
   phone: string;
   nickname: string;
+  email?: string;
   cuan: number;
   tiket: number;
   level: number;
@@ -13,9 +17,14 @@ type PendingAction = "camera" | "profile" | null;
 
 interface UserContextType {
   user: UserData | null;
+  session: Session | null;
   isOnboarded: boolean;
-  login: (phone: string, nickname: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  loginWithPhone: (phone: string, nickname: string) => Promise<void>;
+  verifyOtp: (phone: string, token: string) => Promise<void>;
+  loginWithEmail: (email: string, nickname: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (nickname: string) => Promise<void>;
   theme: "dark" | "light";
   toggleTheme: () => void;
   pushNotifications: boolean;
@@ -24,6 +33,8 @@ interface UserContextType {
   pendingAction: PendingAction;
   requireLogin: (action: PendingAction) => void;
   dismissLogin: () => void;
+  authMode: "phone" | "email";
+  setAuthMode: (mode: "phone" | "email") => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -34,11 +45,23 @@ export const useUser = () => {
   return ctx;
 };
 
+async function upsertProfile(userId: string, nickname: string, phone?: string, email?: string) {
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: userId,
+      nickname,
+      phone: phone ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+  if (error) console.error("Profile upsert error:", error);
+}
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserData | null>(() => {
-    const saved = localStorage.getItem("struk_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("struk_theme") as "dark" | "light") || "dark";
@@ -50,6 +73,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const [showLoginSheet, setShowLoginSheet] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [authMode, setAuthMode] = useState<"phone" | "email">("phone");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -57,24 +81,131 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("struk_theme", theme);
   }, [theme]);
 
-  const login = useCallback((phone: string, nickname: string) => {
-    const newUser: UserData = {
-      phone,
-      nickname,
+  useEffect(() => {
+    if (session && showLoginSheet) {
+      setShowLoginSheet(false);
+      setPendingAction(null);
+    }
+  }, [session]);
+
+  const buildUserFromSession = useCallback(async (s: Session | null): Promise<UserData | null> => {
+    if (!s?.user) return null;
+    const u = s.user as SupabaseUser & { phone?: string };
+    const userId = u.id;
+    const phone = u.phone ?? u.user_metadata?.phone ?? "";
+    const email = u.email ?? u.user_metadata?.email ?? "";
+    const nickname = u.user_metadata?.nickname ?? "";
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("nickname, phone")
+      .eq("id", userId)
+      .single();
+
+    const { data: stats } = await supabase
+      .from("user_stats")
+      .select("tiket, nickname, level, total_receipts")
+      .eq("user_id", userId)
+      .single();
+
+    return {
+      id: userId,
+      phone: profile?.phone ?? phone,
+      nickname: profile?.nickname ?? stats?.nickname ?? (nickname || "User"),
+      email: email || undefined,
       cuan: 0,
-      tiket: 0,
-      level: 1,
-      isNewUser: true,
+      tiket: stats?.tiket ?? 0,
+      level: stats?.level ?? 1,
+      isNewUser: !profile?.nickname,
     };
-    setUser(newUser);
-    localStorage.setItem("struk_user", JSON.stringify(newUser));
-    setShowLoginSheet(false);
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem("struk_user");
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        if (session) {
+          const u = session.user as SupabaseUser & { phone?: string };
+          if (u.user_metadata?.nickname || u.email) {
+            await upsertProfile(
+              u.id,
+              u.user_metadata?.nickname ?? "User",
+              u.phone ?? undefined
+            );
+          }
+          const userData = await buildUserFromSession(session);
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        const userData = await buildUserFromSession(session);
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [buildUserFromSession]);
+
+  const loginWithPhone = useCallback(async (phone: string, nickname: string) => {
+    const fullPhone = phone.startsWith("+") ? phone : `+62${phone.replace(/\D/g, "")}`;
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: fullPhone,
+      options: {
+        data: { nickname },
+      },
+    });
+    if (error) throw error;
   }, []);
+
+  const verifyOtp = useCallback(async (phone: string, token: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const fullPhone = cleanPhone.startsWith("62") ? `+${cleanPhone}` : `+62${cleanPhone}`;
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: fullPhone,
+      token,
+      type: "sms",
+    });
+    if (error) throw error;
+    if (data.session?.user?.user_metadata?.nickname) {
+      await upsertProfile(
+        data.session.user.id,
+        data.session.user.user_metadata.nickname,
+        data.session.user.phone ?? undefined
+      );
+    }
+  }, []);
+
+  const loginWithEmail = useCallback(async (email: string, nickname: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        data: { nickname },
+      },
+    });
+    if (error) throw error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  }, []);
+
+  const updateProfile = useCallback(async (nickname: string) => {
+    if (!session?.user) return;
+    await upsertProfile(session.user.id, nickname);
+    setUser((prev) => (prev ? { ...prev, nickname } : null));
+  }, [session?.user]);
 
   const requireLogin = useCallback((action: PendingAction) => {
     setPendingAction(action);
@@ -99,9 +230,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     <UserContext.Provider
       value={{
         user,
-        isOnboarded: !!user,
-        login,
+        session,
+        isOnboarded: !!user && !!session,
+        isLoading,
+        loginWithPhone,
+        verifyOtp,
+        loginWithEmail,
         logout,
+        updateProfile,
         theme,
         toggleTheme,
         pushNotifications,
@@ -110,6 +246,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         pendingAction,
         requireLogin,
         dismissLogin,
+        authMode,
+        setAuthMode,
       }}
     >
       {children}

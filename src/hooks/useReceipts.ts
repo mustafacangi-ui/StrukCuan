@@ -97,6 +97,33 @@ export function useUserPendingReceipts(userId: string | undefined) {
   });
 }
 
+async function fetchReceiptsTodayCount(userId: string): Promise<number> {
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  const todayStr = startOfDay.toISOString();
+
+  const { count, error } = await supabase
+    .from("receipts")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", todayStr);
+
+  if (error) {
+    console.error("Failed to fetch receipts today count", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export function useReceiptsToday(userId: string | undefined) {
+  return useQuery({
+    queryKey: [...RECEIPTS_QUERY_KEY, "today", userId],
+    queryFn: () => fetchReceiptsTodayCount(userId as string),
+    enabled: !!userId,
+  });
+}
+
 export interface CreateReceiptInput {
   userId: string;
   imageUrl: string;
@@ -134,6 +161,9 @@ export function useCreateReceipt() {
       queryClient.invalidateQueries({
         queryKey: RECEIPTS_QUERY_KEY,
       });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["daily_mission"] });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { Bell, Settings, Shield, Coins, Ticket, User } from "lucide-react";
+import { Bell, Settings, Shield, Ticket, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -9,16 +9,15 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, isOnboarded, requireLogin } = useUser();
 
-  const { data: stats } = useUserStats(user?.phone);
-  const { data: notifications = [] } = useNotifications(user?.phone);
+  const { data: stats } = useUserStats(user?.id);
+  const { data: notifications = [] } = useNotifications(user?.id);
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const markRead = useMarkNotificationsRead(user?.phone);
+  const markRead = useMarkNotificationsRead(user?.id);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const cuan = stats?.cuan ?? user?.cuan ?? 0;
   const tiket = stats?.tiket ?? user?.tiket ?? 0;
   const nickname = user?.nickname ?? "Tamu";
-  const level = user?.level ?? 0;
+  const level = stats?.level ?? user?.level ?? 1;
 
   const handleProfileClick = () => {
     if (!isOnboarded) {
@@ -50,19 +49,12 @@ const Header = () => {
         <span className="text-[10px] font-mono text-muted-foreground">: {onlineCount.toLocaleString("id-ID")}</span>
       </div>
       <div className="flex items-center justify-center gap-3 mb-3">
-        <div className="flex items-center gap-1.5 rounded-full border border-yellow-500/40 bg-yellow-500/10 px-3 py-1.5 shadow-[0_0_12px_hsl(45_100%_50%/0.15)]">
-          <Coins size={14} className="text-yellow-400" />
-          <span className="font-display text-xs font-bold bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 bg-clip-text text-transparent">
-            {cuan.toLocaleString("id-ID")}
-          </span>
-          <span className="text-[9px] text-yellow-400/70">Cuan</span>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-full border border-neon-red/40 bg-neon-red/10 px-3 py-1.5 shadow-[0_0_12px_hsl(0_100%_61%/0.15)]">
-          <Ticket size={14} className="text-neon-red" />
-          <span className="font-display text-xs font-bold text-neon-red glow-red-text">
+        <div className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5">
+          <Ticket size={14} className="text-primary" />
+          <span className="font-display text-xs font-bold text-primary">
             {tiket.toLocaleString("id-ID")}
           </span>
-          <span className="text-[9px] text-neon-red/70">Tiket</span>
+          <span className="text-[9px] text-primary/70">Tiket</span>
         </div>
       </div>
       {/* User row */}

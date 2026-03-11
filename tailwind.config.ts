@@ -81,12 +81,12 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(147 100% 60% / 0.4)" },
-          "50%": { boxShadow: "0 0 35px hsl(147 100% 60% / 0.7), 0 0 60px hsl(147 100% 60% / 0.3)" },
+          "0%, 100%": { boxShadow: "0 0 12px hsl(150 100% 50% / 0.2)" },
+          "50%": { boxShadow: "0 0 18px hsl(150 100% 50% / 0.35)" },
         },
         "pulse-red": {
-          "0%, 100%": { boxShadow: "0 0 15px hsl(0 100% 61% / 0.4)" },
-          "50%": { boxShadow: "0 0 30px hsl(0 100% 61% / 0.7), 0 0 50px hsl(0 100% 61% / 0.3)" },
+          "0%, 100%": { boxShadow: "0 0 10px hsl(0 100% 61% / 0.2)" },
+          "50%": { boxShadow: "0 0 18px hsl(0 100% 61% / 0.35)" },
         },
         "radar-ping": {
           "0%": { transform: "scale(1)", opacity: "0.6" },

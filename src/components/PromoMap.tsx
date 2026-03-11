@@ -35,7 +35,7 @@ export default function PromoMap() {
           longitude: centerLng,
           zoom: 12,
         }}
-        mapStyle="mapbox://styles/mapbox/dark-v11"
+        mapStyle="mapbox://styles/mapbox/navigation-night-v1"
         style={{ width: "100%", height: "100%" }}
       >
         <NavigationControl position="top-right" />
@@ -63,7 +63,7 @@ export default function PromoMap() {
               style={{
                 width: "14px",
                 height: "14px",
-                backgroundColor: "#ff3b3b",
+                backgroundColor: "#FF3B3B",
                 borderRadius: "50%",
                 boxShadow: "0 0 8px rgba(255,0,0,0.8)",
               }}

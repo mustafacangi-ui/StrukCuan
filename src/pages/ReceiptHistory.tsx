@@ -20,7 +20,7 @@ async function fetchUserReceipts(userId: string): Promise<ReceiptRow[]> {
 
 export default function ReceiptHistory() {
   const { user } = useUser();
-  const userId = user?.phone;
+  const userId = user?.id;
 
   const { data: receipts = [], isLoading, error } = useQuery({
     queryKey: ["user_receipts", userId],
