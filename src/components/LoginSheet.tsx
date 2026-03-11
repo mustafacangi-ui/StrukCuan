@@ -7,6 +7,9 @@ import { GoogleIcon, AppleIcon } from "@/components/SocialIcons";
 
 type AuthMethod = "phone" | "email";
 
+/** Set to true to show Apple login button */
+const SHOW_APPLE_LOGIN = false;
+
 const LoginSheet = () => {
   const {
     showLoginSheet,
@@ -167,14 +170,16 @@ const LoginSheet = () => {
             <GoogleIcon className="w-5 h-5" />
             <span>Continue with Google</span>
           </button>
-          <button
-            onClick={() => handleSocialLogin("apple")}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 rounded-xl bg-black text-white py-3.5 font-medium text-sm hover:bg-gray-900 transition-colors disabled:opacity-60"
-          >
-            <AppleIcon className="w-5 h-5" />
-            <span>Continue with Apple</span>
-          </button>
+          {SHOW_APPLE_LOGIN && (
+            <button
+              onClick={() => handleSocialLogin("apple")}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 rounded-xl bg-black text-white py-3.5 font-medium text-sm hover:bg-gray-900 transition-colors disabled:opacity-60"
+            >
+              <AppleIcon className="w-5 h-5" />
+              <span>Continue with Apple</span>
+            </button>
+          )}
         </div>
 
         {/* Divider */}

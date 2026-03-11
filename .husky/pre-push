@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Ensure build succeeds before pushing (prevents broken Vercel deploys)
+npm run build
