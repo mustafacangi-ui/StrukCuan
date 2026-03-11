@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root,
+  .dark {
+    --background: 0 0% 7.1%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 147 100% 60%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 100% 61%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 100% 61%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 147 100% 60%;
+
+    --radius: 0.75rem;
+
+    --neon-green: 147 100% 60%;
+    --neon-red: 0 100% 61%;
+    --neon-green-glow: 0 0 20px hsl(147 100% 60% / 0.5), 0 0 40px hsl(147 100% 60% / 0.2);
+    --neon-red-glow: 0 0 20px hsl(0 100% 61% / 0.5), 0 0 40px hsl(0 100% 61% / 0.2);
+
+    --sidebar-background: 0 0% 7.1%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 147 100% 60%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 147 100% 60%;
+  }
+
+  .light {
+    --background: 0 0% 97%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 147 80% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 85% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 147 80% 40%;
+
+    --neon-green: 147 80% 40%;
+    --neon-red: 0 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .glow-green {
+    box-shadow: 0 0 20px hsl(147 100% 60% / 0.4), 0 0 40px hsl(147 100% 60% / 0.15);
+  }
+  .glow-red {
+    box-shadow: 0 0 20px hsl(0 100% 61% / 0.5), 0 0 40px hsl(0 100% 61% / 0.2);
+  }
+  .glow-green-text {
+    text-shadow: 0 0 10px hsl(147 100% 60% / 0.6), 0 0 20px hsl(147 100% 60% / 0.3);
+  }
+  .glow-red-text {
+    text-shadow: 0 0 10px hsl(0 100% 61% / 0.6), 0 0 20px hsl(0 100% 61% / 0.3);
+  }
+}
