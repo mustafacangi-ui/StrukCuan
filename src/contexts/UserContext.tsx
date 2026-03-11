@@ -22,7 +22,9 @@ interface UserContextType {
   isLoading: boolean;
   loginWithPhone: (phone: string, nickname: string) => Promise<void>;
   verifyOtp: (phone: string, token: string) => Promise<void>;
-  loginWithEmail: (email: string, nickname: string) => Promise<void>;
+  loginWithEmail: (email: string, displayName: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (nickname: string) => Promise<void>;
   theme: "dark" | "light";
@@ -84,9 +86,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (session && showLoginSheet) {
       setShowLoginSheet(false);
-      setPendingAction(null);
+      // Keep pendingAction so PostLoginRedirect can navigate before we clear
+      // (cleared by PostLoginRedirect after navigation)
     }
-  }, [session]);
+  }, [session, showLoginSheet]);
 
   const buildUserFromSession = useCallback(async (s: Session | null): Promise<UserData | null> => {
     if (!s?.user) return null;
@@ -94,7 +97,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const userId = u.id;
     const phone = u.phone ?? u.user_metadata?.phone ?? "";
     const email = u.email ?? u.user_metadata?.email ?? "";
-    const nickname = u.user_metadata?.nickname ?? "";
+    const nickname = u.user_metadata?.nickname ?? u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? "";
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -126,10 +129,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         if (session) {
           const u = session.user as SupabaseUser & { phone?: string };
-          if (u.user_metadata?.nickname || u.email) {
+          const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
+          if (displayName || u.email) {
             await upsertProfile(
               u.id,
-              u.user_metadata?.nickname ?? "User",
+              displayName || "User",
               u.phone ?? undefined
             );
           }
@@ -185,11 +189,32 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const loginWithEmail = useCallback(async (email: string, nickname: string) => {
+  const loginWithEmail = useCallback(async (email: string, displayName: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        data: { nickname },
+        data: { display_name: displayName, nickname: displayName },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+  }, []);
+
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+  }, []);
+
+  const loginWithApple = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "apple",
+      options: {
+        redirectTo: window.location.origin,
       },
     });
     if (error) throw error;
@@ -236,6 +261,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         loginWithPhone,
         verifyOtp,
         loginWithEmail,
+        loginWithGoogle,
+        loginWithApple,
         logout,
         updateProfile,
         theme,

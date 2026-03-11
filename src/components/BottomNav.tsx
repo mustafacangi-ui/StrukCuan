@@ -1,17 +1,27 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Tag, Camera, Trophy, User } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 const navItems = [
   { path: "/", icon: Home, label: "HOME" },
   { path: "/promo", icon: Tag, label: "PROMO" },
-  { path: "/upload", icon: Camera, label: "UPLOAD" },
+  { path: "/upload", icon: Camera, label: "UPLOAD", requiresAuth: true },
   { path: "/leaderboard", icon: Trophy, label: "RANK" },
-  { path: "/settings", icon: User, label: "PROFILE" },
+  { path: "/settings", icon: User, label: "PROFILE", requiresAuth: true },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isOnboarded, requireLogin } = useUser();
+
+  const handleNavClick = (item: (typeof navItems)[number]) => {
+    if (item.requiresAuth && !isOnboarded) {
+      requireLogin(item.path === "/upload" ? "camera" : "profile");
+      return;
+    }
+    navigate(item.path);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md">
@@ -21,7 +31,7 @@ const BottomNav = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavClick(item)}
               className="flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px]"
             >
               <item.icon

@@ -9,6 +9,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";   // ⭐ BUNU EKLE
 
 import Index from "./pages/Index";
+import PostLoginRedirect from "./components/PostLoginRedirect";
 import Promo from "./pages/Promo";
 import Upload from "./pages/Upload";
 import Leaderboard from "./pages/Leaderboard";
@@ -61,6 +62,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <PostLoginRedirect />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />

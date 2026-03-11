@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { Camera } from "lucide-react";
 
@@ -14,21 +14,17 @@ import LegalFooter from "@/components/LegalFooter";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isOnboarded, isLoading, requireLogin } = useUser();
+  const location = useLocation();
+  const { isOnboarded, requireLogin } = useUser();
 
+  // When redirected from Upload/Settings with requireLogin state, open login sheet
   useEffect(() => {
-    if (!isLoading && !isOnboarded) {
-      navigate("/onboarding", { replace: true });
+    const state = location.state as { requireLogin?: "camera" | "profile" } | null;
+    if (state?.requireLogin) {
+      requireLogin(state.requireLogin);
+      navigate("/", { replace: true }); // Clear state to avoid re-triggering
     }
-  }, [isOnboarded, isLoading, navigate]);
-
-  if (isLoading || !isOnboarded) {
-    return (
-      <div className="min-h-screen bg-background max-w-md mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Memuat...</p>
-      </div>
-    );
-  }
+  }, [location.state, requireLogin, navigate]);
 
   const handleCameraClick = () => {
     if (!isOnboarded) {

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
-import { X, Camera, Mail, Phone } from "lucide-react";
+import { X, Phone, Mail } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { GoogleIcon, AppleIcon } from "@/components/SocialIcons";
+
+type AuthMethod = "phone" | "email";
 
 const LoginSheet = () => {
   const {
@@ -11,71 +14,85 @@ const LoginSheet = () => {
     loginWithPhone,
     verifyOtp,
     loginWithEmail,
-    pendingAction,
-    authMode,
-    setAuthMode,
+    loginWithGoogle,
+    loginWithApple,
   } = useUser();
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("phone");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"input" | "verify">("input");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!showLoginSheet) return null;
 
-  const handleSendOtp = async () => {
+  const handleSocialLogin = async (provider: "google" | "apple") => {
     setError("");
+    setSuccessMsg("");
     if (!agreeTerms) {
       setError("Centang persetujuan Terms & Privacy Policy");
       return;
     }
-    if (nickname.trim().length < 2) {
-      setError("Nama panggilan minimal 2 karakter");
-      return;
-    }
-    if (authMode === "phone") {
-      if (phone.replace(/\D/g, "").length < 8) {
-        setError("Nomor HP minimal 8 digit");
-        return;
-      }
-    } else {
-      if (!email.includes("@")) {
-        setError("Masukkan email yang valid");
-        return;
-      }
-    }
-
     setLoading(true);
     try {
-      if (authMode === "phone") {
-        await loginWithPhone(phone, nickname.trim());
-        setStep("verify");
+      if (provider === "google") {
+        await loginWithGoogle();
       } else {
-        await loginWithEmail(email, nickname.trim());
-        setError("");
-        setError("Cek email untuk link login. Setelah login, tutup sheet ini.");
+        await loginWithApple();
       }
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? "Gagal mengirim. Coba email jika phone tidak tersedia.");
+      setError(err?.message ?? "Gagal login. Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    setError("");
+    setSuccessMsg("");
+    if (!agreeTerms) {
+      setError("Centang persetujuan Terms & Privacy Policy");
+      return;
+    }
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length < 10) {
+      setError("Masukkan nomor HP yang valid");
+      return;
+    }
+    if (displayName.trim().length < 2) {
+      setError("Nama tampilan minimal 2 karakter");
+      return;
+    }
+    setLoading(true);
+    try {
+      await loginWithPhone(phone, displayName.trim());
+      setOtpSent(true);
+      setError("");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err?.message ?? "Gagal mengirim OTP. Coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      setError("Masukkan 6 digit kode OTP");
+    setError("");
+    setSuccessMsg("");
+    if (!otp || otp.length < 6) {
+      setError("Masukkan kode OTP 6 digit");
       return;
     }
     setLoading(true);
-    setError("");
     try {
       await verifyOtp(phone, otp);
-      dismissLogin();
+      setOtpSent(false);
+      setOtp("");
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err?.message ?? "Kode OTP salah. Coba lagi.");
@@ -84,137 +101,221 @@ const LoginSheet = () => {
     }
   };
 
-  const handleBack = () => {
-    setStep("input");
-    setOtp("");
+  const handleEmailLogin = async () => {
     setError("");
+    setSuccessMsg("");
+    if (!agreeTerms) {
+      setError("Centang persetujuan Terms & Privacy Policy");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Masukkan email yang valid");
+      return;
+    }
+    if (displayName.trim().length < 2) {
+      setError("Nama tampilan minimal 2 karakter");
+      return;
+    }
+    setLoading(true);
+    try {
+      await loginWithEmail(email, displayName.trim());
+      setError("");
+      setSuccessMsg("Cek email untuk link login. Setelah login, kamu bisa upload struk.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err?.message ?? "Gagal mengirim link. Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (authMethod === "phone") {
+      if (otpSent) {
+        handleVerifyOtp();
+      } else {
+        handleSendOtp();
+      }
+    } else {
+      handleEmailLogin();
+    }
   };
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center">
-      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={dismissLogin} />
-      <div className="relative z-10 w-full max-w-md rounded-t-2xl border-t border-primary/30 bg-card px-6 pt-4 pb-8 animate-slide-up">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={dismissLogin} />
+      <div className="relative z-10 w-full max-w-[420px] rounded-t-2xl border-t border-border bg-card px-6 pt-4 pb-10 animate-slide-up max-h-[92vh] overflow-y-auto">
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted" />
-        <button onClick={dismissLogin} className="absolute top-4 right-5 text-muted-foreground">
-          <X size={18} />
+        <button onClick={dismissLogin} className="absolute top-4 right-5 text-muted-foreground hover:text-foreground">
+          <X size={20} />
         </button>
 
-        <div className="flex items-center gap-2 mb-1">
-          <Camera size={18} className="text-primary" />
-          <h2 className="font-display text-lg font-bold text-foreground">
-            {pendingAction === "camera" ? "Login untuk Ambil Foto" : "Login ke Akun"}
-          </h2>
-        </div>
-        <p className="text-xs text-muted-foreground mb-5">
-          {step === "verify" ? "Masukkan kode 6 digit yang dikirim via SMS" : "Cuma butuh 2 hal, simpel!"}
+        <h2 className="font-display text-xl font-bold text-foreground mb-1">
+          Berburu Promo di Sekitarmu
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Login untuk upload struk dan kumpulkan cuan
         </p>
 
-        {step === "input" ? (
-          <>
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={() => { setAuthMode("phone"); setError(""); }}
-                className={`flex-1 rounded-lg py-2 text-xs font-medium flex items-center justify-center gap-1 ${
-                  authMode === "phone" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                <Phone size={14} /> Phone OTP
-              </button>
-              <button
-                onClick={() => { setAuthMode("email"); setError(""); }}
-                className={`flex-1 rounded-lg py-2 text-xs font-medium flex items-center justify-center gap-1 ${
-                  authMode === "email" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                <Mail size={14} /> Email
-              </button>
-            </div>
+        {/* Social login */}
+        <div className="space-y-3 mb-5">
+          <button
+            onClick={() => handleSocialLogin("google")}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-white text-gray-900 py-3.5 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
+          >
+            <GoogleIcon className="w-5 h-5" />
+            <span>Continue with Google</span>
+          </button>
+          <button
+            onClick={() => handleSocialLogin("apple")}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 rounded-xl bg-black text-white py-3.5 font-medium text-sm hover:bg-gray-900 transition-colors disabled:opacity-60"
+          >
+            <AppleIcon className="w-5 h-5" />
+            <span>Continue with Apple</span>
+          </button>
+        </div>
 
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">
-              {authMode === "phone" ? "Nomor HP" : "Email"}
-            </label>
-            {authMode === "phone" ? (
-              <div className="flex items-center rounded-xl border border-border bg-secondary/50 mb-3 overflow-hidden">
-                <div className="flex items-center gap-1 px-3 py-2.5 border-r border-border">
-                  <span className="text-xs font-semibold text-foreground">🇮🇩 +62</span>
-                </div>
+        {/* Divider */}
+        <div className="relative flex items-center justify-center mb-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative bg-card px-3">
+            <span className="text-xs text-muted-foreground">atau</span>
+          </div>
+        </div>
+
+        {/* Auth method toggle */}
+        <div className="flex rounded-xl border border-border bg-secondary/30 p-1 mb-4">
+          <button
+            type="button"
+            onClick={() => { setAuthMethod("phone"); setError(""); setOtpSent(false); setOtp(""); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              authMethod === "phone" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Phone size={16} />
+            Nomor HP
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAuthMethod("email"); setError(""); setOtpSent(false); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              authMethod === "email" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Mail size={16} />
+            Email
+          </button>
+        </div>
+
+        {/* Phone OTP flow */}
+        {authMethod === "phone" && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nomor HP</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => { setError(""); setPhone(e.target.value); }}
+                placeholder="08123456789"
+                disabled={otpSent}
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+              />
+            </div>
+            {!otpSent && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama tampilan</label>
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => { setError(""); setPhone(e.target.value.replace(/\D/g, "").slice(0, 13)); }}
-                  placeholder="812 3456 7890"
-                  className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => { setError(""); setDisplayName(e.target.value.slice(0, 30)); }}
+                  placeholder="Contoh: Siti"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
-            ) : (
+            )}
+            {otpSent && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kode OTP</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => { setError(""); setOtp(e.target.value.replace(/\D/g, "")); }}
+                  placeholder="123456"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 text-center tracking-widest"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setOtpSent(false); setOtp(""); }}
+                  className="mt-2 text-xs text-primary hover:underline"
+                >
+                  Kirim ulang OTP
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Email form */}
+        {authMethod === "email" && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setError(""); setEmail(e.target.value); }}
-                placeholder="email@example.com"
-                className="w-full rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none mb-3"
+                placeholder="nama@email.com"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
               />
-            )}
-
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Nama Panggilan</label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => { setError(""); setNickname(e.target.value.slice(0, 20)); }}
-              placeholder="Contoh: Siti"
-              className="w-full rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none mb-1"
-            />
-            <p className="text-[9px] text-muted-foreground mb-3">Nama ini akan tampil di profil kamu</p>
-
-            <label className="flex items-start gap-2.5 cursor-pointer mb-4">
-              <Checkbox
-                checked={agreeTerms}
-                onCheckedChange={(v) => setAgreeTerms(!!v)}
-                className="mt-0.5"
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama tampilan</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => { setError(""); setDisplayName(e.target.value.slice(0, 30)); }}
+                placeholder="Contoh: Siti"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="text-[11px] text-muted-foreground">
-                Saya setuju dengan{" "}
-                <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                {" "}dan{" "}
-                <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-              </span>
-            </label>
-
-            {error && <p className="text-xs text-destructive mb-3">{error}</p>}
-
-            <button
-              onClick={handleSendOtp}
-              disabled={loading}
-              className="w-full rounded-xl bg-primary py-3 font-display font-bold text-primary-foreground text-sm disabled:opacity-60"
-            >
-              {loading ? "Mengirim..." : authMode === "phone" ? "Kirim Kode OTP" : "Kirim Link Login"}
-            </button>
-          </>
-        ) : (
-          <>
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Kode OTP</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => { setError(""); setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); }}
-              placeholder="123456"
-              className="w-full rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none mb-4 text-center tracking-[0.5em]"
-            />
-            {error && <p className="text-xs text-destructive mb-3">{error}</p>}
-            <button
-              onClick={handleVerifyOtp}
-              disabled={loading || otp.length !== 6}
-              className="w-full rounded-xl bg-primary py-3 font-display font-bold text-primary-foreground text-sm disabled:opacity-60 mb-2"
-            >
-              {loading ? "Memverifikasi..." : "Verifikasi"}
-            </button>
-            <button onClick={handleBack} className="w-full py-2 text-xs text-muted-foreground">
-              ← Ganti nomor
-            </button>
-          </>
+            </div>
+          </div>
         )}
+
+        {/* Terms checkbox */}
+        <label className="flex items-start gap-3 cursor-pointer mb-5">
+          <Checkbox
+            checked={agreeTerms}
+            onCheckedChange={(v) => setAgreeTerms(!!v)}
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            Saya setuju dengan{" "}
+            <Link to="/terms" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+              Terms of Service
+            </Link>
+            {" "}dan{" "}
+            <Link to="/privacy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+              Privacy Policy
+            </Link>
+          </span>
+        </label>
+
+        {error && <p className="text-xs text-destructive mb-3">{error}</p>}
+        {successMsg && <p className="text-xs text-primary mb-3">{successMsg}</p>}
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full rounded-xl bg-primary py-3.5 font-display font-bold text-primary-foreground text-base disabled:opacity-60"
+        >
+          {loading ? "Memproses..." : "Mulai Berburu Cuan 🚀"}
+        </button>
       </div>
     </div>
   );

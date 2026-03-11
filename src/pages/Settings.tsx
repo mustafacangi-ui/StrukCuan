@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowLeft, Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -6,12 +7,20 @@ import BottomNav from "@/components/BottomNav";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const { user, isOnboarded, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+
+  useEffect(() => {
+    if (!isOnboarded) {
+      navigate("/", { replace: true, state: { requireLogin: "profile" as const } });
+    }
+  }, [isOnboarded, navigate]);
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
+
+  if (!isOnboarded) return null;
 
   return (
     <div className="min-h-screen bg-background max-w-md mx-auto pb-28">

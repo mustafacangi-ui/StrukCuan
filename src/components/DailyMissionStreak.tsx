@@ -12,7 +12,7 @@ const STREAK_MILESTONES = [
 
 export default function DailyMissionStreak() {
   const navigate = useNavigate();
-  const { user, isOnboarded } = useUser();
+  const { user, isOnboarded, requireLogin } = useUser();
   const { data: mission } = useDailyMission(user?.id);
   const { data: stats } = useUserStats(user?.id);
 
@@ -21,7 +21,11 @@ export default function DailyMissionStreak() {
   const nextMilestone = STREAK_MILESTONES.find((m) => streak < m.days);
 
   const handleUpload = () => {
-    if (isOnboarded) navigate("/upload");
+    if (isOnboarded) {
+      navigate("/upload");
+    } else {
+      requireLogin("camera");
+    }
   };
 
   return (

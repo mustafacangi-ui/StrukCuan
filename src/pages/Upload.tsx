@@ -31,7 +31,7 @@ export default function Upload() {
 
   useEffect(() => {
     if (!isOnboarded) {
-      navigate("/onboarding", { replace: true });
+      navigate("/", { replace: true, state: { requireLogin: "camera" as const } });
     }
   }, [isOnboarded, navigate]);
 
