@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
@@ -9,11 +9,24 @@ import { Camera, ArrowLeft, Check, X } from "lucide-react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+const ACCEPTED_EXTENSIONS = /\.(jpe?g|png)$/i;
 const MAX_RECEIPTS_PER_DAY = 10;
+
+function getFileExtension(type: string): string {
+  if (type === "image/png") return "png";
+  if (type === "image/jpeg" || type === "image/jpg") return "jpg";
+  return "jpg";
+}
+
+function sanitizeStoragePath(userId: string, file: File): string {
+  const ext = getFileExtension(file.type);
+  const safeName = `${Date.now()}.${ext}`;
+  return `${userId}/${safeName}`;
+}
 
 export default function Upload() {
   const navigate = useNavigate();
-  const { user, isOnboarded } = useUser();
+  const { user, isOnboarded, isLoading } = useUser();
   const createReceipt = useCreateReceipt();
   const { data: todayCount = 0 } = useReceiptsToday(user?.id);
 
@@ -30,10 +43,11 @@ export default function Upload() {
   const userId = user?.id;
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isOnboarded) {
       navigate("/", { replace: true, state: { requireLogin: "camera" as const } });
     }
-  }, [isOnboarded, navigate]);
+  }, [isLoading, isOnboarded, navigate]);
 
   useEffect(() => {
     if (!message) return;
@@ -41,17 +55,32 @@ export default function Upload() {
     return () => window.clearTimeout(id);
   }, [message]);
 
-  const validateFile = (file: File): string | null => {
-    if (!ACCEPTED_TYPES.includes(file.type)) {
+  const revokePreviewUrl = useCallback(() => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  }, [previewUrl]);
+
+  useEffect(() => {
+    return () => revokePreviewUrl();
+  }, [revokePreviewUrl]);
+
+  const validateFile = useCallback((file: File): string | null => {
+    const isAcceptedType = ACCEPTED_TYPES.includes(file.type) ||
+      ACCEPTED_EXTENSIONS.test(file.name);
+    if (!isAcceptedType) {
       return "Hanya file JPG atau PNG yang diterima";
     }
     if (file.size > MAX_FILE_SIZE) {
       return "Ukuran file maksimal 5MB";
     }
+    if (file.size === 0) {
+      return "File kosong. Coba ambil foto lagi.";
+    }
     return null;
-  };
+  }, []);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,35 +88,44 @@ export default function Upload() {
     const err = validateFile(file);
     if (err) {
       setError(err);
+      e.target.value = "";
       return;
     }
 
+    revokePreviewUrl();
+    const url = URL.createObjectURL(file);
     setImage(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    setPreviewUrl(url);
     setStep("preview");
-  };
+    e.target.value = "";
+  }, [validateFile, revokePreviewUrl]);
 
-  const handleRetake = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  const handleRetake = useCallback(() => {
+    revokePreviewUrl();
     setImage(null);
     setPreviewUrl(null);
     setStore("");
     setTotal("");
     setError(null);
     setStep("camera");
-    fileInputRef.current?.value && (fileInputRef.current.value = "");
-  };
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [revokePreviewUrl]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setError(null);
 
-    if (todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Maksimal ${MAX_RECEIPTS_PER_DAY} struk per hari. Coba lagi besok.`);
+    if (!userId) {
+      setError("Sesi habis. Silakan login kembali.");
       return;
     }
 
-    if (!userId || !image) {
+    if (!image) {
       setError("Silakan ambil foto struk terlebih dahulu");
+      return;
+    }
+
+    if (todayCount >= MAX_RECEIPTS_PER_DAY) {
+      setError(`Maksimal ${MAX_RECEIPTS_PER_DAY} struk per hari. Coba lagi besok.`);
       return;
     }
 
@@ -96,18 +134,36 @@ export default function Upload() {
       return;
     }
 
-    const totalNumber = total ? (Number(total) > 0 ? Number(total) : null) : null;
+    const totalNumber = total
+      ? Number(total) > 0
+        ? Number(total)
+        : null
+      : null;
 
-    const fileName = `${userId}/${Date.now()}-${image.name}`;
+    const storagePath = sanitizeStoragePath(userId, image);
 
     try {
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
-        .upload(fileName, image, { upsert: false });
+        .upload(storagePath, image, {
+          upsert: false,
+          contentType: image.type,
+        });
 
-      if (uploadError || !uploadData?.path) {
-        console.error(uploadError);
-        setError("Gagal mengunggah struk");
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        if (uploadError.message?.includes("duplicate") || uploadError.message?.includes("already exists")) {
+          setError("File sudah ada. Coba ambil foto baru.");
+        } else if (uploadError.message?.includes("size") || uploadError.message?.includes("limit")) {
+          setError("Ukuran file terlalu besar. Maksimal 5MB.");
+        } else {
+          setError("Gagal mengunggah struk. Coba lagi.");
+        }
+        return;
+      }
+
+      if (!uploadData?.path) {
+        setError("Gagal mengunggah struk. Coba lagi.");
         return;
       }
 
@@ -122,14 +178,26 @@ export default function Upload() {
         total: totalNumber,
       });
 
-      setShowReward(true);
       handleRetake();
+      setShowReward(true);
     } catch (e) {
-      console.error(e);
-      setError("Terjadi kesalahan saat mengirim struk");
+      console.error("Receipt submit error:", e);
+      const err = e as { message?: string };
+      if (err?.message?.includes("duplicate") || err?.message?.includes("unique")) {
+        setError("Struk ini sudah terkirim.");
+      } else {
+        setError("Terjadi kesalahan saat mengirim struk. Coba lagi.");
+      }
     }
-  };
+  }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-md mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Memuat...</p>
+      </div>
+    );
+  }
   if (!isOnboarded) return null;
 
   return (
