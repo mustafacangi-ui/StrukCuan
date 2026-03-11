@@ -32,6 +32,7 @@ export function useDeals() {
   const query = useQuery({
     queryKey: DEALS_QUERY_KEY,
     queryFn: fetchDeals,
+    refetchInterval: 30000,
   });
 
   // Keep Supabase realtime subscription and invalidate the deals query on changes

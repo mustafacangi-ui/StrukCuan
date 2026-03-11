@@ -1,7 +1,14 @@
-import { createContext, useContext, useState } from "react";
-import { useDeals } from "@/hooks/useDeals";
+import { createContext, useContext, useState, ReactNode } from "react";
+import { useDealsWithRadius } from "@/hooks/useDealsWithRadius";
 
-const RadarContext = createContext(null);
+interface RadarContextType {
+  radius: number;
+  setRadius: (r: number) => void;
+  promoCount: number;
+  isLoading: boolean;
+}
+
+const RadarContext = createContext<RadarContextType | null>(null);
 
 export const useRadar = () => {
   const ctx = useContext(RadarContext);
@@ -9,19 +16,13 @@ export const useRadar = () => {
   return ctx;
 };
 
-export const RadarProvider = ({ children }) => {
+export const RadarProvider = ({ children }: { children: ReactNode }) => {
   const [radius, setRadius] = useState(5);
-  const {
-    data: deals = [],
-    isLoading,
-    error,
-  } = useDeals();
-
-  const promoCount = deals.length;
+  const { deals, isLoading } = useDealsWithRadius(radius);
 
   return (
     <RadarContext.Provider
-      value={{ radius, setRadius, promoCount, isLoading, error }}
+      value={{ radius, setRadius, promoCount: deals.length, isLoading }}
     >
       {children}
     </RadarContext.Provider>

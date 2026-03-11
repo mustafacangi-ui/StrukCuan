@@ -114,4 +114,11 @@
   .shadow-primary {
     box-shadow: 0 0 12px hsl(150 100% 50% / 0.25);
   }
+  @keyframes pulse-marker {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+  .animate-pulse-marker {
+    animation: pulse-marker 1.5s ease-in-out infinite;
+  }
 }
