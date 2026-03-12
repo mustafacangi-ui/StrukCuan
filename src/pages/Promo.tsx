@@ -3,11 +3,13 @@ import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import PromoHeader from "@/components/PromoHeader";
+import FeaturedDealCard from "@/components/FeaturedDealCard";
 import CommunityPromoCard from "@/components/CommunityPromoCard";
 import SharePromoSheet from "@/components/SharePromoSheet";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { usePromosNearby } from "@/hooks/usePromos";
+import { useFeaturedDeals } from "@/hooks/useFeaturedDeals";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { useUserLocationSync } from "@/hooks/useUserLocationSync";
 
@@ -17,6 +19,7 @@ export default function Promo() {
   const { location } = useUserLocation();
   const [showShareSheet, setShowShareSheet] = useState(false);
 
+  const { deals: featuredDeals = [], isLoading: dealsLoading } = useFeaturedDeals();
   const { data: promos = [], isLoading: promosLoading } = usePromosNearby(
     location.lat,
     location.lng,
@@ -45,13 +48,37 @@ export default function Promo() {
     <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <PromoHeader />
 
+      {/* SECTION 1: Featured Deals (admin promos) */}
       <div className="mt-4 px-4">
         <h2 className="font-display text-sm font-bold text-foreground mb-3">
-          Promo di Sekitarmu
+          Promo Unggulan
         </h2>
+        {dealsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-sm text-muted-foreground">Memuat...</p>
+          </div>
+        ) : featuredDeals.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card/50 p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Belum ada featured deals.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {featuredDeals.map((deal) => (
+              <FeaturedDealCard key={deal.id} deal={deal} />
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* SECTION 2: Community Promos Near You */}
+      <div className="mt-6 px-4">
+        <h2 className="font-display text-sm font-bold text-foreground mb-3">
+          Promo Komunitas di Sekitarmu
+        </h2>
         {promosLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-8">
             <p className="text-sm text-muted-foreground">Memuat promo...</p>
           </div>
         ) : promos.length === 0 ? (
