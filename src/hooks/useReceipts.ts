@@ -151,7 +151,14 @@ export function useCreateReceipt() {
         .single();
 
       if (error) {
-        console.error("Failed to create receipt", error);
+        const sbError = error as { message?: string; code?: string; details?: string; hint?: string };
+        console.error("[createReceipt] Supabase insert error:", {
+          message: sbError.message,
+          code: sbError.code,
+          details: sbError.details,
+          hint: sbError.hint,
+          full: error,
+        });
         throw error;
       }
 

@@ -162,8 +162,14 @@ export default function Upload() {
       handleRetake();
       setShowReward(true);
     } catch (e) {
-      console.error("Receipt submit error:", e);
-      const err = e as { message?: string };
+      const err = e as { message?: string; code?: string; details?: string; hint?: string };
+      console.error("[Upload] Receipt submit error:", {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        full: e,
+      });
       if (err?.message?.includes("duplicate") || err?.message?.includes("unique")) {
         setError("This receipt was already submitted.");
       } else {

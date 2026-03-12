@@ -124,8 +124,14 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       stopCamera();
       setStatus("success");
     } catch (e) {
-      const err = e instanceof Error ? e : new Error(String(e));
-      console.error("[CameraScanner] Upload error:", err.message, err.stack ?? err);
+      const err = e as { message?: string; code?: string; details?: string; hint?: string };
+      console.error("[CameraScanner] Receipt create error:", {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        full: e,
+      });
       setError(USER_FACING_ERROR);
       setStatus("error");
     }
