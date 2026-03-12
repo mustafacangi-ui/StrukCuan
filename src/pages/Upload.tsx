@@ -43,10 +43,14 @@ export default function Upload() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isOnboarded) {
+    if (!user) {
       navigate("/", { replace: true, state: { requireLogin: "camera" as const } });
+      return;
     }
-  }, [isLoading, isOnboarded, navigate]);
+    if (!isOnboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [isLoading, user, isOnboarded, navigate]);
 
   useEffect(() => {
     if (!message) return;
@@ -191,17 +195,19 @@ export default function Upload() {
   }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Memuat...</p>
+      </div>
+    );
   }
-  
-  if (!user) {
-    navigate("/login");
-    return <div>Redirecting...</div>;
-  }
-  
-  if (!isOnboarded) {
-    navigate("/onboarding");
-    return <div>Redirecting...</div>;
+
+  if (!user || !isOnboarded) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Mengalihkan...</p>
+      </div>
+    );
   }
 
   return (
