@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Camera } from "lucide-react";
+import { X, Camera, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt } from "@/hooks/useReceipts";
@@ -8,6 +8,14 @@ import { useReceiptsToday } from "@/hooks/useReceipts";
 const MAX_RECEIPTS_PER_DAY = 3;
 
 const USER_FACING_ERROR = "Upload failed. Please try again.";
+
+const RECEIPT_RULES = `Rules:
+• Only supermarket receipts
+• Receipt must be from today
+• Maximum 3 receipts per day`;
+
+const UPLOAD_CONSENT = "By uploading a receipt you allow StrukCuan to review and store it for verification.";
+const FRAUD_WARNING = "Uploading fake or duplicated receipts may result in account suspension.";
 
 interface CameraScannerProps {
   onClose: () => void;
@@ -22,7 +30,9 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [status, setStatus] = useState<"camera" | "processing" | "success" | "error">("camera");
+  const [step, setStep] = useState<"camera" | "preview" | "processing" | "success" | "error">("camera");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const userId = user?.id;
@@ -52,53 +62,62 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         console.error("Camera error:", e);
         if (mounted) {
           setError("Cannot access camera");
-          setStatus("error");
+          setStep("error");
         }
       }
     };
-    startCamera();
+    if (step === "camera") {
+      startCamera();
+    }
     return () => {
       mounted = false;
-      stopCamera();
+      if (step === "preview" || step === "camera") stopCamera();
     };
-  }, [stopCamera]);
+  }, [step]);
 
-  const handleCapture = useCallback(async () => {
+  const handleCapture = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !userId || status !== "camera") return;
+    if (!video || !canvas || !userId) return;
 
     if (todayCount >= MAX_RECEIPTS_PER_DAY) {
       setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day.`);
-      setStatus("error");
+      setStep("error");
       return;
     }
-
-    setStatus("processing");
-    setError(null);
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.error("[CameraScanner] Canvas context unavailable");
-      setError(USER_FACING_ERROR);
-      setStatus("error");
-      return;
-    }
+    if (!ctx) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    try {
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/jpeg", 0.9)
-      );
-      if (!blob) {
-        console.error("[CameraScanner] Failed to create image blob");
-        throw new Error("Blob creation failed");
-      }
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      setCapturedBlob(blob);
+      setPreviewUrl(URL.createObjectURL(blob));
+      stopCamera();
+      setStep("preview");
+    }, "image/jpeg", 0.9);
+  }, [userId, todayCount, stopCamera]);
 
-      const file = new File([blob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
+  const handleRetake = useCallback(() => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setCapturedBlob(null);
+    setError(null);
+    setStep("camera");
+  }, [previewUrl]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!capturedBlob || !userId) return;
+
+    setStep("processing");
+    setError(null);
+
+    try {
+      const file = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
       const storagePath = `${userId}/${Date.now()}.jpg`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -106,7 +125,6 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         .upload(storagePath, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        console.error("[CameraScanner] Upload failed:", uploadError);
         throw new Error("Upload failed");
       }
 
@@ -114,133 +132,162 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         .from("receipts")
         .getPublicUrl(uploadData.path);
 
+      const receiptIndexToday = todayCount + 1;
+
       try {
         await createReceipt.mutateAsync({
           userId,
           imageUrl: publicUrl,
           store: null,
           total: null,
+          receiptIndexToday,
         });
       } catch (dbErr) {
-        console.error("[CameraScanner] Receipt DB insert failed (image uploaded):", dbErr);
+        console.error("[CameraScanner] Receipt DB insert failed:", dbErr);
       }
 
-      stopCamera();
-      setStatus("success");
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+      setCapturedBlob(null);
+      setStep("success");
     } catch (e) {
       console.error("[CameraScanner] Upload error:", e);
       setError(USER_FACING_ERROR);
-      setStatus("error");
+      setStep("error");
     }
-  }, [userId, todayCount, status, createReceipt, stopCamera]);
+  }, [capturedBlob, userId, todayCount, createReceipt, previewUrl]);
 
   const handleClose = useCallback(() => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     stopCamera();
     onClose();
-  }, [stopCamera, onClose]);
+  }, [stopCamera, onClose, previewUrl]);
 
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-black">
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="absolute inset-0 flex items-center justify-center">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="h-full w-full object-cover"
-        />
-      </div>
+      {/* Camera preview */}
+      {step === "camera" && (
+        <>
+          <div className="absolute inset-0">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-black/50 p-2 text-white"
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+            <span className="text-sm font-medium text-white">Take Photo</span>
+            <div className="w-10" />
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-6 pb-10">
+            <div className="mb-4 space-y-2">
+              <pre className="rounded-lg bg-black/60 p-3 text-[10px] text-white/90 whitespace-pre-wrap">
+                {RECEIPT_RULES}
+              </pre>
+              <p className="rounded-lg bg-black/60 p-2.5 text-[10px] text-white/80">
+                {UPLOAD_CONSENT}
+              </p>
+              <p className="rounded-lg bg-amber-500/20 border border-amber-500/40 p-2.5 text-[10px] text-amber-200">
+                ⚠ {FRAUD_WARNING}
+              </p>
+            </div>
+            <button
+              onClick={handleCapture}
+              disabled={todayCount >= MAX_RECEIPTS_PER_DAY}
+              className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-white disabled:opacity-50"
+            >
+              <Camera size={32} className="text-black" />
+            </button>
+          </div>
+        </>
+      )}
 
-      {/* Ghost UI: prominent neon green frame */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className="relative w-[85%] max-w-[340px] aspect-[3/4] rounded-2xl border-4 border-primary"
-          style={{
-            boxShadow: "0 0 32px hsl(150 100% 50% / 0.7), 0 0 64px hsl(150 100% 50% / 0.4), inset 0 0 24px hsl(150 100% 50% / 0.15)",
-          }}
-        >
-          {/* Corner accents - more prominent */}
-          <div className="absolute -top-1 -left-1 w-12 h-12 border-l-[5px] border-t-[5px] border-primary rounded-tl-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
-          <div className="absolute -top-1 -right-1 w-12 h-12 border-r-[5px] border-t-[5px] border-primary rounded-tr-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
-          <div className="absolute -bottom-1 -left-1 w-12 h-12 border-l-[5px] border-b-[5px] border-primary rounded-bl-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
-          <div className="absolute -bottom-1 -right-1 w-12 h-12 border-r-[5px] border-b-[5px] border-primary rounded-br-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
+      {/* Preview */}
+      {step === "preview" && previewUrl && (
+        <>
+          <div className="absolute inset-0 flex items-center justify-center bg-black p-4">
+            <img
+              src={previewUrl}
+              alt="Receipt preview"
+              className="max-h-full max-w-full object-contain rounded-lg"
+            />
+          </div>
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
+            <button
+              onClick={handleRetake}
+              className="rounded-full bg-black/50 p-2 text-white"
+              aria-label="Retake"
+            >
+              <RotateCcw size={24} />
+            </button>
+            <span className="text-sm font-medium text-white">Preview</span>
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-black/50 p-2 text-white"
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 p-4 pb-10">
+            <p className="text-[10px] text-white/80 text-center">
+              {UPLOAD_CONSENT}
+            </p>
+            <p className="text-[10px] text-amber-200 text-center">
+              ⚠ {FRAUD_WARNING}
+            </p>
+            <div className="flex gap-3">
+            <button
+              onClick={handleRetake}
+              className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
+            >
+              Retake
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+            >
+              Submit
+            </button>
+            </div>
+          </div>
+        </>
+      )}
 
-          {/* Laser scan line */}
-          <div
-            className="absolute left-0 right-0 h-0.5 bg-primary animate-scan-line pointer-events-none"
-            style={{
-              boxShadow: "0 0 16px hsl(150 100% 50% / 0.9)",
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Overlay text */}
-      <div className="absolute top-4 left-4 right-4 text-center pointer-events-none">
-        <p className="text-sm font-medium text-white drop-shadow-lg">
-          Align receipt within the frame
-        </p>
-      </div>
-
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
-        <button
-          onClick={handleClose}
-          className="rounded-full bg-black/50 p-2 text-white"
-          aria-label="Close"
-        >
-          <X size={24} />
-        </button>
-        <span className="text-sm font-medium text-white">Upload Receipt</span>
-        <div className="w-10" />
-      </div>
-
-      {/* Bottom capture button */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <button
-          onClick={handleCapture}
-          disabled={status === "processing"}
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-[0_0_24px_hsl(150_100%_50%_/_0.5)] disabled:opacity-50"
-        >
-          <Camera size={32} className="text-primary-foreground" />
-        </button>
-      </div>
-
-      {/* Processing overlay */}
-      {status === "processing" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+      {/* Processing */}
+      {step === "processing" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
-            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
+            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />
             <p className="text-white font-medium">Uploading...</p>
           </div>
         </div>
       )}
 
-      {/* Success overlay */}
-      {status === "success" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6">
-          <p className="text-primary font-semibold text-center mb-4 text-lg">
-            Receipt uploaded successfully. Waiting for admin approval.
-          </p>
-          <button
-            onClick={handleClose}
-            className="rounded-lg bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            Close
-          </button>
-        </div>
+      {/* Success with celebration */}
+      {step === "success" && (
+        <SuccessCelebration onClose={handleClose} />
       )}
 
-      {/* Error overlay */}
-      {status === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6">
-          <p className="text-destructive font-medium text-center mb-4">{error}</p>
+      {/* Error */}
+      {step === "error" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6">
+          <p className="text-red-400 font-medium text-center mb-4">{error}</p>
           <div className="flex gap-3">
             <button
-              onClick={() => { setStatus("camera"); setError(null); }}
-              className="rounded-lg bg-secondary px-4 py-2 text-sm font-medium"
+              onClick={() => { setStep("camera"); setError(null); }}
+              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white"
             >
               Try Again
             </button>
@@ -253,6 +300,40 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SuccessCelebration({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const id = setTimeout(onClose, 2500);
+    return () => clearTimeout(id);
+  }, [onClose]);
+
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 p-6 overflow-hidden">
+      {/* Falling sparkles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 rounded-full bg-yellow-300 animate-fall"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: "-10px",
+              animationDelay: `${Math.random() * 0.5}s`,
+              animationDuration: `${1.5 + Math.random()}s`,
+            }}
+          />
+        ))}
+      </div>
+      <div className="relative z-10 text-center max-w-sm">
+        <p className="text-2xl mb-2">✨</p>
+        <p className="text-lg font-bold text-white mb-2">Receipt received!</p>
+        <p className="text-sm text-white/90">
+          It is being reviewed. Your ticket and cuan will be added soon.
+        </p>
+      </div>
     </div>
   );
 }

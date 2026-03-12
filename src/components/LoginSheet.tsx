@@ -27,6 +27,7 @@ const LoginSheet = () => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [confirmAge, setConfirmAge] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,8 +37,12 @@ const LoginSheet = () => {
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setError("");
     setSuccessMsg("");
+    if (!confirmAge) {
+      setError("Please confirm you are at least 18 years old");
+      return;
+    }
     if (!agreeTerms) {
-      setError("Centang persetujuan Terms & Privacy Policy");
+      setError("Please agree to Terms of Service and Privacy Policy");
       return;
     }
     setLoading(true);
@@ -107,8 +112,12 @@ const LoginSheet = () => {
   const handleEmailLogin = async () => {
     setError("");
     setSuccessMsg("");
+    if (!confirmAge) {
+      setError("Please confirm you are at least 18 years old");
+      return;
+    }
     if (!agreeTerms) {
-      setError("Centang persetujuan Terms & Privacy Policy");
+      setError("Please agree to Terms of Service and Privacy Policy");
       return;
     }
     if (!email.includes("@")) {
@@ -292,6 +301,18 @@ const LoginSheet = () => {
           </div>
         )}
 
+        {/* Age confirmation */}
+        <label className="flex items-start gap-3 cursor-pointer mb-3">
+          <Checkbox
+            checked={confirmAge}
+            onCheckedChange={(v) => setConfirmAge(!!v)}
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            I confirm that I am at least 18 years old.
+          </span>
+        </label>
+
         {/* Terms checkbox */}
         <label className="flex items-start gap-3 cursor-pointer mb-5">
           <Checkbox
@@ -300,11 +321,11 @@ const LoginSheet = () => {
             className="mt-0.5 shrink-0"
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            Saya setuju dengan{" "}
+            I agree to{" "}
             <Link to="/terms" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
               Terms of Service
             </Link>
-            {" "}dan{" "}
+            {" "}and{" "}
             <Link to="/privacy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
               Privacy Policy
             </Link>

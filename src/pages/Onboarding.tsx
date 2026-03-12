@@ -13,7 +13,9 @@ const Onboarding = () => {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [confirmAge, setConfirmAge] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -24,8 +26,12 @@ const Onboarding = () => {
 
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setError("");
+    if (!confirmAge) {
+      setError("Please confirm you are at least 18 years old");
+      return;
+    }
     if (!agreeTerms) {
-      setError("Centang persetujuan Terms & Privacy Policy");
+      setError("Please agree to Terms of Service and Privacy Policy");
       return;
     }
     setLoading(true);
@@ -45,8 +51,12 @@ const Onboarding = () => {
 
   const handleEmailLogin = async () => {
     setError("");
+    if (!confirmAge) {
+      setError("Please confirm you are at least 18 years old");
+      return;
+    }
     if (!agreeTerms) {
-      setError("Centang persetujuan Terms & Privacy Policy");
+      setError("Please agree to Terms of Service and Privacy Policy");
       return;
     }
     if (!email.includes("@")) {
@@ -61,7 +71,7 @@ const Onboarding = () => {
     try {
       await loginWithEmail(email, displayName.trim());
       setError("");
-      setError("Cek email untuk link login. Setelah login, kamu akan diarahkan ke beranda.");
+      setSuccessMsg("Check your email for the login link.");
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err?.message ?? "Gagal mengirim link. Coba lagi.");
@@ -177,6 +187,18 @@ const Onboarding = () => {
           </div>
         </div>
 
+        {/* Age confirmation */}
+        <label className="flex items-start gap-3 cursor-pointer mb-3">
+          <Checkbox
+            checked={confirmAge}
+            onCheckedChange={(v) => setConfirmAge(!!v)}
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            I confirm that I am at least 18 years old.
+          </span>
+        </label>
+
         {/* Terms checkbox */}
         <label className="flex items-start gap-3 cursor-pointer mb-6">
           <Checkbox
@@ -185,15 +207,18 @@ const Onboarding = () => {
             className="mt-0.5 shrink-0"
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            Saya setuju dengan{" "}
+            I agree to{" "}
             <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-            {" "}dan{" "}
+            {" "}and{" "}
             <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
           </span>
         </label>
 
         {error && (
           <p className="text-xs text-destructive mb-4">{error}</p>
+        )}
+        {successMsg && (
+          <p className="text-xs text-primary mb-4">{successMsg}</p>
         )}
 
         <button

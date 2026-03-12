@@ -9,7 +9,7 @@ export default function PromoRules() {
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-6"
       >
         <ArrowLeft size={18} />
-        <span className="text-sm">Kembali</span>
+        <span className="text-sm">Back</span>
       </Link>
 
       <h1 className="font-display text-2xl font-bold text-foreground mb-4">
@@ -23,21 +23,33 @@ export default function PromoRules() {
         <p className="text-sm leading-relaxed">
           These rules govern participation in StrukCuan promotions, lotteries, and reward programs.
         </p>
-        <h2 className="text-base font-semibold text-foreground mt-6">Receipt Upload</h2>
+
+        <h2 className="text-base font-semibold text-foreground mt-6">Receipt Rules</h2>
+        <ul className="list-disc pl-5 text-sm leading-relaxed space-y-1">
+          <li>Only supermarket receipts are accepted</li>
+          <li>Receipts must be from the same day</li>
+          <li>Maximum 3 receipts per day</li>
+          <li>Rewards are granted only after manual approval</li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-foreground mt-6">Receipt Ownership</h2>
         <p className="text-sm leading-relaxed">
-          Each verified receipt earns 50 Cuan and 1 lottery ticket. Receipts must be from eligible stores (e.g., Indomaret, Alfamart) and show a valid purchase. Maximum 3 receipts per user per day.
+          Users must only upload receipts from purchases they personally made. Uploading receipts belonging to other individuals, businesses, or third parties is strictly prohibited. StrukCuan reserves the right to reject receipts suspected of being collected, shared, purchased, or distributed between users.
         </p>
+
+        <h2 className="text-base font-semibold text-foreground mt-6">Tickets and Cuan</h2>
+        <p className="text-sm leading-relaxed">
+          Each approved receipt earns Cuan (points) and lottery tickets. The exact amounts are determined by StrukCuan moderators during manual verification. Tickets enter you into the weekly lottery draw.
+        </p>
+
         <h2 className="text-base font-semibold text-foreground mt-6">Weekly Lottery</h2>
         <p className="text-sm leading-relaxed">
-          Lotteries are drawn weekly. Five winners receive Rp 100,000 each. Winners are selected randomly from participants with at least one ticket. Odds depend on total tickets in the pool.
+          Lotteries are drawn weekly. Winners are selected randomly from participants with tickets. Participation does not guarantee rewards.
         </p>
-        <h2 className="text-base font-semibold text-foreground mt-6">Promo Merah Bonus</h2>
-        <p className="text-sm leading-relaxed">
-          Receipts uploaded near active Promo Merah locations may qualify for 2x Cuan bonus. Eligibility is determined at our discretion based on location and timing.
-        </p>
+
         <h2 className="text-base font-semibold text-foreground mt-6">Contact</h2>
         <p className="text-sm leading-relaxed">
-          For questions about promo rules, please visit our Contact page.
+          For questions about promo rules, please visit our <Link to="/contact" className="text-primary hover:underline">Contact</Link> page.
         </p>
       </div>
     </div>

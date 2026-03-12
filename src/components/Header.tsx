@@ -40,15 +40,23 @@ const Header = () => {
     return () => clearInterval(id);
   }, []);
 
+  const cuan = stats?.cuan ?? 0;
+
   return (
     <div className="px-4 pt-3 pb-2">
       <div className="flex items-center justify-center gap-3 mb-3">
-        <div className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5">
-          <Ticket size={14} className="text-primary" />
-          <span className="font-display text-xs font-bold text-primary">
+        <div className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/20 px-3 py-1.5">
+          <Ticket size={14} className="text-red-400" />
+          <span className="font-display text-xs font-bold text-red-400">
             {tiket.toLocaleString()}
           </span>
-          <span className="text-[9px] text-primary/70">Ticket</span>
+          <span className="text-[9px] text-red-400/80">Ticket</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/20 px-3 py-1.5">
+          <span className="text-[10px] font-bold text-amber-400">Cuan</span>
+          <span className="font-display text-xs font-bold text-amber-400">
+            {cuan.toLocaleString()}
+          </span>
         </div>
       </div>
       {/* User row */}

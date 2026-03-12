@@ -12,6 +12,7 @@ export interface ReceiptRow {
   total: number | null;
   status: ReceiptStatus;
   created_at: string;
+  receipt_index_today?: number | null;
 }
 
 export const RECEIPTS_QUERY_KEY = ["receipts"];
@@ -26,6 +27,29 @@ async function fetchPendingReceipts(): Promise<ReceiptRow[]> {
   if (error) {
     console.error("Failed to fetch pending receipts", error);
     throw error;
+  }
+
+  return (data as ReceiptRow[]) ?? [];
+}
+
+export async function fetchUserReceiptsSameDay(
+  userId: string,
+  receiptDate: string
+): Promise<ReceiptRow[]> {
+  const dayStart = receiptDate.slice(0, 10) + "T00:00:00.000Z";
+  const dayEnd = receiptDate.slice(0, 10) + "T23:59:59.999Z";
+
+  const { data, error } = await supabase
+    .from("receipts")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("created_at", dayStart)
+    .lte("created_at", dayEnd)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch user receipts same day", error);
+    return [];
   }
 
   return (data as ReceiptRow[]) ?? [];
@@ -146,6 +170,7 @@ export function useCreateReceipt() {
             store: input.store ?? null,
             total: input.total ?? null,
             status: "pending",
+            receipt_index_today: input.receiptIndexToday ?? null,
           },
         ])
         .select("*")
@@ -187,6 +212,36 @@ export function useApproveReceipt() {
 
       if (error) {
         console.error("Failed to approve receipt", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: RECEIPTS_QUERY_KEY,
+      });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useApproveReceiptWithRewards() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      cuan,
+      tiket,
+    }: { receiptId: number; cuan: number; tiket: number }) => {
+      const { error } = await supabase.rpc("approve_receipt_with_rewards", {
+        p_receipt_id: receiptId,
+        p_cuan: cuan,
+        p_tiket: tiket,
+      });
+
+      if (error) {
+        console.error("Failed to approve receipt with rewards", error);
         throw error;
       }
     },

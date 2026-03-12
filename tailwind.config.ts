@@ -110,6 +110,10 @@ export default {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" },
         },
+        "fall": {
+          "0%": { transform: "translateY(0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translateY(100vh) rotate(180deg)", opacity: "0.3" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -120,6 +124,7 @@ export default {
         "breathing": "breathing 3s ease-in-out infinite",
         "fade-in": "fade-in 0.3s ease-out forwards",
         "slide-up": "slide-up 0.35s ease-out",
+        "fall": "fall 2s linear forwards",
       },
     },
   },
