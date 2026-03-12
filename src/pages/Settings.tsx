@@ -7,19 +7,27 @@ import BottomNav from "@/components/BottomNav";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, isOnboarded, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const { user, isOnboarded, isLoading, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isOnboarded) {
       navigate("/", { replace: true, state: { requireLogin: "profile" as const } });
     }
-  }, [isOnboarded, navigate]);
+  }, [isLoading, isOnboarded, navigate]);
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
   if (!isOnboarded) return null;
 
   return (

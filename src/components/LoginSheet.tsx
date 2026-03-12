@@ -3,12 +3,9 @@ import { Link } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { X, Phone, Mail } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GoogleIcon, AppleIcon } from "@/components/SocialIcons";
+import { GoogleIcon } from "@/components/SocialIcons";
 
 type AuthMethod = "phone" | "email";
-
-/** Set to true to show Apple login button */
-const SHOW_APPLE_LOGIN = false;
 
 const LoginSheet = () => {
   const {
@@ -18,7 +15,6 @@ const LoginSheet = () => {
     verifyOtp,
     loginWithEmail,
     loginWithGoogle,
-    loginWithApple,
   } = useUser();
   const [authMethod, setAuthMethod] = useState<AuthMethod>("phone");
   const [phone, setPhone] = useState("");
@@ -34,7 +30,7 @@ const LoginSheet = () => {
 
   if (!showLoginSheet) return null;
 
-  const handleSocialLogin = async (provider: "google" | "apple") => {
+  const handleGoogleLogin = async () => {
     setError("");
     setSuccessMsg("");
     if (!confirmAge) {
@@ -47,11 +43,7 @@ const LoginSheet = () => {
     }
     setLoading(true);
     try {
-      if (provider === "google") {
-        await loginWithGoogle();
-      } else {
-        await loginWithApple();
-      }
+      await loginWithGoogle();
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err?.message ?? "Gagal login. Coba lagi.");
@@ -170,25 +162,15 @@ const LoginSheet = () => {
         </p>
 
         {/* Social login */}
-        <div className="space-y-3 mb-5">
+        <div className="mb-5">
           <button
-            onClick={() => handleSocialLogin("google")}
+            onClick={handleGoogleLogin}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-white text-gray-900 py-3.5 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             <GoogleIcon className="w-5 h-5" />
             <span>Continue with Google</span>
           </button>
-          {SHOW_APPLE_LOGIN && (
-            <button
-              onClick={() => handleSocialLogin("apple")}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 rounded-xl bg-black text-white py-3.5 font-medium text-sm hover:bg-gray-900 transition-colors disabled:opacity-60"
-            >
-              <AppleIcon className="w-5 h-5" />
-              <span>Continue with Apple</span>
-            </button>
-          )}
         </div>
 
         {/* Divider */}

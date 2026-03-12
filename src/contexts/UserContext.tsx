@@ -24,7 +24,6 @@ interface UserContextType {
   verifyOtp: (phone: string, token: string) => Promise<void>;
   loginWithEmail: (email: string, displayName: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (nickname: string) => Promise<void>;
   theme: "dark" | "light";
@@ -124,44 +123,58 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    let mounted = true;
+
+    const restoreSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
         setSession(session);
         if (session) {
           const u = session.user as SupabaseUser & { phone?: string };
           const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
           if (displayName || u.email) {
-            await upsertProfile(
-              u.id,
-              displayName || "User",
-              u.phone ?? undefined
-            );
+            await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
           }
           const userData = await buildUserFromSession(session);
-          setUser(userData);
+          if (mounted) setUser(userData);
         } else {
           setUser(null);
         }
-        setIsLoading(false);
+      } catch {
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        setSession(session);
+        if (session) {
+          const u = session.user as SupabaseUser & { phone?: string };
+          const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
+          if (displayName || u.email) {
+            await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
+          }
+          const userData = await buildUserFromSession(session);
+          if (mounted) setUser(userData);
+        } else {
+          setUser(null);
+        }
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        const userData = await buildUserFromSession(session);
-        setUser(userData);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    }).catch(() => {
-      setSession(null);
-      setUser(null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [buildUserFromSession]);
 
   const loginWithPhone = useCallback(async (phone: string, nickname: string) => {
@@ -214,16 +227,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (error) throw error;
   }, []);
 
-  const loginWithApple = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    if (error) throw error;
-  }, []);
-
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -266,7 +269,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         verifyOtp,
         loginWithEmail,
         loginWithGoogle,
-        loginWithApple,
         logout,
         updateProfile,
         theme,

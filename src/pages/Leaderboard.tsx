@@ -8,15 +8,23 @@ import LegalFooter from "@/components/LegalFooter";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
-  const { user, isOnboarded } = useUser();
-  const { data: leaderboard = [], isLoading, error } = useLeaderboard(user?.id, 50);
+  const { user, isOnboarded, isLoading } = useUser();
+  const { data: leaderboard = [], isLoading: leaderboardLoading, error } = useLeaderboard(user?.id, 50);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isOnboarded) {
       navigate("/onboarding", { replace: true });
     }
-  }, [isOnboarded, navigate]);
+  }, [isLoading, isOnboarded, navigate]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
   if (!isOnboarded) return null;
 
   const getRankIcon = (rank: number) => {
@@ -44,7 +52,7 @@ export default function Leaderboard() {
       </div>
 
       <div className="mx-4 mt-4">
-        {isLoading && (
+        {leaderboardLoading && (
           <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
             Loading...
           </div>
@@ -56,13 +64,13 @@ export default function Leaderboard() {
           </div>
         )}
 
-        {!isLoading && !error && leaderboard.length === 0 && (
+        {!leaderboardLoading && !error && leaderboard.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
             Belum ada data. Upload struk untuk mulai!
           </div>
         )}
 
-        {!isLoading && !error && leaderboard.length > 0 && (
+        {!leaderboardLoading && !error && leaderboard.length > 0 && (
           <div className="space-y-2">
             {leaderboard.map((row, i) => (
               <div

@@ -4,10 +4,10 @@ import { Camera, ArrowRight } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GoogleIcon, AppleIcon } from "@/components/SocialIcons";
+import { GoogleIcon } from "@/components/SocialIcons";
 
 const Onboarding = () => {
-  const { loginWithGoogle, loginWithApple, loginWithEmail, isOnboarded } = useUser();
+  const { loginWithGoogle, loginWithEmail, isOnboarded } = useUser();
   const navigate = useNavigate();
   const [step, setStep] = useState<"splash" | "signup">("splash");
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ const Onboarding = () => {
     }
   }, [isOnboarded, navigate]);
 
-  const handleSocialLogin = async (provider: "google" | "apple") => {
+  const handleGoogleLogin = async () => {
     setError("");
     if (!confirmAge) {
       setError("Please confirm you are at least 18 years old");
@@ -36,11 +36,7 @@ const Onboarding = () => {
     }
     setLoading(true);
     try {
-      if (provider === "google") {
-        await loginWithGoogle();
-      } else {
-        await loginWithApple();
-      }
+      await loginWithGoogle();
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err?.message ?? "Gagal login. Coba lagi.");
@@ -129,23 +125,15 @@ const Onboarding = () => {
           Pilih cara login yang paling mudah
         </p>
 
-        {/* Social login buttons */}
-        <div className="space-y-3 mb-6">
+        {/* Social login */}
+        <div className="mb-6">
           <button
-            onClick={() => handleSocialLogin("google")}
+            onClick={handleGoogleLogin}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-white text-gray-900 py-3.5 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             <GoogleIcon className="w-5 h-5" />
             <span>Continue with Google</span>
-          </button>
-          <button
-            onClick={() => handleSocialLogin("apple")}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 rounded-xl bg-black text-white py-3.5 font-medium text-sm hover:bg-gray-900 transition-colors disabled:opacity-60"
-          >
-            <AppleIcon className="w-5 h-5" />
-            <span>Continue with Apple</span>
           </button>
         </div>
 
