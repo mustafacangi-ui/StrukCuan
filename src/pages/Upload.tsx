@@ -190,8 +190,19 @@ export default function Upload() {
     }
   }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
 
-  if (!isLoading && !user) return null;
-  if (!isLoading && !isOnboarded) return null;
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
+  if (!user) {
+    navigate("/login");
+    return <div>Redirecting...</div>;
+  }
+  
+  if (!isOnboarded) {
+    navigate("/onboarding");
+    return <div>Redirecting...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
