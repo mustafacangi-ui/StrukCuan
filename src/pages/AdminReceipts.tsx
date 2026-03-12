@@ -1,7 +1,9 @@
+import { useUser } from "@/contexts/UserContext";
 import { usePendingReceipts, useApproveReceipt, useRejectReceipt } from "@/hooks/useReceipts";
 
 export default function AdminReceipts() {
-  const { data: receipts = [], isLoading, error } = usePendingReceipts();
+  const { user } = useUser();
+  const { data: receipts = [], isLoading, error } = usePendingReceipts(user?.id);
   const approve = useApproveReceipt();
   const reject = useRejectReceipt();
 

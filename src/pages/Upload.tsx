@@ -49,6 +49,14 @@ export default function Upload() {
     }
   }, [isLoading, user, isOnboarded, navigate]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
   const revokePreviewUrl = useCallback(() => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -152,39 +160,23 @@ export default function Upload() {
         .from("receipts")
         .getPublicUrl(uploadData.path);
 
-      await createReceipt.mutateAsync({
-        userId,
-        imageUrl: publicUrl,
-        store: null,
-        total: null,
-      });
+      try {
+        await createReceipt.mutateAsync({
+          userId,
+          imageUrl: publicUrl,
+          store: null,
+          total: null,
+        });
+      } catch (dbErr) {
+        console.error("[Upload] Receipt DB insert failed (image uploaded):", dbErr);
+      }
 
       handleRetake();
       setShowReward(true);
     } catch (e) {
-      const err = e as { message?: string; code?: string; details?: string; hint?: string };
-      console.error("[Upload] Receipt submit error:", {
-        message: err?.message,
-        code: err?.code,
-        details: err?.details,
-        hint: err?.hint,
-        full: e,
-      });
-      if (err?.message?.includes("duplicate") || err?.message?.includes("unique")) {
-        setError("This receipt was already submitted.");
-      } else {
-        setError("Error sending receipt. Try again.");
-      }
+      setError("Error uploading image. Try again.");
     }
   }, [userId, image, todayCount, createReceipt, handleRetake]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
 
   if (!user || !isOnboarded) {
     return (

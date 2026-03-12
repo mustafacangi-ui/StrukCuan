@@ -31,12 +31,13 @@ async function fetchPendingReceipts(): Promise<ReceiptRow[]> {
   return (data as ReceiptRow[]) ?? [];
 }
 
-export function usePendingReceipts() {
+export function usePendingReceipts(userId: string | undefined) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: [...RECEIPTS_QUERY_KEY, "pending"],
     queryFn: fetchPendingReceipts,
+    enabled: !!userId,
   });
 
   // Realtime invalidation

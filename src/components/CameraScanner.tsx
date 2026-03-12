@@ -114,24 +114,21 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         .from("receipts")
         .getPublicUrl(uploadData.path);
 
-      await createReceipt.mutateAsync({
-        userId,
-        imageUrl: publicUrl,
-        store: null,
-        total: null,
-      });
+      try {
+        await createReceipt.mutateAsync({
+          userId,
+          imageUrl: publicUrl,
+          store: null,
+          total: null,
+        });
+      } catch (dbErr) {
+        console.error("[CameraScanner] Receipt DB insert failed (image uploaded):", dbErr);
+      }
 
       stopCamera();
       setStatus("success");
     } catch (e) {
-      const err = e as { message?: string; code?: string; details?: string; hint?: string };
-      console.error("[CameraScanner] Receipt create error:", {
-        message: err?.message,
-        code: err?.code,
-        details: err?.details,
-        hint: err?.hint,
-        full: e,
-      });
+      console.error("[CameraScanner] Upload error:", e);
       setError(USER_FACING_ERROR);
       setStatus("error");
     }

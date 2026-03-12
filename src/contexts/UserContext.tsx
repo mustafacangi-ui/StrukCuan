@@ -155,6 +155,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
       }
       setIsLoading(false);
+    }).catch(() => {
+      setSession(null);
+      setUser(null);
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();

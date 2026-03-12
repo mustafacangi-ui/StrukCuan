@@ -8,8 +8,8 @@ import LegalFooter from "@/components/LegalFooter";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
-  const { isOnboarded } = useUser();
-  const { data: leaderboard = [], isLoading, error } = useLeaderboard(50);
+  const { user, isOnboarded } = useUser();
+  const { data: leaderboard = [], isLoading, error } = useLeaderboard(user?.id, 50);
 
   useEffect(() => {
     if (!isOnboarded) {

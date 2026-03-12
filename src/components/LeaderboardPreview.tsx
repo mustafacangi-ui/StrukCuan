@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/hooks/useUserStats";
 import { Trophy, ChevronRight } from "lucide-react";
 
 export default function LeaderboardPreview() {
   const navigate = useNavigate();
-  const { data: leaderboard = [], isLoading } = useLeaderboard(3);
+  const { user } = useUser();
+  const { data: leaderboard = [], isLoading } = useLeaderboard(user?.id, 3);
 
-  if (isLoading || leaderboard.length === 0) return null;
+  if (!user || isLoading || leaderboard.length === 0) return null;
 
   return (
     <button

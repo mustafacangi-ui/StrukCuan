@@ -64,10 +64,11 @@ async function fetchLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
   return (data as LeaderboardRow[]) ?? [];
 }
 
-export function useLeaderboard(limit = 50) {
+export function useLeaderboard(userId: string | undefined, limit = 50) {
   return useQuery({
     queryKey: ["leaderboard", limit],
     queryFn: () => fetchLeaderboard(limit),
+    enabled: !!userId,
   });
 }
 
