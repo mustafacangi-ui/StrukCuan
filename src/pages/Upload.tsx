@@ -34,10 +34,7 @@ export default function Upload() {
   const [step, setStep] = useState<"camera" | "preview" | "submit">("camera");
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [store, setStore] = useState("");
-  const [total, setTotal] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [showReward, setShowReward] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,12 +48,6 @@ export default function Upload() {
       navigate("/onboarding", { replace: true });
     }
   }, [isLoading, user, isOnboarded, navigate]);
-
-  useEffect(() => {
-    if (!message) return;
-    const id = window.setTimeout(() => setMessage(null), 5000);
-    return () => window.clearTimeout(id);
-  }, [message]);
 
   const revokePreviewUrl = useCallback(() => {
     if (previewUrl) {
@@ -107,8 +98,6 @@ export default function Upload() {
     revokePreviewUrl();
     setImage(null);
     setPreviewUrl(null);
-    setStore("");
-    setTotal("");
     setError(null);
     setStep("camera");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -131,17 +120,6 @@ export default function Upload() {
       setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day. Try again tomorrow.`);
       return;
     }
-
-    if (store.trim().length < 2) {
-      setError("Enter store name (min. 2 characters)");
-      return;
-    }
-
-    const totalNumber = total
-      ? Number(total) > 0
-        ? Number(total)
-        : null
-      : null;
 
     const storagePath = sanitizeStoragePath(userId, image);
 
@@ -177,8 +155,8 @@ export default function Upload() {
       await createReceipt.mutateAsync({
         userId,
         imageUrl: publicUrl,
-        store: store.trim(),
-        total: totalNumber,
+        store: null,
+        total: null,
       });
 
       handleRetake();
@@ -192,7 +170,7 @@ export default function Upload() {
         setError("Error sending receipt. Try again.");
       }
     }
-  }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
+  }, [userId, image, todayCount, createReceipt, handleRetake]);
 
   if (isLoading) {
     return (
@@ -259,21 +237,6 @@ export default function Upload() {
                 className="w-full h-auto block"
               />
             </div>
-
-            <input
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none"
-              placeholder="Store name (Indomaret / Alfamart)"
-              value={store}
-              onChange={(e) => setStore(e.target.value)}
-            />
-
-            <input
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none"
-              placeholder="Total (opsional)"
-              inputMode="decimal"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-            />
 
             <div className="flex gap-2">
               <button
