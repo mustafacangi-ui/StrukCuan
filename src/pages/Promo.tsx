@@ -14,6 +14,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { useUserLocationSync } from "@/hooks/useUserLocationSync";
 import { useRadar } from "@/contexts/RadarContext";
 import RadarCuanMap from "@/components/RadarCuanMap";
+import FreeTicketEvent from "@/components/FreeTicketEvent";
 
 export default function Promo() {
   const { user, isOnboarded, isLoading } = useUser();
@@ -113,6 +114,11 @@ export default function Promo() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* SECTION 4: Free Ticket Event */}
+      <div className="mt-6 px-4">
+        <FreeTicketEvent />
       </div>
 
       <SharePromoSheet
