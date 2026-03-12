@@ -10,11 +10,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10];
 
-const MARKER_COLORS = {
-  big_discount: { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" },
-  bonus_cuan: { bg: "#FFD700", glow: "rgba(255,215,0,0.8)" },
-  normal: { bg: "#00FF88", glow: "rgba(0,255,136,0.8)" },
-};
+const RED_PIN = { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" };
 
 function createCircleGeoJSON(lat: number, lng: number, radiusKm: number) {
   const points: [number, number][] = [];
@@ -50,6 +46,11 @@ function formatDistance(km: number): string {
   return `${km.toFixed(1)} km`;
 }
 
+function formatPrice(price?: number | null): string {
+  if (price == null || price <= 0) return "Promo";
+  return `Rp ${price.toLocaleString("id-ID")}`;
+}
+
 function PromoMarker({
   deal,
   onClick,
@@ -57,12 +58,12 @@ function PromoMarker({
   deal: DealWithDistance;
   onClick: () => void;
 }) {
-  const colors = MARKER_COLORS[deal.promoType];
+  const priceLabel = formatPrice(deal.price);
   return (
     <Marker
       latitude={deal.lat}
       longitude={deal.lng}
-      anchor="center"
+      anchor="bottom"
       onClick={(e) => {
         e.originalEvent.stopPropagation();
         onClick();
@@ -70,13 +71,23 @@ function PromoMarker({
     >
       <button
         type="button"
-        className="w-4 h-4 rounded-full border-2 border-white cursor-pointer"
-        style={{
-          backgroundColor: colors.bg,
-          boxShadow: `0 0 12px ${colors.glow}`,
-        }}
-        aria-label={`Promo: ${deal.store ?? "Store"}`}
-      />
+        className="flex flex-col items-center cursor-pointer"
+        aria-label={`Promo: ${deal.store ?? "Store"} - ${priceLabel}`}
+      >
+        <div
+          className="rounded-md border-2 border-white px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap shadow-lg"
+          style={{
+            backgroundColor: RED_PIN.bg,
+            boxShadow: `0 0 10px ${RED_PIN.glow}`,
+          }}
+        >
+          {priceLabel}
+        </div>
+        <div
+          className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] -mt-0.5"
+          style={{ borderTopColor: RED_PIN.bg }}
+        />
+      </button>
     </Marker>
   );
 }

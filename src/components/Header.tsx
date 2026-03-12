@@ -42,12 +42,6 @@ const Header = () => {
 
   return (
     <div className="px-4 pt-3 pb-2">
-      {/* LIVE indicator */}
-      <div className="flex items-center justify-end gap-1.5 mb-2">
-        <span className="h-2 w-2 rounded-full bg-neon-red animate-pulse" />
-        <span className="text-[10px] font-bold text-neon-red tracking-wider">LIVE</span>
-        <span className="text-[10px] font-mono text-muted-foreground">: {onlineCount.toLocaleString("id-ID")}</span>
-      </div>
       <div className="flex items-center justify-center gap-3 mb-3">
         <div className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5">
           <Ticket size={14} className="text-primary" />
@@ -103,7 +97,13 @@ const Header = () => {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* LIVE counter - top right, next to settings */}
+          <div className="flex items-center gap-1 rounded-full border border-neon-red/30 bg-neon-red/10 px-2 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon-red animate-pulse" />
+            <span className="text-[9px] font-bold text-neon-red tracking-wider">LIVE</span>
+            <span className="text-[9px] font-mono font-semibold text-foreground">{onlineCount.toLocaleString("id-ID")}</span>
+          </div>
           <div className="relative">
             <button
               className="relative rounded-full bg-secondary p-2"

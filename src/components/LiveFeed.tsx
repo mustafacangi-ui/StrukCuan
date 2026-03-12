@@ -95,15 +95,15 @@ const LiveFeed = () => {
           <h2 className="font-display text-sm font-bold text-foreground">Promo Merah di Sekitarmu</h2>
         </div>
       </div>
-      {/* Active promo indicator */}
-      <div className="px-4 mb-3">
-        <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1.5">
+      {/* Radar Cuan: sadece kampanya sayısı */}
+      <div className="px-4 mb-3 flex justify-center">
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
-          <p className="text-[11px] font-semibold text-primary glow-green-text">
-            [{promoCount}] Active Promo Merah found nearby!
+          <p className="text-sm font-bold text-primary glow-green-text">
+            {promoCount} Promo Aktif
           </p>
         </div>
       </div>
