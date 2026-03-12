@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, X, Award } from "lucide-react";
+import { Trophy, X, Award, Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
@@ -89,7 +89,17 @@ const PrizeSection = () => {
         </div>
       )}
 
-      <div className="mx-4 rounded-xl border border-primary/30 bg-card p-4">
+      <div
+        className="relative mx-4 rounded-xl border border-primary/30 p-4 overflow-hidden"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top right, rgba(255,255,255,0.25), transparent 60%), linear-gradient(to top, #0B0B0B, #3A2A00, #C89B2C, #FFD85A)",
+          boxShadow: "0 10px 30px rgba(255, 215, 90, 0.25)",
+        }}
+      >
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+          <Ticket size={28} color="#FF2E63" />
+        </div>
         <div className="flex items-center gap-2 mb-1">
           <Trophy size={16} className="text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">
