@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Timer } from "lucide-react";
 import type { FeaturedDeal } from "@/hooks/useFeaturedDeals";
 
 interface FeaturedDealCardProps {
@@ -17,11 +17,21 @@ function formatPrice(price?: number | null): string {
 
 export default function FeaturedDealCard({ deal }: FeaturedDealCardProps) {
   const priceStr = formatPrice(deal.price);
-  const discount = (deal as FeaturedDeal & { discount?: number }).discount;
+  const discount = deal.discount ?? 0;
   const discountStr = discount ? `-${discount}%` : "Promo";
+  const hasExpiry = !!deal.expiry;
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="relative rounded-xl border border-border bg-card overflow-hidden">
+      {/* LIVE badge */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-neon-red/20 px-1.5 py-0.5 border border-neon-red/30">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-red opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-red" />
+        </span>
+        <span className="text-[8px] font-bold text-neon-red">LIVE</span>
+      </div>
+
       {deal.image && (
         <div className="aspect-[4/3] bg-secondary/50">
           <img
@@ -48,6 +58,14 @@ export default function FeaturedDealCard({ deal }: FeaturedDealCardProps) {
           </span>
           <span className="text-sm font-bold text-primary">{priceStr}</span>
         </div>
+        {hasExpiry && (
+          <div className="mt-2 flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-1">
+            <Timer size={10} className="text-primary" />
+            <span className="text-[10px] font-bold text-primary">
+              Berakhir: {deal.expiry}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

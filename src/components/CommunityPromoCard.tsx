@@ -71,39 +71,50 @@ export default function CommunityPromoCard({ promo }: CommunityPromoCardProps) {
         </div>
 
         <p className="mt-2 text-[10px] text-muted-foreground">
-          Promo oleh {promo.author_nickname ?? "Anonim"} • Level {promo.author_level ?? 1}
+          Promo oleh Level {promo.author_level ?? 1} User
         </p>
 
         {!isVerified && !isExpired && (
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => handleVote("positive")}
-              disabled={hasVoted || !canVotePositive}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
-                hasVoted
-                  ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                  : canVotePositive
-                    ? "bg-primary text-primary-foreground hover:opacity-90"
-                    : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              <Check size={14} />
-              <span>Masih Ada</span>
-            </button>
-            <button
-              onClick={() => handleVote("negative")}
-              disabled={hasVoted || !canVoteNegative}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
-                hasVoted
-                  ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                  : canVoteNegative
-                    ? "bg-destructive text-destructive-foreground hover:opacity-90"
-                    : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              <X size={14} />
-              <span>Sudah Habis</span>
-            </button>
+          <div className="mt-3 space-y-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleVote("positive")}
+                disabled={hasVoted || !canVotePositive}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
+                  hasVoted
+                    ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                    : canVotePositive
+                      ? "bg-primary text-primary-foreground hover:opacity-90"
+                      : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                <Check size={14} />
+                <span>✔ Masih Ada</span>
+              </button>
+              <button
+                onClick={() => handleVote("negative")}
+                disabled={hasVoted || !canVoteNegative}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
+                  hasVoted
+                    ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                    : canVoteNegative
+                      ? "bg-destructive text-destructive-foreground hover:opacity-90"
+                      : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                <X size={14} />
+                <span>✖ Sudah Habis</span>
+              </button>
+            </div>
+            <div className="flex justify-center gap-4 text-[10px] text-muted-foreground">
+              <span>✔ Masih Ada ({promo.positive_votes ?? 0})</span>
+              <span>✖ Sudah Habis ({promo.negative_votes ?? 0})</span>
+            </div>
+            {(promo.negative_votes ?? 0) > (promo.positive_votes ?? 0) && (
+              <p className="text-[10px] font-semibold text-destructive text-center">
+                Promo kemungkinan sudah habis
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -112,13 +112,14 @@ async function fetchPromosNearby(
 export function usePromosNearby(
   userLat: number | null,
   userLng: number | null,
-  userId?: string | null
+  userId?: string | null,
+  radiusKm = 10
 ) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: [...PROMOS_QUERY_KEY, "nearby", userLat, userLng, userId],
-    queryFn: () => fetchPromosNearby(userLat!, userLng!, userId),
+    queryKey: [...PROMOS_QUERY_KEY, "nearby", userLat, userLng, userId, radiusKm],
+    queryFn: () => fetchPromosNearby(userLat!, userLng!, userId, radiusKm),
     enabled: userLat != null && userLng != null,
   });
 
@@ -145,13 +146,15 @@ export function usePromosNearby(
     };
   }, [queryClient]);
 
-  // Enrich with user vote and distance
+  // Enrich with user vote and distance, sort by created_at DESC
   const promosWithDistance = (query.data ?? []).map((p) => {
     const dist = userLat != null && userLng != null
       ? haversineDistance(userLat, userLng, p.latitude, p.longitude)
       : 0;
     return { ...p, distance_km: dist };
-  }).sort((a, b) => a.distance_km - b.distance_km);
+  }).filter((p) => p.distance_km <= radiusKm).sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return {
     ...query,

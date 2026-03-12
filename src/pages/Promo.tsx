@@ -12,18 +12,22 @@ import { usePromosNearby } from "@/hooks/usePromos";
 import { useFeaturedDeals } from "@/hooks/useFeaturedDeals";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { useUserLocationSync } from "@/hooks/useUserLocationSync";
+import { useRadar } from "@/contexts/RadarContext";
+import RadarCuanMap from "@/components/RadarCuanMap";
 
 export default function Promo() {
   const { user, isOnboarded, isLoading } = useUser();
   const navigate = useNavigate();
   const { location } = useUserLocation();
+  const { radius } = useRadar();
   const [showShareSheet, setShowShareSheet] = useState(false);
 
   const { deals: featuredDeals = [], isLoading: dealsLoading } = useFeaturedDeals();
   const { data: promos = [], isLoading: promosLoading } = usePromosNearby(
     location.lat,
     location.lng,
-    user?.id
+    user?.id,
+    radius
   );
 
   useUserLocationSync(user?.id, location.lat, location.lng);
@@ -48,10 +52,15 @@ export default function Promo() {
     <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <PromoHeader />
 
-      {/* SECTION 1: Featured Deals (admin promos) */}
+      {/* SECTION 1: Radar Cuan (Mapbox map) */}
       <div className="mt-4 px-4">
+        <RadarCuanMap />
+      </div>
+
+      {/* SECTION 2: Promo Unggulan (admin deals) */}
+      <div className="mt-6 px-4">
         <h2 className="font-display text-sm font-bold text-foreground mb-3">
-          Promo Unggulan
+          Promo Unggulan di Sekitarmu
         </h2>
         {dealsLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -72,7 +81,7 @@ export default function Promo() {
         )}
       </div>
 
-      {/* SECTION 2: Community Promos Near You */}
+      {/* SECTION 3: Community Promos */}
       <div className="mt-6 px-4">
         <h2 className="font-display text-sm font-bold text-foreground mb-3">
           Promo Komunitas di Sekitarmu

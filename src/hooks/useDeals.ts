@@ -13,10 +13,16 @@ export interface Deal {
   store?: string;
   image?: string | null;
   status?: string;
+  created_at?: string;
+  discount?: number;
+  expiry?: string;
 }
 
 async function fetchDeals(): Promise<Deal[]> {
-  const { data, error } = await supabase.from("deals").select("*");
+  const { data, error } = await supabase
+    .from("deals")
+    .select("*")
+    .order("id", { ascending: false });
 
   if (error) {
     console.error("Failed to fetch deals", error);
