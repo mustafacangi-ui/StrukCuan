@@ -62,7 +62,7 @@ const FloatingActionButton = () => {
             <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2">
               <Ticket size={14} className="text-primary" />
               <p className="text-xs text-foreground font-semibold">
-                Kamu mendapatkan <span className="text-primary">+1 Tiket</span> untuk Undian Minggu ini!
+                You earned <span className="text-primary">+1 Ticket</span> for this week's lottery!
               </p>
             </div>
             {isNearPromoMerah && (
@@ -73,7 +73,7 @@ const FloatingActionButton = () => {
                 </p>
               </div>
             )}
-            <p className="text-[10px] text-muted-foreground mt-1">ID Struk: #RX{Math.random().toString(36).slice(2, 6).toUpperCase()}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Receipt ID: #RX{Math.random().toString(36).slice(2, 6).toUpperCase()}</p>
             <button
               onClick={() => setShowSuccess(false)}
               className="mt-1 w-full rounded-lg bg-primary py-2.5 font-display font-bold text-primary-foreground text-sm"
@@ -107,7 +107,7 @@ const FloatingActionButton = () => {
             <span className={`text-[8px] font-bold ${isNearPromoMerah ? "text-primary glow-green-text" : "text-muted-foreground"}`}>2x</span>
           </div>
         </div>
-        <p className="mt-1 text-center text-[10px] font-semibold text-primary glow-green-text">Ambil Foto</p>
+        <p className="mt-1 text-center text-[10px] font-semibold text-primary glow-green-text">Take Photo</p>
       </div>
     </>
   );

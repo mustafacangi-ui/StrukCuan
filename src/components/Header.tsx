@@ -16,7 +16,7 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const tiket = stats?.tiket ?? user?.tiket ?? 0;
-  const nickname = user?.nickname ?? "Tamu";
+  const nickname = user?.nickname ?? "Guest";
   const level = stats?.level ?? user?.level ?? 1;
 
   const handleProfileClick = () => {
@@ -46,9 +46,9 @@ const Header = () => {
         <div className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5">
           <Ticket size={14} className="text-primary" />
           <span className="font-display text-xs font-bold text-primary">
-            {tiket.toLocaleString("id-ID")}
+            {tiket.toLocaleString()}
           </span>
-          <span className="text-[9px] text-primary/70">Tiket</span>
+          <span className="text-[9px] text-primary/70">Ticket</span>
         </div>
       </div>
       {/* User row */}
@@ -73,7 +73,7 @@ const Header = () => {
           </button>
           <div>
             <p className="text-sm text-muted-foreground">
-              {isOnboarded ? "Selamat siang," : "Selamat datang!"}
+              {isOnboarded ? "Hello," : "Welcome!"}
             </p>
             <h1 className="font-display text-lg font-bold text-foreground">{nickname}</h1>
             {isOnboarded ? (
@@ -83,7 +83,7 @@ const Header = () => {
               >
                 <Shield size={10} className="text-primary" />
                 <span className="text-[10px] font-bold text-primary glow-green-text">
-                  Level {level} · Struk Hunter
+                  Level {level} · Receipt Hunter
                 </span>
               </button>
             ) : (
@@ -92,7 +92,7 @@ const Header = () => {
                 className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 glow-green shadow-[0_0_20px_hsl(147_100%_60%/0.4)] animate-pulse-glow"
               >
                 <Ticket size={12} className="text-primary-foreground" />
-                <span className="text-[10px] font-bold text-primary-foreground tracking-wide">UPLOAD STRUK → DAPAT TIKET</span>
+                <span className="text-[10px] font-bold text-primary-foreground tracking-wide">UPLOAD RECEIPT → GET TICKET</span>
               </button>
             )}
           </div>
@@ -102,7 +102,7 @@ const Header = () => {
           <div className="flex items-center gap-1 rounded-full border border-neon-red/30 bg-neon-red/10 px-2 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-neon-red animate-pulse" />
             <span className="text-[9px] font-bold text-neon-red tracking-wider">LIVE</span>
-            <span className="text-[9px] font-mono font-semibold text-foreground">{onlineCount.toLocaleString("id-ID")}</span>
+            <span className="text-[9px] font-mono font-semibold text-foreground">{onlineCount.toLocaleString()}</span>
           </div>
           <div className="relative">
             <button
@@ -129,7 +129,7 @@ const Header = () => {
                 <div className="max-h-64 overflow-y-auto py-2">
                   {notifications.length === 0 && (
                     <div className="px-3 py-2 text-[10px] text-muted-foreground">
-                      Tidak ada notifikasi.
+                      No notifications.
                     </div>
                   )}
                   {notifications.slice(0, 10).map((n) => (

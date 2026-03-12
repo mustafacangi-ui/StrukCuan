@@ -48,7 +48,7 @@ function formatDistance(km: number): string {
 
 function formatPrice(price?: number | null): string {
   if (price == null || price <= 0) return "Promo";
-  return `Rp ${price.toLocaleString("id-ID")}`;
+  return `Rp ${price.toLocaleString()}`;
 }
 
 function PromoMarker({
@@ -102,8 +102,8 @@ function PromoCardPopup({
   onViewPromo: () => void;
 }) {
   const priceStr = deal.price
-    ? `Rp ${deal.price.toLocaleString("id-ID")}`
-    : "Lihat harga";
+    ? `Rp ${deal.price.toLocaleString()}`
+    : "View price";
   const discount = (deal as DealWithDistance & { discount?: number }).discount;
   const discountStr = discount ? `-${discount}%` : "Promo";
 
@@ -119,10 +119,10 @@ function PromoCardPopup({
         {deal.store ?? "Toko"}
       </p>
       <p className="text-[10px] text-muted-foreground mt-0.5">
-        Jarak: {formatDistance(deal.distanceKm)}
+        Distance: {formatDistance(deal.distanceKm)}
       </p>
       <p className="text-sm text-foreground mt-1">
-        {deal.product_name ?? "Promo tersedia"}
+        {deal.product_name ?? "Promo available"}
       </p>
       <div className="flex items-center gap-2 mt-2">
         <span className="rounded bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
@@ -134,7 +134,7 @@ function PromoCardPopup({
         onClick={onViewPromo}
         className="mt-3 w-full rounded-lg bg-primary py-2.5 font-display font-bold text-sm text-primary-foreground"
       >
-        Lihat Promo
+        View Promo
       </button>
     </div>
   );
@@ -218,7 +218,7 @@ export default function PromoMap() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-red" />
           </span>
           <span className="text-sm font-bold text-foreground">
-            Promo di sekitarmu - LIVE
+            Active Promos Nearby - LIVE
           </span>
         </div>
         {/* Radius filters */}
@@ -332,7 +332,7 @@ export default function PromoMap() {
 
         {!isLoading && deals.length === 0 && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/70 px-4 py-2 text-[10px] text-white text-center max-w-[200px]">
-            Belum ada promo dalam {radius} km
+            No promos within {radius} km
           </div>
         )}
 

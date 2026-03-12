@@ -53,7 +53,7 @@ export default function ReceiptHistory() {
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-8">
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <h1 className="font-display text-lg font-bold text-foreground">
-          Riwayat Struk
+          Receipt History
         </h1>
         <p className="mt-1 text-[10px] text-muted-foreground">
           Lihat status verifikasi semua struk yang kamu kirim.
@@ -78,7 +78,7 @@ export default function ReceiptHistory() {
 
         {error && (
           <div className="rounded-xl border border-destructive/30 bg-card p-4 text-xs text-destructive">
-            Gagal memuat riwayat struk.
+            Failed to load receipt history.
           </div>
         )}
 

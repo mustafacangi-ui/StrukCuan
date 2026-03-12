@@ -19,7 +19,7 @@ const StatsCards = () => {
           <div className="rounded-full bg-yellow-500/20 p-1.5">
             <Ticket size={14} className="text-yellow-400" />
           </div>
-          <span className="text-xs text-muted-foreground">Tiket Undian Kamu</span>
+          <span className="text-xs text-muted-foreground">Your Lottery Tickets</span>
         </div>
         <p className="font-display text-2xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 bg-clip-text text-transparent">1.200</p>
         <p className="text-[10px] text-yellow-400 mt-1">+500 minggu ini ✨</p>

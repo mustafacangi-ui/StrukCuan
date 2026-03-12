@@ -121,7 +121,7 @@ export default function ReceiptScanner() {
       }`}
     >
       <h2 className="font-display text-sm font-bold text-foreground">
-        Scan Struk
+        Scan Receipt
       </h2>
       <p className="mt-1 text-[10px] text-muted-foreground">
         Upload foto struk. Admin akan verifikasi. Jika disetujui kamu dapat +50
@@ -161,7 +161,7 @@ export default function ReceiptScanner() {
 
             const maxSize = 5 * 1024 * 1024;
             if (file.size > maxSize) {
-              setError("Ukuran file maksimal 5MB");
+              setError("Max file size 5MB");
               return;
             }
 

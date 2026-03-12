@@ -72,13 +72,13 @@ export default function Upload() {
     const isAcceptedType = ACCEPTED_TYPES.includes(file.type) ||
       ACCEPTED_EXTENSIONS.test(file.name);
     if (!isAcceptedType) {
-      return "Hanya file JPG atau PNG yang diterima";
+      return "Only JPG or PNG files are accepted";
     }
     if (file.size > MAX_FILE_SIZE) {
-      return "Ukuran file maksimal 5MB";
+      return "Max file size is 5MB";
     }
     if (file.size === 0) {
-      return "File kosong. Coba ambil foto lagi.";
+      return "Empty file. Try taking the photo again.";
     }
     return null;
   }, []);
@@ -118,22 +118,22 @@ export default function Upload() {
     setError(null);
 
     if (!userId) {
-      setError("Sesi habis. Silakan login kembali.");
+      setError("Session expired. Please log in again.");
       return;
     }
 
     if (!image) {
-      setError("Silakan ambil foto struk terlebih dahulu");
+      setError("Please take a receipt photo first");
       return;
     }
 
     if (todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Maksimal ${MAX_RECEIPTS_PER_DAY} struk per hari. Coba lagi besok.`);
+      setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day. Try again tomorrow.`);
       return;
     }
 
     if (store.trim().length < 2) {
-      setError("Masukkan nama toko (min. 2 karakter)");
+      setError("Enter store name (min. 2 characters)");
       return;
     }
 
@@ -156,9 +156,9 @@ export default function Upload() {
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
         if (uploadError.message?.includes("duplicate") || uploadError.message?.includes("already exists")) {
-          setError("File sudah ada. Coba ambil foto baru.");
+          setError("File already exists. Try a new photo.");
         } else if (uploadError.message?.includes("size") || uploadError.message?.includes("limit")) {
-          setError("Ukuran file terlalu besar. Maksimal 5MB.");
+          setError("File too large. Max 5MB.");
         } else {
           setError("Gagal mengunggah struk. Coba lagi.");
         }
@@ -187,9 +187,9 @@ export default function Upload() {
       console.error("Receipt submit error:", e);
       const err = e as { message?: string };
       if (err?.message?.includes("duplicate") || err?.message?.includes("unique")) {
-        setError("Struk ini sudah terkirim.");
+        setError("This receipt was already submitted.");
       } else {
-        setError("Terjadi kesalahan saat mengirim struk. Coba lagi.");
+        setError("Error sending receipt. Try again.");
       }
     }
   }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
@@ -197,7 +197,7 @@ export default function Upload() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Memuat...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -205,7 +205,7 @@ export default function Upload() {
   if (!user || !isOnboarded) {
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Mengalihkan...</p>
+        <p className="text-sm text-muted-foreground">Redirecting...</p>
       </div>
     );
   }
@@ -220,7 +220,7 @@ export default function Upload() {
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="font-display text-lg font-bold text-foreground">
-          Upload Struk
+          Upload Receipt
         </h1>
       </div>
 
@@ -242,10 +242,10 @@ export default function Upload() {
               <Camera size={48} className="text-primary-foreground" />
             </button>
             <p className="mt-4 text-sm text-muted-foreground text-center">
-              Ambil foto struk belanja atau pilih dari galeri
+              Take a receipt photo or choose from gallery
             </p>
             <p className="mt-2 text-[10px] text-muted-foreground/80">
-              JPG/PNG max 5MB · Max 10 struk/hari
+              JPG/PNG max 5MB · Max 10 receipts/day
             </p>
           </div>
         )}
@@ -262,7 +262,7 @@ export default function Upload() {
 
             <input
               className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none"
-              placeholder="Nama toko (Indomaret / Alfamart)"
+              placeholder="Store name (Indomaret / Alfamart)"
               value={store}
               onChange={(e) => setStore(e.target.value)}
             />
@@ -281,17 +281,17 @@ export default function Upload() {
                 className="flex-1 rounded-lg border border-border bg-secondary py-2.5 text-sm font-medium"
               >
                 <X size={16} className="inline mr-1" />
-                Ambil Ulang
+                Retake
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={createReceipt.isPending}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
               >
-                {createReceipt.isPending ? "Mengirim..." : (
+                {createReceipt.isPending ? "Sending..." : (
                   <>
                     <Check size={16} className="inline mr-1" />
-                    Kirim
+                    Submit
                   </>
                 )}
               </button>

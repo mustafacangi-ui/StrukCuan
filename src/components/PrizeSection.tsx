@@ -55,14 +55,14 @@ const PrizeSection = () => {
             </button>
             <div className="flex items-center gap-2 mb-1">
               <Award size={16} className="text-primary" />
-              <h3 className="font-display text-base font-bold text-foreground">Pemenang Undian</h3>
+              <h3 className="font-display text-base font-bold text-foreground">Lottery Winners</h3>
             </div>
             <p className="text-[10px] text-muted-foreground mb-4">
               Voucher Belanja 100.000 Rp
             </p>
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {winners.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Belum ada pemenang</p>
+                <p className="text-xs text-muted-foreground">No winners yet</p>
               ) : (
                 winners.map((w, i) => (
                   <div
@@ -93,7 +93,7 @@ const PrizeSection = () => {
         <div className="flex items-center gap-2 mb-1">
           <Trophy size={16} className="text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-            Undian Mingguan
+            Weekly Lottery
           </span>
         </div>
 
@@ -104,7 +104,7 @@ const PrizeSection = () => {
           100.000 Rp
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          5 pemenang setiap Minggu
+          5 winners every Sunday
         </p>
 
         <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
@@ -112,16 +112,16 @@ const PrizeSection = () => {
             📸 Setiap struk = 1 tiket undian
           </p>
           <p className="text-sm font-bold text-primary mt-0.5">
-            Tiket kamu: {tickets.toLocaleString("id-ID")}
+            Your tickets: {tickets.toLocaleString()}
           </p>
         </div>
 
         <div className="mt-3 flex items-center justify-center gap-1.5">
           {[
-            { val: pad(timeLeft.days), label: "Hari" },
-            { val: pad(timeLeft.hours), label: "Jam" },
+            { val: pad(timeLeft.days), label: "Days" },
+            { val: pad(timeLeft.hours), label: "Hrs" },
             { val: pad(timeLeft.minutes), label: "Min" },
-            { val: pad(timeLeft.seconds), label: "Det" },
+            { val: pad(timeLeft.seconds), label: "Sec" },
           ].map((block, i) => (
             <div key={block.label} className="flex items-center gap-1.5">
               <div className="flex flex-col items-center">
@@ -142,7 +142,7 @@ const PrizeSection = () => {
           className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 py-2.5 font-display font-bold text-sm text-primary"
         >
           <Award size={14} className="text-primary" />
-          <span>Lihat Pemenang</span>
+          <span>View Winners</span>
         </button>
       </div>
     </>

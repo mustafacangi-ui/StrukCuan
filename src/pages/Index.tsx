@@ -56,7 +56,7 @@ const Index = () => {
           <Camera size={40} className="text-primary-foreground" />
         </button>
         <p className="mt-2 text-[11px] font-bold text-primary">
-          UPLOAD STRUK → DAPAT TIKET
+          UPLOAD RECEIPT → GET TICKET
         </p>
       </div>
 

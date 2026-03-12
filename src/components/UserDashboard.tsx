@@ -23,7 +23,7 @@ export default function UserDashboard() {
     <div className="mx-4 mt-3">
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-border bg-card p-2">
-          <p className="text-[9px] text-muted-foreground">Tiket Undian</p>
+          <p className="text-[9px] text-muted-foreground">Lottery Ticket</p>
           <p className="font-display text-base font-bold text-foreground">
             {tiket.toLocaleString("id-ID")}
           </p>
@@ -49,8 +49,8 @@ export default function UserDashboard() {
         <Progress value={levelProgress.progress} className="h-2 bg-secondary" />
         <p className="mt-1 text-[9px] text-muted-foreground">
           {level >= 5
-            ? "Level maksimal!"
-            : `${levelProgress.receiptsToNext} struk lagi ke Level ${levelProgress.next}`}
+            ? "Max level!"
+            : `${levelProgress.receiptsToNext} more receipts to Level ${levelProgress.next}`}
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { createWorker } from "tesseract.js";
+import { createWorker, PSM } from "tesseract.js";
 import { X, Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
@@ -15,13 +15,22 @@ const STORE_PATTERNS = [
   /alfamidi/i,
   /circle\s*k/i,
   /minimarket/i,
+  /carrefour/i,
+  /lidl/i,
+  /aldi/i,
+  /tesco/i,
+  /supermarket/i,
 ];
 
 const PRICE_PATTERNS = [
-  /(?:total|grand\s*total|total\s*pembayaran)[\s:]*rp\.?\s*([\d.,]+)/i,
+  /(?:total|grand\s*total|total\s*pembayaran|sum|amount\s*due)[\s:]*rp\.?\s*([\d.,]+)/i,
+  /(?:total|grand\s*total|sum)[\s:]*€?\s*([\d.,]+)/i,
+  /(?:total|amount)[\s:]*\$?\s*([\d.,]+)/i,
   /rp\.?\s*([\d.,]+)\s*$/im,
+  /€\s*([\d.,]+)\s*$/im,
+  /\$\s*([\d.,]+)\s*$/im,
   /(?:total|jumlah)[\s:]*([\d.,]+)/i,
-  /([\d.,]+)\s*(?:rupiah|rb|ribu)/i,
+  /([\d.,]+)\s*(?:rupiah|rb|ribu|eur|usd)/i,
 ];
 
 function extractStore(text: string): string {
@@ -33,6 +42,9 @@ function extractStore(text: string): string {
       if (/alfamart/i.test(found)) return "Alfamart";
       if (/alfamidi/i.test(found)) return "Alfamidi";
       if (/circle\s*k/i.test(found)) return "Circle K";
+      if (/carrefour/i.test(found)) return "Carrefour";
+      if (/lidl/i.test(found)) return "Lidl";
+      if (/aldi/i.test(found)) return "Aldi";
       return found;
     }
   }
@@ -58,7 +70,7 @@ function extractTotal(text: string): number | null {
   return null;
 }
 
-function imageToGrayscale(
+function preprocessForOCR(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number
@@ -67,7 +79,10 @@ function imageToGrayscale(
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
     const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    data[i] = data[i + 1] = data[i + 2] = gray;
+    const contrast = 1.3;
+    const brightness = 10;
+    const adjusted = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
+    data[i] = data[i + 1] = data[i + 2] = adjusted;
   }
   ctx.putImageData(imageData, 0, 0);
 }
@@ -115,7 +130,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       } catch (e) {
         console.error("Camera error:", e);
         if (mounted) {
-          setError("Tidak dapat mengakses kamera");
+          setError("Cannot access camera");
           setStatus("error");
         }
       }
@@ -133,7 +148,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     if (!video || !canvas || !userId || status !== "camera") return;
 
     if (todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Maksimal ${MAX_RECEIPTS_PER_DAY} struk per hari.`);
+      setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day.`);
       setStatus("error");
       return;
     }
@@ -148,15 +163,18 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
-      imageToGrayscale(ctx, canvas.width, canvas.height);
+      preprocessForOCR(ctx, canvas.width, canvas.height);
 
       const worker = await createWorker("eng", 1, {
         logger: () => {},
       });
+      await worker.setParameters({
+        tessedit_pageseg_mode: PSM.AUTO,
+      });
       const { data: { text } } = await worker.recognize(canvas);
       await worker.terminate();
 
-      const store = extractStore(text) || "Toko";
+      const store = extractStore(text) || "Store";
       const total = extractTotal(text);
 
       const blob = await new Promise<Blob | null>((resolve) =>
@@ -172,7 +190,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         .upload(storagePath, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        throw new Error("Gagal mengunggah struk");
+        throw new Error("Failed to upload receipt");
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -191,7 +209,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       setShowReward(true);
     } catch (e) {
       console.error("Scan error:", e);
-      setError(e instanceof Error ? e.message : "Gagal memindai struk");
+      setError(e instanceof Error ? e.message : "Failed to scan receipt");
       setStatus("error");
     }
   }, [userId, todayCount, status, createReceipt, stopCamera]);
@@ -215,19 +233,19 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         />
       </div>
 
-      {/* Ghost UI: neon green frame */}
+      {/* Ghost UI: prominent neon green frame */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div
-          className="relative w-[85%] max-w-[340px] aspect-[3/4] rounded-xl border-2 border-primary/40"
+          className="relative w-[85%] max-w-[340px] aspect-[3/4] rounded-2xl border-4 border-primary"
           style={{
-            boxShadow: "0 0 16px hsl(150 100% 50% / 0.5), inset 0 0 16px hsl(150 100% 50% / 0.1)",
+            boxShadow: "0 0 32px hsl(150 100% 50% / 0.7), 0 0 64px hsl(150 100% 50% / 0.4), inset 0 0 24px hsl(150 100% 50% / 0.15)",
           }}
         >
-          {/* Corner accents */}
-          <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-l-4 border-t-4 border-primary rounded-tl-lg" style={{ boxShadow: "0 0 12px hsl(150 100% 50% / 0.8)" }} />
-          <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-r-4 border-t-4 border-primary rounded-tr-lg" style={{ boxShadow: "0 0 12px hsl(150 100% 50% / 0.8)" }} />
-          <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-l-4 border-b-4 border-primary rounded-bl-lg" style={{ boxShadow: "0 0 12px hsl(150 100% 50% / 0.8)" }} />
-          <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-r-4 border-b-4 border-primary rounded-br-lg" style={{ boxShadow: "0 0 12px hsl(150 100% 50% / 0.8)" }} />
+          {/* Corner accents - more prominent */}
+          <div className="absolute -top-1 -left-1 w-12 h-12 border-l-[5px] border-t-[5px] border-primary rounded-tl-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
+          <div className="absolute -top-1 -right-1 w-12 h-12 border-r-[5px] border-t-[5px] border-primary rounded-tr-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
+          <div className="absolute -bottom-1 -left-1 w-12 h-12 border-l-[5px] border-b-[5px] border-primary rounded-bl-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
+          <div className="absolute -bottom-1 -right-1 w-12 h-12 border-r-[5px] border-b-[5px] border-primary rounded-br-xl" style={{ boxShadow: "0 0 20px hsl(150 100% 50% / 0.9)" }} />
 
           {/* Laser scan line */}
           <div
@@ -242,7 +260,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       {/* Overlay text */}
       <div className="absolute top-4 left-4 right-4 text-center pointer-events-none">
         <p className="text-sm font-medium text-white drop-shadow-lg">
-          Arahkan fiş ke dalam bingkai
+          Align receipt within the frame
         </p>
       </div>
 
@@ -251,11 +269,11 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         <button
           onClick={handleClose}
           className="rounded-full bg-black/50 p-2 text-white"
-          aria-label="Tutup"
+          aria-label="Close"
         >
           <X size={24} />
         </button>
-        <span className="text-sm font-medium text-white">Pindai Struk</span>
+        <span className="text-sm font-medium text-white">Scan Receipt</span>
         <div className="w-10" />
       </div>
 
@@ -275,7 +293,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         <div className="absolute inset-0 flex items-center justify-center bg-black/70">
           <div className="text-center">
             <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
-            <p className="text-white font-medium">Memindai struk...</p>
+            <p className="text-white font-medium">Scanning receipt...</p>
           </div>
         </div>
       )}
@@ -289,13 +307,13 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
               onClick={() => { setStatus("camera"); setError(null); }}
               className="rounded-lg bg-secondary px-4 py-2 text-sm font-medium"
             >
-              Coba Lagi
+              Try Again
             </button>
             <button
               onClick={handleClose}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
             >
-              Tutup
+              Close
             </button>
           </div>
         </div>

@@ -56,7 +56,7 @@ const HistoryTab = () => {
         </div>
         <p className="font-display text-base font-bold text-foreground mb-1">Belum Ada Riwayat</p>
         <p className="text-xs text-muted-foreground">
-          Ambil foto struk pertamamu untuk mulai kumpulkan Cuan & Tiket! 📸
+          Take your first receipt photo to start earning tickets! 📸
         </p>
       </div>
     );
@@ -66,7 +66,7 @@ const HistoryTab = () => {
     <div className="mx-4 mt-4">
       <div className="flex items-center gap-2 mb-3">
         <Receipt size={16} className="text-primary" />
-        <h2 className="font-display text-sm font-bold text-foreground">Riwayat Struk</h2>
+        <h2 className="font-display text-sm font-bold text-foreground">Receipt History</h2>
       </div>
       <div className="flex flex-col gap-2">
         <HistoryItem store="Indomaret Sudirman" date="8 Mar 2026" amount="Rp 45.000" points="900" tickets="9" isPromoMerah />

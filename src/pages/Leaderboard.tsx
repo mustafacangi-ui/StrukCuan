@@ -46,13 +46,13 @@ export default function Leaderboard() {
       <div className="mx-4 mt-4">
         {isLoading && (
           <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            Memuat...
+            Loading...
           </div>
         )}
 
         {error && (
           <div className="rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive">
-            Gagal memuat leaderboard
+            Failed to load leaderboard
           </div>
         )}
 
@@ -77,7 +77,7 @@ export default function Leaderboard() {
                     {row.nickname || "Anonim"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    Level {row.level ?? 1} · {row.total_receipts} struk
+                    Level {row.level ?? 1} · {row.total_receipts} receipts
                   </p>
                 </div>
                 <div className="text-right">

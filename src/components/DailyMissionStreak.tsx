@@ -43,10 +43,10 @@ export default function DailyMissionStreak() {
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground">
-                Misi Harian
+                Daily Mission
               </p>
               <p className="text-[10px] text-muted-foreground">
-                {missionCompleted ? "Selesai!" : "Upload 1 struk hari ini"}
+                {missionCompleted ? "Done!" : "Upload 1 receipt today"}
               </p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function DailyMissionStreak() {
                 Streak
               </p>
               <p className="text-[10px] text-muted-foreground">
-                {streak} hari berturut-turut
+                {streak} days in a row
               </p>
             </div>
           </div>
@@ -83,8 +83,8 @@ export default function DailyMissionStreak() {
             </p>
             <p className="text-[9px] text-muted-foreground">
               {nextMilestone
-                ? `${nextMilestone.days - streak} hari lagi +${nextMilestone.reward} tiket`
-                : "Maksimal!"}
+                ? `${nextMilestone.days - streak} more days +${nextMilestone.reward} ticket`
+                : "Max!"}
             </p>
           </div>
         </div>

@@ -45,7 +45,7 @@ const Settings = () => {
             <div className="flex items-center gap-1 mt-0.5">
               <Shield size={10} className="text-primary" />
               <span className="text-[10px] font-bold text-primary glow-green-text">
-                Level {user?.level || 1} · Struk Hunter
+                Level {user?.level || 1} · Receipt Hunter
               </span>
             </div>
             <div className="flex items-center gap-1 mt-1">

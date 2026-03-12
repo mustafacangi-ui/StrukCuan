@@ -17,7 +17,7 @@ const RadarCuan = () => {
       </p>
 
       <p className="text-lg font-bold text-green-400">
-        {promoCount} Promo Aktif
+        {promoCount} Active Promos
       </p>
 
       <div className="flex gap-2 justify-center mt-4">

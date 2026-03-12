@@ -20,7 +20,7 @@ export default function Promo() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Memuat...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -30,10 +30,10 @@ export default function Promo() {
     <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <h1 className="font-display text-lg font-bold text-foreground">
-          Promo Merah
+          Red Promo
         </h1>
         <p className="mt-1 text-[10px] text-muted-foreground">
-          Promo di sekitarmu
+          Promos near you
         </p>
       </div>
 

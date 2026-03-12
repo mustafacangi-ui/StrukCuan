@@ -43,7 +43,7 @@ const PromoCard = ({ store, branch, discount, product, price, distance, time, ex
       {discount}
     </div>
     {/* STOK TERBATAS */}
-    <p className="text-[9px] font-bold text-neon-red glow-red-text animate-pulse mb-1">🔥 STOK TERBATAS!</p>
+    <p className="text-[9px] font-bold text-neon-red glow-red-text animate-pulse mb-1">🔥 LIMITED STOCK!</p>
     <p className="text-xs text-foreground font-medium">{product}</p>
     <p className="text-sm font-bold text-primary mt-1">{price}</p>
 
@@ -68,7 +68,7 @@ const PromoCard = ({ store, branch, discount, product, price, distance, time, ex
     {/* Urgency Timer */}
     <div className="mt-1.5 flex items-center gap-1 rounded-md bg-neon-red/10 border border-neon-red/20 px-2 py-1">
       <Timer size={10} className="text-neon-red animate-pulse" />
-      <span className="text-[10px] font-bold text-neon-red glow-red-text">Berakhir dalam {expiry}</span>
+      <span className="text-[10px] font-bold text-neon-red glow-red-text">Ends in {expiry}</span>
     </div>
     <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -92,7 +92,7 @@ const LiveFeed = () => {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-red opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-red" />
           </span>
-          <h2 className="font-display text-sm font-bold text-foreground">Promo Merah di Sekitarmu</h2>
+          <h2 className="font-display text-sm font-bold text-foreground">Active Promos Nearby</h2>
         </div>
       </div>
       {/* Radar Cuan: sadece kampanya sayısı */}
@@ -114,9 +114,9 @@ const LiveFeed = () => {
           discount="-50%"
           product="Indomie Goreng 5-pack"
           price="Rp 12.500"
-          distance="500m dari kamu"
-          time="5 menit lalu"
-          expiry="4 jam"
+          distance="500m from you"
+          time="5 min ago"
+          expiry="4 hrs"
           views={24}
           trending={true}
           verified={true}
@@ -127,9 +127,9 @@ const LiveFeed = () => {
           discount="-50%"
           product="Ayam Potong Segar 1kg"
           price="Rp 15.200"
-          distance="1.2km dari kamu"
-          time="2 menit lalu"
-          expiry="2 jam"
+          distance="1.2km from you"
+          time="2 min ago"
+          expiry="2 hrs"
           views={12}
           trending={false}
           verified={true}
