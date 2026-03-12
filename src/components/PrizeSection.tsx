@@ -113,14 +113,21 @@ const PrizeSection = () => {
         <p className="text-lg font-bold text-primary mt-0.5">
           Rp100.000
         </p>
-        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+        <p className="text-[10px] text-[#F8F8F8] mt-0.5 leading-tight">
           5 pemenang setiap minggu
           <br />
           masing-masing mendapatkan voucher belanja Rp100.000
         </p>
 
-        <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
+        <div
+          className="mt-3 rounded-lg border border-primary/20 px-3 py-2"
+          style={{
+            background: "rgba(0,0,0,0.35)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        >
+          <p className="text-[10px] text-[#F8F8F8] leading-relaxed">
             Upload struk belanja untuk mendapatkan kesempatan hadiah.
             <br />
             1 struk = 1 kesempatan hadiah.
@@ -132,7 +139,7 @@ const PrizeSection = () => {
           </p>
         </div>
 
-        <p className="text-[9px] text-muted-foreground mt-3 text-center">
+        <p className="text-[9px] text-[#F8F8F8] mt-3 text-center">
           Pengumuman hadiah dalam
         </p>
         <div className="mt-1 flex items-center justify-center gap-1.5">
@@ -147,7 +154,7 @@ const PrizeSection = () => {
                 <div className="rounded-lg bg-secondary border border-primary/20 px-2.5 py-1 font-display text-lg font-bold text-primary tabular-nums">
                   {block.val}
                 </div>
-                <span className="mt-0.5 text-[7px] uppercase tracking-wider text-muted-foreground">
+                <span className="mt-0.5 text-[7px] uppercase tracking-wider text-[#F8F8F8]">
                   {block.label}
                 </span>
               </div>
@@ -164,7 +171,7 @@ const PrizeSection = () => {
           <span>Lihat Pemenang</span>
         </button>
 
-        <p className="text-[8px] text-muted-foreground/90 mt-3 leading-relaxed">
+        <p className="text-[8px] mt-3 leading-relaxed" style={{ color: "#F2F2F2" }}>
           Program ini adalah program promosi StrukCuan.
           <br />
           Pemenang menerima voucher belanja setelah verifikasi struk.
