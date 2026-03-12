@@ -97,14 +97,19 @@ const PrizeSection = () => {
           boxShadow: "0 10px 30px rgba(255, 215, 90, 0.25)",
         }}
       >
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-          <Ticket size={28} color="#FF2E63" />
-        </div>
-        <div className="flex items-center gap-2 mb-1">
-          <Trophy size={16} className="text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-            HADIAH BELANJA MINGGUAN
-          </span>
+        <div className="flex items-center justify-between gap-2 mb-1 pr-1">
+          <div className="flex items-center gap-2">
+            <Trophy size={16} className="text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              HADIAH BELANJA MINGGUAN
+            </span>
+          </div>
+          <div
+            className="pointer-events-none flex-shrink-0 p-3"
+            style={{ filter: "drop-shadow(0 0 10px rgba(255,46,99,0.6))" }}
+          >
+            <Ticket size={32} color="#FF2E63" />
+          </div>
         </div>
 
         <p className="font-display text-2xl font-bold text-foreground mt-1">
