@@ -1,172 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { createWorker, PSM } from "tesseract.js";
 import { X, Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt } from "@/hooks/useReceipts";
 import { useReceiptsToday } from "@/hooks/useReceipts";
-import RewardPopup from "@/components/RewardPopup";
 
 const MAX_RECEIPTS_PER_DAY = 10;
 
-const STORE_PATTERNS = [
-  /indomaret/i,
-  /alfamart/i,
-  /alfamidi/i,
-  /circle\s*k/i,
-  /minimarket/i,
-  /carrefour/i,
-  /lidl/i,
-  /aldi/i,
-  /tesco/i,
-  /dm\s*-?\s*drogerie/i,
-  /dm\s+markt/i,
-  /drogerie\s*markt/i,
-  /supermarket/i,
-];
-
-const PRICE_PATTERNS = [
-  /(?:total|grand\s*total|total\s*pembayaran|sum|amount\s*due)[\s:]*rp\.?\s*([\d.,]+)/i,
-  /(?:gesamt|summe|betrag|total|grand\s*total|sum)[\s:]*€?\s*([\d.,]+)/i,
-  /(?:total|amount)[\s:]*\$?\s*([\d.,]+)/i,
-  /rp\.?\s*([\d.,]+)\s*$/im,
-  /€\s*([\d.,]+)\s*$/im,
-  /\$\s*([\d.,]+)\s*$/im,
-  /(?:total|jumlah)[\s:]*([\d.,]+)/i,
-  /([\d.,]+)\s*(?:rupiah|rb|ribu|eur|usd)/i,
-];
-
-function extractStore(text: string): string {
-  for (const pattern of STORE_PATTERNS) {
-    const match = text.match(pattern);
-    if (match) {
-      const found = match[0].trim();
-      if (/indomaret/i.test(found)) return "Indomaret";
-      if (/alfamart/i.test(found)) return "Alfamart";
-      if (/alfamidi/i.test(found)) return "Alfamidi";
-      if (/circle\s*k/i.test(found)) return "Circle K";
-      if (/carrefour/i.test(found)) return "Carrefour";
-      if (/lidl/i.test(found)) return "Lidl";
-      if (/aldi/i.test(found)) return "Aldi";
-      if (/dm\s*-?\s*drogerie|dm\s+markt|drogerie\s*markt/i.test(found)) return "DM";
-      return found;
-    }
-  }
-  return "";
-}
-
-function extractTotal(text: string): number | null {
-  for (const pattern of PRICE_PATTERNS) {
-    const match = text.match(pattern);
-    if (match) {
-      const numStr = (match[1] ?? match[0]).replace(/\./g, "").replace(",", ".");
-      const num = parseFloat(numStr);
-      if (!isNaN(num) && num > 0 && num < 1e9) return Math.round(num);
-    }
-  }
-  const rpMatch = text.match(/rp\.?\s*([\d.,]+)/gi);
-  if (rpMatch?.length) {
-    const last = rpMatch[rpMatch.length - 1];
-    const numStr = last.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
-    const num = parseFloat(numStr);
-    if (!isNaN(num) && num > 100) return Math.round(num);
-  }
-  return null;
-}
-
-type PreprocessMode = "full" | "highContrast" | "grayscaleOnly";
-
-function applyPreprocess(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  mode: PreprocessMode
-): void {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-
-  const contrast = mode === "highContrast" ? 1.8 : mode === "full" ? 1.56 : 1;
-  const brightness = mode === "grayscaleOnly" ? 0 : 10;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    const adjusted = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
-    data[i] = data[i + 1] = data[i + 2] = adjusted;
-  }
-
-  if (mode === "grayscaleOnly") {
-    ctx.putImageData(imageData, 0, 0);
-    return;
-  }
-
-  const grayPixels: number[] = [];
-  for (let i = 0; i < data.length; i += 4) {
-    grayPixels.push(data[i]);
-  }
-
-  const medianFiltered = new Float32Array(grayPixels.length);
-  const pad = 1;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const neighbors: number[] = [];
-      for (let dy = -pad; dy <= pad; dy++) {
-        for (let dx = -pad; dx <= pad; dx++) {
-          const ny = Math.min(height - 1, Math.max(0, y + dy));
-          const nx = Math.min(width - 1, Math.max(0, x + dx));
-          neighbors.push(grayPixels[ny * width + nx]);
-        }
-      }
-      neighbors.sort((a, b) => a - b);
-      medianFiltered[y * width + x] = neighbors[Math.floor(neighbors.length / 2)];
-    }
-  }
-
-  const blockSize = 31;
-  const halfBlock = Math.floor(blockSize / 2);
-  const C = 10;
-  const binary = new Uint8Array(grayPixels.length);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let sum = 0;
-      let count = 0;
-      for (let by = Math.max(0, y - halfBlock); by <= Math.min(height - 1, y + halfBlock); by++) {
-        for (let bx = Math.max(0, x - halfBlock); bx <= Math.min(width - 1, x + halfBlock); bx++) {
-          sum += medianFiltered[by * width + bx];
-          count++;
-        }
-      }
-      const mean = sum / count;
-      const pixel = medianFiltered[y * width + x];
-      binary[y * width + x] = pixel > mean - C ? 255 : 0;
-    }
-  }
-
-  for (let i = 0; i < data.length; i += 4) {
-    const v = binary[Math.floor(i / 4)];
-    data[i] = data[i + 1] = data[i + 2] = v;
-  }
-  ctx.putImageData(imageData, 0, 0);
-}
-
-function isCanvasEmptyOrCorrupted(imageData: ImageData): boolean {
-  const data = imageData.data;
-  let sum = 0;
-  let variance = 0;
-  const samples: number[] = [];
-  for (let i = 0; i < data.length; i += 16) {
-    const g = data[i];
-    sum += g;
-    samples.push(g);
-  }
-  const mean = sum / samples.length;
-  for (const g of samples) {
-    variance += (g - mean) ** 2;
-  }
-  variance /= samples.length;
-  return variance < 100 || (mean < 5) || (mean > 250);
-}
-
-const USER_FACING_ERROR = "Scan failed. Please ensure the receipt is flat and well-lit.";
+const USER_FACING_ERROR = "Upload failed. Please try again.";
 
 interface CameraScannerProps {
   onClose: () => void;
@@ -183,7 +24,6 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
 
   const [status, setStatus] = useState<"camera" | "processing" | "success" | "error">("camera");
   const [error, setError] = useState<string | null>(null);
-  const [showReward, setShowReward] = useState(false);
 
   const userId = user?.id;
 
@@ -249,108 +89,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    const rawImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const preprocessModes: PreprocessMode[] = ["full", "highContrast", "grayscaleOnly"];
-
-    let store = "Store";
-    let total: number | null = null;
-    let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
-
-    const tesseractOptions = {
-      logger: (m: { status?: string; progress?: number }) => console.log("[Tesseract]", m),
-      workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js",
-      corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0",
-    };
-
     try {
-      try {
-        worker = await createWorker("eng+deu", 1, tesseractOptions);
-      } catch (workerErr) {
-        console.error("[CameraScanner] Worker init failed (eng+deu):", workerErr);
-        try {
-          worker = await createWorker("eng", 1, tesseractOptions);
-        } catch (engErr) {
-          console.error("[CameraScanner] Worker init failed (eng):", engErr);
-          worker = null;
-        }
-      }
-
-      if (worker) {
-        await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
-
-        let bestText = "";
-        let bestStore = "";
-        let bestTotal: number | null = null;
-
-        for (let attempt = 0; attempt < preprocessModes.length; attempt++) {
-          try {
-            ctx.putImageData(rawImageData, 0, 0);
-            applyPreprocess(ctx, canvas.width, canvas.height, preprocessModes[attempt]);
-
-            const processedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            if (isCanvasEmptyOrCorrupted(processedData)) {
-              console.warn("[CameraScanner] Empty Canvas detected, using raw image for attempt", attempt + 1);
-              ctx.putImageData(rawImageData, 0, 0);
-              applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
-            }
-
-            const { data: { text } } = await worker.recognize(canvas);
-            const extractedStore = extractStore(text) || "Store";
-            const extractedTotal = extractTotal(text);
-
-            if (text.trim().length > bestText.trim().length) {
-              bestText = text;
-              bestStore = extractedStore;
-              bestTotal = extractedTotal;
-            }
-
-            if (extractedStore !== "Store" || extractedTotal !== null) break;
-          } catch (recErr) {
-            console.warn(`[CameraScanner] Recognition attempt ${attempt + 1} failed:`, recErr);
-          }
-        }
-
-        if (!bestText.trim()) {
-          console.warn("[CameraScanner] Recognition Timeout or empty result");
-        }
-
-        if (bestTotal === null && bestText.trim().length > 0) {
-          try {
-            ctx.putImageData(rawImageData, 0, 0);
-            applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
-            await worker.setParameters({
-              tessedit_pageseg_mode: PSM.AUTO,
-              tessedit_char_whitelist: "0123456789.,€$Rp ",
-            });
-            const { data: { text } } = await worker.recognize(canvas);
-            const priceRetry = extractTotal(text);
-            if (priceRetry !== null) bestTotal = priceRetry;
-          } catch (priceErr) {
-            console.warn("[CameraScanner] Price retry with char_whitelist failed:", priceErr);
-          }
-        }
-
-        store = bestStore || "Store";
-        total = bestTotal;
-      } else {
-        store = "Store";
-        total = null;
-      }
-    } catch (detectionErr) {
-      console.warn("[CameraScanner] Receipt detection failed — using original image:", detectionErr);
-      store = "Store";
-      total = null;
-    } finally {
-      if (worker) {
-        try {
-          await worker.terminate();
-        } catch (_) {}
-      }
-      worker = null;
-    }
-
-    try {
-      ctx.putImageData(rawImageData, 0, 0);
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.9)
       );
@@ -378,16 +117,15 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       await createReceipt.mutateAsync({
         userId,
         imageUrl: publicUrl,
-        store,
-        total,
+        store: null,
+        total: null,
       });
 
       stopCamera();
       setStatus("success");
-      setShowReward(true);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      console.error("[CameraScanner] Scan/upload error:", err.message, err.stack ?? err);
+      console.error("[CameraScanner] Upload error:", err.message, err.stack ?? err);
       setError(USER_FACING_ERROR);
       setStatus("error");
     }
@@ -452,7 +190,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         >
           <X size={24} />
         </button>
-        <span className="text-sm font-medium text-white">Scan Receipt</span>
+        <span className="text-sm font-medium text-white">Upload Receipt</span>
         <div className="w-10" />
       </div>
 
@@ -472,8 +210,23 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         <div className="absolute inset-0 flex items-center justify-center bg-black/70">
           <div className="text-center">
             <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
-            <p className="text-white font-medium">Scanning receipt...</p>
+            <p className="text-white font-medium">Uploading...</p>
           </div>
+        </div>
+      )}
+
+      {/* Success overlay */}
+      {status === "success" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6">
+          <p className="text-primary font-semibold text-center mb-4 text-lg">
+            Receipt uploaded successfully. Waiting for admin approval.
+          </p>
+          <button
+            onClick={handleClose}
+            className="rounded-lg bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
+          >
+            Close
+          </button>
         </div>
       )}
 
@@ -496,16 +249,6 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Success: RewardPopup */}
-      {showReward && (
-        <RewardPopup
-          onClose={() => {
-            setShowReward(false);
-            handleClose();
-          }}
-        />
       )}
     </div>
   );

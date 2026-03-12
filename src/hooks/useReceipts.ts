@@ -127,8 +127,8 @@ export function useReceiptsToday(userId: string | undefined) {
 export interface CreateReceiptInput {
   userId: string;
   imageUrl: string;
-  store: string;
-  total: number | null;
+  store?: string | null;
+  total?: number | null;
 }
 
 export function useCreateReceipt() {
@@ -142,8 +142,8 @@ export function useCreateReceipt() {
           {
             user_id: input.userId,
             image_url: input.imageUrl,
-            store: input.store,
-            total: input.total,
+            store: input.store ?? null,
+            total: input.total ?? null,
             status: "pending",
           },
         ])
