@@ -252,77 +252,104 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     const rawImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const preprocessModes: PreprocessMode[] = ["full", "highContrast", "grayscaleOnly"];
 
+    let store = "Store";
+    let total: number | null = null;
     let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
+
+    const tesseractOptions = {
+      logger: (m: { status?: string; progress?: number }) => console.log("[Tesseract]", m),
+      workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js",
+      corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0",
+    };
+
     try {
       try {
-        worker = await createWorker("eng+deu", 1, { logger: () => {} });
+        worker = await createWorker("eng+deu", 1, tesseractOptions);
       } catch (workerErr) {
-        console.warn("[CameraScanner] Worker Init Failed (eng+deu), falling back to eng:", workerErr);
-        worker = await createWorker("eng", 1, { logger: () => {} });
-      }
-
-      await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
-
-      let bestText = "";
-      let bestStore = "";
-      let bestTotal: number | null = null;
-
-      for (let attempt = 0; attempt < preprocessModes.length; attempt++) {
+        console.error("[CameraScanner] Worker init failed (eng+deu):", workerErr);
         try {
-          ctx.putImageData(rawImageData, 0, 0);
-          applyPreprocess(ctx, canvas.width, canvas.height, preprocessModes[attempt]);
-
-          const processedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          if (isCanvasEmptyOrCorrupted(processedData)) {
-            console.warn("[CameraScanner] Empty Canvas detected, using raw image for attempt", attempt + 1);
-            ctx.putImageData(rawImageData, 0, 0);
-            applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
-          }
-
-          const { data: { text } } = await worker.recognize(canvas);
-          const store = extractStore(text) || "Store";
-          const total = extractTotal(text);
-
-          if (text.trim().length > bestText.trim().length) {
-            bestText = text;
-            bestStore = store;
-            bestTotal = total;
-          }
-
-          if (store !== "Store" || total !== null) break;
-        } catch (recErr) {
-          console.warn(`[CameraScanner] Recognition attempt ${attempt + 1} failed:`, recErr);
+          worker = await createWorker("eng", 1, tesseractOptions);
+        } catch (engErr) {
+          console.error("[CameraScanner] Worker init failed (eng):", engErr);
+          worker = null;
         }
       }
-
-      if (!bestText.trim()) {
-        console.warn("[CameraScanner] Recognition Timeout or empty result");
-      }
-
-      if (bestTotal === null && bestText.trim().length > 0) {
-        try {
-          ctx.putImageData(rawImageData, 0, 0);
-          applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
-          await worker.setParameters({
-            tessedit_pageseg_mode: PSM.AUTO,
-            tessedit_char_whitelist: "0123456789.,€$Rp ",
-          });
-          const { data: { text } } = await worker.recognize(canvas);
-          const priceRetry = extractTotal(text);
-          if (priceRetry !== null) bestTotal = priceRetry;
-        } catch (priceErr) {
-          console.warn("[CameraScanner] Price retry with char_whitelist failed:", priceErr);
-        }
-      }
-
-      const store = bestStore || "Store";
-      const total = bestTotal;
 
       if (worker) {
-        await worker.terminate();
-        worker = null;
-      }
+        await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
 
+        let bestText = "";
+        let bestStore = "";
+        let bestTotal: number | null = null;
+
+        for (let attempt = 0; attempt < preprocessModes.length; attempt++) {
+          try {
+            ctx.putImageData(rawImageData, 0, 0);
+            applyPreprocess(ctx, canvas.width, canvas.height, preprocessModes[attempt]);
+
+            const processedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (isCanvasEmptyOrCorrupted(processedData)) {
+              console.warn("[CameraScanner] Empty Canvas detected, using raw image for attempt", attempt + 1);
+              ctx.putImageData(rawImageData, 0, 0);
+              applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
+            }
+
+            const { data: { text } } = await worker.recognize(canvas);
+            const extractedStore = extractStore(text) || "Store";
+            const extractedTotal = extractTotal(text);
+
+            if (text.trim().length > bestText.trim().length) {
+              bestText = text;
+              bestStore = extractedStore;
+              bestTotal = extractedTotal;
+            }
+
+            if (extractedStore !== "Store" || extractedTotal !== null) break;
+          } catch (recErr) {
+            console.warn(`[CameraScanner] Recognition attempt ${attempt + 1} failed:`, recErr);
+          }
+        }
+
+        if (!bestText.trim()) {
+          console.warn("[CameraScanner] Recognition Timeout or empty result");
+        }
+
+        if (bestTotal === null && bestText.trim().length > 0) {
+          try {
+            ctx.putImageData(rawImageData, 0, 0);
+            applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
+            await worker.setParameters({
+              tessedit_pageseg_mode: PSM.AUTO,
+              tessedit_char_whitelist: "0123456789.,€$Rp ",
+            });
+            const { data: { text } } = await worker.recognize(canvas);
+            const priceRetry = extractTotal(text);
+            if (priceRetry !== null) bestTotal = priceRetry;
+          } catch (priceErr) {
+            console.warn("[CameraScanner] Price retry with char_whitelist failed:", priceErr);
+          }
+        }
+
+        store = bestStore || "Store";
+        total = bestTotal;
+      } else {
+        store = "Store";
+        total = null;
+      }
+    } catch (detectionErr) {
+      console.warn("[CameraScanner] Receipt detection failed — using original image:", detectionErr);
+      store = "Store";
+      total = null;
+    } finally {
+      if (worker) {
+        try {
+          await worker.terminate();
+        } catch (_) {}
+      }
+      worker = null;
+    }
+
+    try {
       ctx.putImageData(rawImageData, 0, 0);
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.9)
@@ -359,12 +386,8 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       setStatus("success");
       setShowReward(true);
     } catch (e) {
-      if (worker) {
-        try {
-          await worker.terminate();
-        } catch (_) {}
-      }
-      console.error("[CameraScanner] Scan error:", e);
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.error("[CameraScanner] Scan/upload error:", err.message, err.stack ?? err);
       setError(USER_FACING_ERROR);
       setStatus("error");
     }
