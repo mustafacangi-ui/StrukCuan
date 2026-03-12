@@ -7,19 +7,27 @@ import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 
 export default function Promo() {
-  const { isOnboarded } = useUser();
+  const { isOnboarded, isLoading } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isOnboarded) {
       navigate("/onboarding", { replace: true });
     }
-  }, [isOnboarded, navigate]);
+  }, [isLoading, isOnboarded, navigate]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Memuat...</p>
+      </div>
+    );
+  }
   if (!isOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background pb-28 max-w-md mx-auto">
+    <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <h1 className="font-display text-lg font-bold text-foreground">
           Promo Merah

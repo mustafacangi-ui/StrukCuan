@@ -27,7 +27,7 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 max-w-md mx-auto">
+    <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
         <button
           onClick={() => navigate(-1)}

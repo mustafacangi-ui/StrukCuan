@@ -23,7 +23,7 @@ const Settings = () => {
   if (!isOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto pb-28">
+    <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
         <button onClick={() => navigate("/")} className="rounded-full bg-secondary p-2">

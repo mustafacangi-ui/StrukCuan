@@ -6,7 +6,7 @@ export default function AdminReceipts() {
   const reject = useRejectReceipt();
 
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto pb-10">
+    <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-10">
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <h1 className="font-display text-lg font-bold text-foreground">
           Admin · Pending Receipts

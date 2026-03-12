@@ -35,7 +35,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 max-w-md mx-auto">
+    <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
       <Header />
 
       <div className="mt-4">

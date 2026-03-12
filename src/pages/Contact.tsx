@@ -3,7 +3,7 @@ import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 
 export default function Contact() {
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto px-4 py-6 pb-12">
+    <div className="min-h-screen bg-background max-w-[420px] mx-auto px-4 py-6 pb-12">
       <Link
         to="/"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-6"

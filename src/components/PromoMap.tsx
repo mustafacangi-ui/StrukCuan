@@ -6,7 +6,7 @@ import { useRadar } from "@/contexts/RadarContext";
 import { useDealsWithRadius, type DealWithDistance } from "@/hooks/useDealsWithRadius";
 import { haversineDistance } from "@/hooks/useUserLocation";
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10];
 
@@ -70,7 +70,7 @@ function PromoMarker({
     >
       <button
         type="button"
-        className="w-4 h-4 rounded-full border-2 border-white cursor-pointer animate-pulse-marker"
+        className="w-4 h-4 rounded-full border-2 border-white cursor-pointer"
         style={{
           backgroundColor: colors.bg,
           boxShadow: `0 0 12px ${colors.glow}`,
@@ -137,19 +137,30 @@ export default function PromoMap() {
   );
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
+  const hasFlownRef = useRef(false);
   useEffect(() => {
-    if (mapRef.current && userLocation) {
-      mapRef.current.flyTo({
-        center: [userLocation.lng, userLocation.lat],
-        zoom: 12,
-        duration: 1000,
-      });
-    }
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+    map.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: 12,
+      duration: hasFlownRef.current ? 1000 : 0,
+    });
+    hasFlownRef.current = true;
   }, [userLocation.lat, userLocation.lng]);
+
+  const initialViewState = useMemo(
+    () => ({
+      latitude: userLocation.lat,
+      longitude: userLocation.lng,
+      zoom: 12,
+    }),
+    [] // Stable on mount - flyTo handles location updates
+  );
 
   const circleGeoJSON = useMemo(
     () => createCircleGeoJSON(userLocation.lat, userLocation.lng, radius),
-    [userLocation, radius]
+    [userLocation.lat, userLocation.lng, radius]
   );
 
   const heatmapDeals = useMemo(() => {
@@ -176,7 +187,7 @@ export default function PromoMap() {
     }
   }, [selectedDeal]);
 
-  if (!MAPBOX_TOKEN) {
+  if (!MAPBOX_TOKEN || MAPBOX_TOKEN === "YOUR_MAPBOX_PUBLIC_TOKEN") {
     return (
       <div className="h-[280px] rounded-xl border border-border bg-card flex items-center justify-center">
         <p className="text-sm text-muted-foreground px-4">
@@ -224,11 +235,7 @@ export default function PromoMap() {
           }}
           mapboxAccessToken={MAPBOX_TOKEN}
           mapLib={mapboxgl}
-          initialViewState={{
-            latitude: userLocation.lat,
-            longitude: userLocation.lng,
-            zoom: 12,
-          }}
+          initialViewState={initialViewState}
           mapStyle="mapbox://styles/mapbox/dark-v11"
           style={{ width: "100%", height: "100%" }}
         >
@@ -285,7 +292,7 @@ export default function PromoMap() {
                 anchor="center"
               >
                 <div
-                  className="rounded-full border-2 border-primary/40 animate-pulse"
+                  className="rounded-full border-2 border-primary/40"
                   style={{
                     width: 32 + Math.min(cluster.length, 5) * 6,
                     height: 32 + Math.min(cluster.length, 5) * 6,

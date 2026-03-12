@@ -96,6 +96,13 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+
+  #root {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
 }
 
 @layer utilities {
