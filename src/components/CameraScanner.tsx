@@ -19,12 +19,15 @@ const STORE_PATTERNS = [
   /lidl/i,
   /aldi/i,
   /tesco/i,
+  /dm\s*-?\s*drogerie/i,
+  /dm\s+markt/i,
+  /drogerie\s*markt/i,
   /supermarket/i,
 ];
 
 const PRICE_PATTERNS = [
   /(?:total|grand\s*total|total\s*pembayaran|sum|amount\s*due)[\s:]*rp\.?\s*([\d.,]+)/i,
-  /(?:total|grand\s*total|sum)[\s:]*€?\s*([\d.,]+)/i,
+  /(?:gesamt|summe|betrag|total|grand\s*total|sum)[\s:]*€?\s*([\d.,]+)/i,
   /(?:total|amount)[\s:]*\$?\s*([\d.,]+)/i,
   /rp\.?\s*([\d.,]+)\s*$/im,
   /€\s*([\d.,]+)\s*$/im,
@@ -45,6 +48,7 @@ function extractStore(text: string): string {
       if (/carrefour/i.test(found)) return "Carrefour";
       if (/lidl/i.test(found)) return "Lidl";
       if (/aldi/i.test(found)) return "Aldi";
+      if (/dm\s*-?\s*drogerie|dm\s+markt|drogerie\s*markt/i.test(found)) return "DM";
       return found;
     }
   }
@@ -70,6 +74,7 @@ function extractTotal(text: string): number | null {
   return null;
 }
 
+/** High Accuracy OCR preprocessing: grayscale, +20% contrast, noise reduction, adaptive thresholding */
 function preprocessForOCR(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -77,12 +82,60 @@ function preprocessForOCR(
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
+
+  // Step 1: Grayscale + contrast boost (1.3 * 1.2 = 1.56) + brightness
+  const contrast = 1.56;
+  const brightness = 10;
+  const grayPixels: number[] = [];
   for (let i = 0; i < data.length; i += 4) {
     const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    const contrast = 1.3;
-    const brightness = 10;
     const adjusted = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
-    data[i] = data[i + 1] = data[i + 2] = adjusted;
+    grayPixels.push(adjusted);
+  }
+
+  // Step 2: Noise reduction - 3x3 median filter
+  const medianFiltered = new Float32Array(grayPixels.length);
+  const pad = 1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const neighbors: number[] = [];
+      for (let dy = -pad; dy <= pad; dy++) {
+        for (let dx = -pad; dx <= pad; dx++) {
+          const ny = Math.min(height - 1, Math.max(0, y + dy));
+          const nx = Math.min(width - 1, Math.max(0, x + dx));
+          neighbors.push(grayPixels[ny * width + nx]);
+        }
+      }
+      neighbors.sort((a, b) => a - b);
+      medianFiltered[y * width + x] = neighbors[Math.floor(neighbors.length / 2)];
+    }
+  }
+
+  // Step 3: Adaptive thresholding (block size 31, constant 10)
+  const blockSize = 31;
+  const halfBlock = Math.floor(blockSize / 2);
+  const C = 10;
+  const binary = new Uint8Array(grayPixels.length);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      let count = 0;
+      for (let by = Math.max(0, y - halfBlock); by <= Math.min(height - 1, y + halfBlock); by++) {
+        for (let bx = Math.max(0, x - halfBlock); bx <= Math.min(width - 1, x + halfBlock); bx++) {
+          sum += medianFiltered[by * width + bx];
+          count++;
+        }
+      }
+      const mean = sum / count;
+      const pixel = medianFiltered[y * width + x];
+      binary[y * width + x] = pixel > mean - C ? 255 : 0;
+    }
+  }
+
+  // Write back to imageData (grayscale from binary for Tesseract)
+  for (let i = 0; i < data.length; i += 4) {
+    const v = binary[Math.floor(i / 4)];
+    data[i] = data[i + 1] = data[i + 2] = v;
   }
   ctx.putImageData(imageData, 0, 0);
 }
@@ -165,7 +218,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       ctx.drawImage(video, 0, 0);
       preprocessForOCR(ctx, canvas.width, canvas.height);
 
-      const worker = await createWorker("eng", 1, {
+      const worker = await createWorker("eng+deu", 1, {
         logger: () => {},
       });
       await worker.setParameters({
