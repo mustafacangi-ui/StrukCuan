@@ -55,14 +55,14 @@ const PrizeSection = () => {
             </button>
             <div className="flex items-center gap-2 mb-1">
               <Award size={16} className="text-primary" />
-              <h3 className="font-display text-base font-bold text-foreground">Lottery Winners</h3>
+              <h3 className="font-display text-base font-bold text-foreground">Pemenang Hadiah</h3>
             </div>
             <p className="text-[10px] text-muted-foreground mb-4">
-              Voucher Belanja 100.000 Rp
+              Voucher Belanja Rp100.000
             </p>
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {winners.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No winners yet</p>
+                <p className="text-xs text-muted-foreground">Belum ada pemenang</p>
               ) : (
                 winners.map((w, i) => (
                   <div
@@ -79,7 +79,7 @@ const PrizeSection = () => {
                       </div>
                     </div>
                     <span className="font-display text-[11px] font-bold text-primary">
-                      100.000 Rp
+                      Rp100.000
                     </span>
                   </div>
                 ))
@@ -103,7 +103,7 @@ const PrizeSection = () => {
         <div className="flex items-center gap-2 mb-1">
           <Trophy size={16} className="text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-            Weekly Lottery
+            HADIAH BELANJA MINGGUAN
           </span>
         </div>
 
@@ -111,22 +111,31 @@ const PrizeSection = () => {
           Menang Voucher Belanja
         </p>
         <p className="text-lg font-bold text-primary mt-0.5">
-          100.000 Rp
+          Rp100.000
         </p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
-          5 winners every Sunday
+        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+          5 pemenang setiap minggu
+          <br />
+          masing-masing mendapatkan voucher belanja Rp100.000
         </p>
 
         <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
-          <p className="text-[10px] text-muted-foreground">
-            📸 Setiap struk = 1 tiket undian
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Upload struk belanja untuk mendapatkan kesempatan hadiah.
+            <br />
+            1 struk = 1 kesempatan hadiah.
+            <br />
+            Semakin banyak struk, semakin besar peluang.
           </p>
           <p className="text-sm font-bold text-primary mt-0.5">
-            Your tickets: {tickets.toLocaleString()}
+            Kesempatan hadiah Anda: {tickets.toLocaleString()}
           </p>
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-1.5">
+        <p className="text-[9px] text-muted-foreground mt-3 text-center">
+          Pengumuman hadiah dalam
+        </p>
+        <div className="mt-1 flex items-center justify-center gap-1.5">
           {[
             { val: pad(timeLeft.days), label: "Days" },
             { val: pad(timeLeft.hours), label: "Hrs" },
@@ -152,8 +161,16 @@ const PrizeSection = () => {
           className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 py-2.5 font-display font-bold text-sm text-primary"
         >
           <Award size={14} className="text-primary" />
-          <span>View Winners</span>
+          <span>Lihat Pemenang</span>
         </button>
+
+        <p className="text-[8px] text-muted-foreground/90 mt-3 leading-relaxed">
+          Program ini adalah program promosi StrukCuan.
+          <br />
+          Pemenang menerima voucher belanja setelah verifikasi struk.
+          <br />
+          Program ini bukan perjudian atau sistem taruhan.
+        </p>
       </div>
     </>
   );
