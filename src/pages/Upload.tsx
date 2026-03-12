@@ -28,7 +28,8 @@ export default function Upload() {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading } = useUser();
   const createReceipt = useCreateReceipt();
-  const { data: todayCount = 0 } = useReceiptsToday(user?.id);
+  const userId = user?.id;
+  const { data: todayCount = 0 } = useReceiptsToday(userId ?? undefined);
 
   const [step, setStep] = useState<"camera" | "preview" | "submit">("camera");
   const [image, setImage] = useState<File | null>(null);
@@ -39,8 +40,6 @@ export default function Upload() {
   const [message, setMessage] = useState<string | null>(null);
   const [showReward, setShowReward] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const userId = user?.id;
 
   useEffect(() => {
     if (isLoading) return;
@@ -191,14 +190,8 @@ export default function Upload() {
     }
   }, [userId, image, store, total, todayCount, createReceipt, handleRetake]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Memuat...</p>
-      </div>
-    );
-  }
-  if (!isOnboarded) return null;
+  if (!isLoading && !user) return null;
+  if (!isLoading && !isOnboarded) return null;
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
