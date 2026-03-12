@@ -5,7 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 const navItems = [
   { path: "/", icon: Home, label: "HOME" },
   { path: "/promo", icon: Tag, label: "PROMO" },
-  { path: "/upload", icon: Camera, label: "UPLOAD", requiresAuth: true },
+  { path: "/", icon: Camera, label: "UPLOAD", redirectToHome: true },
   { path: "/leaderboard", icon: Trophy, label: "RANK" },
   { path: "/settings", icon: User, label: "PROFILE", requiresAuth: true },
 ];
@@ -16,8 +16,12 @@ const BottomNav = () => {
   const { isOnboarded, requireLogin } = useUser();
 
   const handleNavClick = (item: (typeof navItems)[number]) => {
+    if ("redirectToHome" in item && item.redirectToHome) {
+      navigate("/");
+      return;
+    }
     if (item.requiresAuth && !isOnboarded) {
-      requireLogin(item.path === "/upload" ? "camera" : "profile");
+      requireLogin("profile");
       return;
     }
     navigate(item.path);
@@ -27,7 +31,7 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = "redirectToHome" in item ? false : location.pathname === item.path;
           return (
             <button
               key={item.path}

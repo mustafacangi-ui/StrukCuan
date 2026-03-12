@@ -5,7 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt } from "@/hooks/useReceipts";
 import { useReceiptsToday } from "@/hooks/useReceipts";
 
-const MAX_RECEIPTS_PER_DAY = 10;
+const MAX_RECEIPTS_PER_DAY = 3;
 
 const USER_FACING_ERROR = "Upload failed. Please try again.";
 

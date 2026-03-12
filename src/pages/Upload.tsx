@@ -10,7 +10,7 @@ import { Camera, ArrowLeft, Check, X } from "lucide-react";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 const ACCEPTED_EXTENSIONS = /\.(jpe?g|png)$/i;
-const MAX_RECEIPTS_PER_DAY = 10;
+const MAX_RECEIPTS_PER_DAY = 3;
 
 function getFileExtension(type: string): string {
   if (type === "image/png") return "png";
@@ -221,7 +221,7 @@ export default function Upload() {
               Take a receipt photo or choose from gallery
             </p>
             <p className="mt-2 text-[10px] text-muted-foreground/80">
-              JPG/PNG max 5MB · Max 10 receipts/day
+              JPG/PNG max 5MB · Max 3 receipts/day
             </p>
           </div>
         )}

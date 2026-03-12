@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";   // ⭐ BUNU EKLE
@@ -11,7 +11,6 @@ import { RadarProvider } from "@/contexts/RadarContext";   // ⭐ BUNU EKLE
 import Index from "./pages/Index";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import Promo from "./pages/Promo";
-import Upload from "./pages/Upload";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
@@ -67,7 +66,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
-              <Route path="/upload" element={<Upload />} />
+              <Route path="/upload" element={<Navigate to="/" replace />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/privacy" element={<Privacy />} />

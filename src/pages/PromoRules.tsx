@@ -25,7 +25,7 @@ export default function PromoRules() {
         </p>
         <h2 className="text-base font-semibold text-foreground mt-6">Receipt Upload</h2>
         <p className="text-sm leading-relaxed">
-          Each verified receipt earns 50 Cuan and 1 lottery ticket. Receipts must be from eligible stores (e.g., Indomaret, Alfamart) and show a valid purchase. Maximum 10 receipts per user per day.
+          Each verified receipt earns 50 Cuan and 1 lottery ticket. Receipts must be from eligible stores (e.g., Indomaret, Alfamart) and show a valid purchase. Maximum 3 receipts per user per day.
         </p>
         <h2 className="text-base font-semibold text-foreground mt-6">Weekly Lottery</h2>
         <p className="text-sm leading-relaxed">

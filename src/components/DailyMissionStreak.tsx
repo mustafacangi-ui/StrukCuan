@@ -22,7 +22,7 @@ export default function DailyMissionStreak() {
 
   const handleUpload = () => {
     if (isOnboarded) {
-      navigate("/upload");
+      navigate("/");
     } else {
       requireLogin("camera");
     }
