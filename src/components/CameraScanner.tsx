@@ -74,26 +74,36 @@ function extractTotal(text: string): number | null {
   return null;
 }
 
-/** High Accuracy OCR preprocessing: grayscale, +20% contrast, noise reduction, adaptive thresholding */
-function preprocessForOCR(
+type PreprocessMode = "full" | "highContrast" | "grayscaleOnly";
+
+function applyPreprocess(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
+  mode: PreprocessMode
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
 
-  // Step 1: Grayscale + contrast boost (1.3 * 1.2 = 1.56) + brightness
-  const contrast = 1.56;
-  const brightness = 10;
-  const grayPixels: number[] = [];
+  const contrast = mode === "highContrast" ? 1.8 : mode === "full" ? 1.56 : 1;
+  const brightness = mode === "grayscaleOnly" ? 0 : 10;
+
   for (let i = 0; i < data.length; i += 4) {
     const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
     const adjusted = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
-    grayPixels.push(adjusted);
+    data[i] = data[i + 1] = data[i + 2] = adjusted;
   }
 
-  // Step 2: Noise reduction - 3x3 median filter
+  if (mode === "grayscaleOnly") {
+    ctx.putImageData(imageData, 0, 0);
+    return;
+  }
+
+  const grayPixels: number[] = [];
+  for (let i = 0; i < data.length; i += 4) {
+    grayPixels.push(data[i]);
+  }
+
   const medianFiltered = new Float32Array(grayPixels.length);
   const pad = 1;
   for (let y = 0; y < height; y++) {
@@ -111,7 +121,6 @@ function preprocessForOCR(
     }
   }
 
-  // Step 3: Adaptive thresholding (block size 31, constant 10)
   const blockSize = 31;
   const halfBlock = Math.floor(blockSize / 2);
   const C = 10;
@@ -132,13 +141,32 @@ function preprocessForOCR(
     }
   }
 
-  // Write back to imageData (grayscale from binary for Tesseract)
   for (let i = 0; i < data.length; i += 4) {
     const v = binary[Math.floor(i / 4)];
     data[i] = data[i + 1] = data[i + 2] = v;
   }
   ctx.putImageData(imageData, 0, 0);
 }
+
+function isCanvasEmptyOrCorrupted(imageData: ImageData): boolean {
+  const data = imageData.data;
+  let sum = 0;
+  let variance = 0;
+  const samples: number[] = [];
+  for (let i = 0; i < data.length; i += 16) {
+    const g = data[i];
+    sum += g;
+    samples.push(g);
+  }
+  const mean = sum / samples.length;
+  for (const g of samples) {
+    variance += (g - mean) ** 2;
+  }
+  variance /= samples.length;
+  return variance < 100 || (mean < 5) || (mean > 250);
+}
+
+const USER_FACING_ERROR = "Scan failed. Please ensure the receipt is flat and well-lit.";
 
 interface CameraScannerProps {
   onClose: () => void;
@@ -209,31 +237,100 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     setStatus("processing");
     setError(null);
 
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("[CameraScanner] Canvas context unavailable");
+      setError(USER_FACING_ERROR);
+      setStatus("error");
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    const rawImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const preprocessModes: PreprocessMode[] = ["full", "highContrast", "grayscaleOnly"];
+
+    let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
     try {
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas context unavailable");
+      try {
+        worker = await createWorker("eng+deu", 1, { logger: () => {} });
+      } catch (workerErr) {
+        console.warn("[CameraScanner] Worker Init Failed (eng+deu), falling back to eng:", workerErr);
+        worker = await createWorker("eng", 1, { logger: () => {} });
+      }
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      preprocessForOCR(ctx, canvas.width, canvas.height);
+      await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
 
-      const worker = await createWorker("eng+deu", 1, {
-        logger: () => {},
-      });
-      await worker.setParameters({
-        tessedit_pageseg_mode: PSM.AUTO,
-      });
-      const { data: { text } } = await worker.recognize(canvas);
-      await worker.terminate();
+      let bestText = "";
+      let bestStore = "";
+      let bestTotal: number | null = null;
 
-      const store = extractStore(text) || "Store";
-      const total = extractTotal(text);
+      for (let attempt = 0; attempt < preprocessModes.length; attempt++) {
+        try {
+          ctx.putImageData(rawImageData, 0, 0);
+          applyPreprocess(ctx, canvas.width, canvas.height, preprocessModes[attempt]);
 
+          const processedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          if (isCanvasEmptyOrCorrupted(processedData)) {
+            console.warn("[CameraScanner] Empty Canvas detected, using raw image for attempt", attempt + 1);
+            ctx.putImageData(rawImageData, 0, 0);
+            applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
+          }
+
+          const { data: { text } } = await worker.recognize(canvas);
+          const store = extractStore(text) || "Store";
+          const total = extractTotal(text);
+
+          if (text.trim().length > bestText.trim().length) {
+            bestText = text;
+            bestStore = store;
+            bestTotal = total;
+          }
+
+          if (store !== "Store" || total !== null) break;
+        } catch (recErr) {
+          console.warn(`[CameraScanner] Recognition attempt ${attempt + 1} failed:`, recErr);
+        }
+      }
+
+      if (!bestText.trim()) {
+        console.warn("[CameraScanner] Recognition Timeout or empty result");
+      }
+
+      if (bestTotal === null && bestText.trim().length > 0) {
+        try {
+          ctx.putImageData(rawImageData, 0, 0);
+          applyPreprocess(ctx, canvas.width, canvas.height, "grayscaleOnly");
+          await worker.setParameters({
+            tessedit_pageseg_mode: PSM.AUTO,
+            tessedit_char_whitelist: "0123456789.,€$Rp ",
+          });
+          const { data: { text } } = await worker.recognize(canvas);
+          const priceRetry = extractTotal(text);
+          if (priceRetry !== null) bestTotal = priceRetry;
+        } catch (priceErr) {
+          console.warn("[CameraScanner] Price retry with char_whitelist failed:", priceErr);
+        }
+      }
+
+      const store = bestStore || "Store";
+      const total = bestTotal;
+
+      if (worker) {
+        await worker.terminate();
+        worker = null;
+      }
+
+      ctx.putImageData(rawImageData, 0, 0);
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.9)
       );
-      if (!blob) throw new Error("Failed to create image blob");
+      if (!blob) {
+        console.error("[CameraScanner] Failed to create image blob");
+        throw new Error("Blob creation failed");
+      }
 
       const file = new File([blob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
       const storagePath = `${userId}/${Date.now()}.jpg`;
@@ -243,7 +340,8 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         .upload(storagePath, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        throw new Error("Failed to upload receipt");
+        console.error("[CameraScanner] Upload failed:", uploadError);
+        throw new Error("Upload failed");
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -261,8 +359,13 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       setStatus("success");
       setShowReward(true);
     } catch (e) {
-      console.error("Scan error:", e);
-      setError(e instanceof Error ? e.message : "Failed to scan receipt");
+      if (worker) {
+        try {
+          await worker.terminate();
+        } catch (_) {}
+      }
+      console.error("[CameraScanner] Scan error:", e);
+      setError(USER_FACING_ERROR);
       setStatus("error");
     }
   }, [userId, todayCount, status, createReceipt, stopCamera]);
