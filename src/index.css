@@ -128,4 +128,11 @@
   .animate-pulse-marker {
     animation: pulse-marker 1.5s ease-in-out infinite;
   }
+  @keyframes scan-line {
+    0%, 100% { top: 10%; }
+    50% { top: 90%; }
+  }
+  .animate-scan-line {
+    animation: scan-line 2.5s ease-in-out infinite;
+  }
 }

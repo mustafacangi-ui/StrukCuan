@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { Camera } from "lucide-react";
@@ -11,11 +11,13 @@ import LeaderboardPreview from "@/components/LeaderboardPreview";
 import BottomNav from "@/components/BottomNav";
 import LoginSheet from "@/components/LoginSheet";
 import LegalFooter from "@/components/LegalFooter";
+import CameraScanner from "@/components/CameraScanner";
 
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOnboarded, requireLogin } = useUser();
+  const [showScanner, setShowScanner] = useState(false);
 
   // When redirected from Upload/Settings with requireLogin state, open login sheet
   useEffect(() => {
@@ -31,7 +33,7 @@ const Index = () => {
       requireLogin("camera");
       return;
     }
-    navigate("/upload");
+    setShowScanner(true);
   };
 
   return (
@@ -65,6 +67,10 @@ const Index = () => {
       <LegalFooter />
       <LoginSheet />
       <BottomNav />
+
+      {showScanner && (
+        <CameraScanner onClose={() => setShowScanner(false)} />
+      )}
     </div>
   );
 };
