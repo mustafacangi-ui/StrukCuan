@@ -1,14 +1,29 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import PromoMap from "@/components/PromoMap";
-import LiveFeed from "@/components/LiveFeed";
+import { Share2 } from "lucide-react";
+import PromoHeader from "@/components/PromoHeader";
+import CommunityPromoCard from "@/components/CommunityPromoCard";
+import SharePromoSheet from "@/components/SharePromoSheet";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
+import { usePromosNearby } from "@/hooks/usePromos";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { useUserLocationSync } from "@/hooks/useUserLocationSync";
 
 export default function Promo() {
-  const { isOnboarded, isLoading } = useUser();
+  const { user, isOnboarded, isLoading } = useUser();
   const navigate = useNavigate();
+  const { location } = useUserLocation();
+  const [showShareSheet, setShowShareSheet] = useState(false);
+
+  const { data: promos = [], isLoading: promosLoading } = usePromosNearby(
+    location.lat,
+    location.lng,
+    user?.id
+  );
+
+  useUserLocationSync(user?.id, location.lat, location.lng);
 
   useEffect(() => {
     if (isLoading) return;
@@ -28,32 +43,54 @@ export default function Promo() {
 
   return (
     <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
-      <div className="px-4 pt-4 pb-3 border-b border-border">
-        <h1 className="font-display text-lg font-bold text-foreground">
-          Red Promo
-        </h1>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Promos near you
-        </p>
+      <PromoHeader />
+
+      <div className="mt-4 px-4">
+        <h2 className="font-display text-sm font-bold text-foreground mb-3">
+          Promo di Sekitarmu
+        </h2>
+
+        {promosLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-muted-foreground">Memuat promo...</p>
+          </div>
+        ) : promos.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card/50 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Belum ada promo di dekat kamu.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Jadi yang pertama menemukan promo!
+            </p>
+            <button
+              onClick={() => setShowShareSheet(true)}
+              className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-3 font-display font-bold text-sm text-primary-foreground"
+            >
+              <Share2 size={16} />
+              <span>Bagikan Promo</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {promos.map((promo) => (
+              <CommunityPromoCard key={promo.id} promo={promo} />
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="mx-4 mt-4 h-[280px] rounded-xl overflow-hidden border border-border">
-        <PromoMap />
-      </div>
+      <SharePromoSheet
+        open={showShareSheet}
+        onOpenChange={setShowShareSheet}
+      />
 
-      <LiveFeed />
-
-      {/* Banner ad placeholder */}
-      <div className="mx-4 mt-4 rounded-lg border border-border bg-card/50 px-4 py-4 text-center min-h-[90px] flex flex-col items-center justify-center">
-        <p className="text-[9px] text-muted-foreground/50 mb-1">
-          Sponsor
-        </p>
-        <div className="w-full h-16 rounded-md bg-secondary/50 flex items-center justify-center">
-          <span className="text-[10px] text-muted-foreground/40">
-            Banner Ad
-          </span>
-        </div>
-      </div>
+      <button
+        onClick={() => setShowShareSheet(true)}
+        className="fixed bottom-24 right-4 z-30 flex items-center gap-2 rounded-full bg-primary px-4 py-3 font-display font-bold text-sm text-primary-foreground shadow-lg"
+      >
+        <Share2 size={18} />
+        <span>Bagikan Promo</span>
+      </button>
 
       <LegalFooter />
       <BottomNav />
