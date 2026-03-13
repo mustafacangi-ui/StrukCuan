@@ -197,6 +197,7 @@ export function useCreateReceipt() {
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["daily_mission"] });
+      queryClient.invalidateQueries({ queryKey: ["referral_count"] });
     },
   });
 }

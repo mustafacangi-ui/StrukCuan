@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
 
 export interface UserData {
   id: string;
@@ -125,6 +126,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    const processReferral = async (userId: string) => {
+      const code = localStorage.getItem(REFERRAL_STORAGE_KEY);
+      if (!code?.trim()) return;
+      const { data: referrer } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("referral_code", code.trim().toUpperCase())
+        .single();
+      if (!referrer || referrer.id === userId) {
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+        return;
+      }
+      const { error } = await supabase.from("referrals").insert({
+        referrer_user_id: referrer.id,
+        referred_user_id: userId,
+        reward_given: false,
+      });
+      if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
+    };
+
     const restoreSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -136,6 +157,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           if (displayName || u.email) {
             await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
           }
+          processReferral(u.id).catch(() => {});
           const userData = await buildUserFromSession(session);
           if (mounted) setUser(userData);
         } else {
@@ -163,6 +185,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           if (displayName || u.email) {
             await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
           }
+          processReferral(u.id).catch(() => {});
           const userData = await buildUserFromSession(session);
           if (mounted) setUser(userData);
         } else {
