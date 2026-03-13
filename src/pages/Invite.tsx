@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, MessageCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, Copy, MessageCircle, Send, Share2, Camera, Instagram, UserPlus } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
@@ -8,6 +8,8 @@ import { useReferralCode, useReferralCount, WHATSAPP_MESSAGE } from "@/hooks/use
 import { toast } from "sonner";
 
 const BASE_URL = "https://struk-cuan.vercel.app";
+
+const INVITE_MESSAGE = "Aku lagi kumpulin tiket di StrukCuan! Daftar pakai link aku dan dapat tiket gratis.";
 
 export default function Invite() {
   const navigate = useNavigate();
@@ -28,9 +30,9 @@ export default function Invite() {
     if (!inviteLink) return;
     try {
       await navigator.clipboard.writeText(inviteLink);
-      toast.success("Link berhasil disalin!");
+      toast.success("Link copied");
     } catch {
-      toast.error("Gagal menyalin link");
+      toast.error("Failed to copy");
     }
   };
 
@@ -38,6 +40,73 @@ export default function Invite() {
     if (!referralCode) return;
     const text = encodeURIComponent(WHATSAPP_MESSAGE(referralCode));
     window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
+
+  const handleTelegramShare = () => {
+    if (!inviteLink) return;
+    const text = encodeURIComponent(INVITE_MESSAGE);
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${text}`, "_blank");
+  };
+
+  const handleFacebookShare = () => {
+    if (!inviteLink) return;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`, "_blank");
+  };
+
+  const handleTikTokShare = async () => {
+    if (!inviteLink) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "StrukCuan",
+          text: INVITE_MESSAGE,
+          url: inviteLink,
+        });
+        toast.success("Shared!");
+      } catch {
+        try {
+          await navigator.clipboard.writeText(inviteLink);
+          toast.success("Link copied");
+        } catch {
+          toast.error("Failed to copy");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success("Link copied");
+      } catch {
+        toast.error("Failed to copy");
+      }
+    }
+  };
+
+  const handleInstagramShare = async () => {
+    if (!inviteLink) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "StrukCuan",
+          text: INVITE_MESSAGE,
+          url: inviteLink,
+        });
+        toast.success("Shared!");
+      } catch {
+        try {
+          await navigator.clipboard.writeText(inviteLink);
+          toast.success("Link copied");
+        } catch {
+          toast.error("Failed to copy");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success("Link copied");
+      } catch {
+        toast.error("Failed to copy");
+      }
+    }
   };
 
   if (isLoading) {
@@ -71,37 +140,85 @@ export default function Invite() {
         </div>
 
         {/* Invite Link Section */}
-        <div className="rounded-2xl border border-white/20 bg-card p-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+        <div
+          className="rounded-2xl p-4"
+          style={{
+            background: "rgba(0,0,0,0.45)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}
+        >
+          <p className="text-[10px] uppercase tracking-wider text-white/80 mb-2 font-semibold">
             Link undangan kamu
           </p>
           {codeLoading ? (
-            <p className="text-sm text-muted-foreground">Memuat...</p>
+            <p className="text-sm text-white/80">Memuat...</p>
           ) : (
             <>
-              <input
-                type="text"
-                readOnly
-                value={inviteLink || ""}
-                onFocus={(e) => e.target.select()}
-                className="w-full rounded-2xl bg-black/30 p-4 font-mono text-sm text-white border-0 outline-none cursor-text"
-              />
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={handleCopyLink}
-                  disabled={!inviteLink}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
-                >
-                  <Copy size={18} />
-                  Copy Link
-                </button>
+              <div
+                className="rounded-2xl p-4 mb-4"
+                style={{ background: "rgba(0,0,0,0.4)" }}
+              >
+                <p className="text-sm text-white leading-relaxed mb-3">
+                  Ajak temanmu ke StrukCuan.
+                  <br />
+                  Kalian berdua dapat +1 ticket setelah temanmu upload struk pertama.
+                </p>
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteLink || ""}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full rounded-xl bg-black/40 p-3 font-mono text-sm text-white border border-white/10 outline-none cursor-text"
+                />
+              </div>
+              <button
+                onClick={handleCopyLink}
+                disabled={!inviteLink}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity mb-4"
+              >
+                <Copy size={18} />
+                Copy Link
+              </button>
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handleWhatsAppShare}
                   disabled={!referralCode}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
-                  <MessageCircle size={18} />
+                  <MessageCircle size={16} />
                   WhatsApp
+                </button>
+                <button
+                  onClick={handleTelegramShare}
+                  disabled={!inviteLink}
+                  className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#0088cc] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                >
+                  <Send size={16} />
+                  Telegram
+                </button>
+                <button
+                  onClick={handleFacebookShare}
+                  disabled={!inviteLink}
+                  className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#1877f2] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                >
+                  <Share2 size={16} />
+                  Facebook
+                </button>
+                <button
+                  onClick={handleTikTokShare}
+                  disabled={!inviteLink}
+                  className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-black py-2.5 font-display font-semibold text-xs text-white border border-white/20 disabled:opacity-50 hover:opacity-90 transition-opacity"
+                >
+                  <Camera size={16} />
+                  TikTok
+                </button>
+                <button
+                  onClick={handleInstagramShare}
+                  disabled={!inviteLink}
+                  className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#833ab4] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                >
+                  <Instagram size={16} />
+                  Instagram
                 </button>
               </div>
             </>
@@ -109,16 +226,22 @@ export default function Invite() {
         </div>
 
         {/* Friends Joined Progress */}
-        <div className="mt-6 rounded-2xl border border-white/20 bg-card p-4">
+        <div
+          className="mt-6 rounded-2xl p-4"
+          style={{
+            background: "rgba(0,0,0,0.45)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary glow-green">
               <UserPlus size={24} className="text-primary" />
             </div>
             <div>
-              <p className="font-display text-sm font-bold text-foreground">
+              <p className="font-display text-sm font-bold text-white">
                 Friends joined: {friendsJoined}
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-white/80">
                 Teman yang sudah daftar & upload struk pertama
               </p>
             </div>
@@ -126,8 +249,14 @@ export default function Invite() {
         </div>
 
         {/* Info card */}
-        <div className="mt-6 rounded-2xl border border-white/20 bg-card p-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
+        <div
+          className="mt-6 rounded-2xl p-4"
+          style={{
+            background: "rgba(0,0,0,0.45)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}
+        >
+          <p className="text-xs text-white leading-relaxed">
             Bagikan link undangan ke teman. Saat teman daftar dan upload struk pertamanya, kamu dan teman masing-masing dapat +1 tiket!
           </p>
         </div>

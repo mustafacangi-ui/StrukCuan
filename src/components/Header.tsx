@@ -43,24 +43,104 @@ const Header = () => {
   const cuan = stats?.cuan ?? 0;
 
   return (
-    <div className="px-4 pt-3 pb-2 rounded-b-2xl bg-black/35 backdrop-blur-md">
-      <div className="flex items-center justify-center gap-3 mb-3">
-        <div className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/20 px-3 py-1.5">
-          <Ticket size={14} className="text-red-400" />
-          <span className="font-display text-xs font-bold text-red-400">
-            {tiket.toLocaleString()}
-          </span>
-          <span className="text-[9px] text-red-400/80">Ticket</span>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/20 px-3 py-1.5">
-          <span className="text-[10px] font-bold text-amber-400">Cuan</span>
-          <span className="font-display text-xs font-bold text-amber-400">
-            {cuan.toLocaleString()}
-          </span>
+    <div className="px-4 pt-3 pb-2">
+      <div
+        className="rounded-[18px] p-3 px-4"
+        style={{
+          background: "rgba(0,0,0,0.65)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+              style={{ background: "#2b2b2b", color: "#ff6b6b" }}
+            >
+              <Ticket size={14} />
+              <span className="font-display text-xs font-semibold">
+                {tiket.toLocaleString()}
+              </span>
+              <span className="text-[9px] opacity-90">Ticket</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+              style={{ background: "#2b2b2b", color: "#ffd166" }}
+            >
+              <span className="text-[10px] font-semibold">Cuan</span>
+              <span className="font-display text-xs font-semibold">
+                {cuan.toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-1 rounded-full"
+              style={{
+                background: "#111",
+                color: "#ff4d4f",
+                padding: "4px 10px",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#ff4d4f] animate-pulse" />
+              <span className="text-[9px] font-bold tracking-wider">LIVE</span>
+              <span className="text-[9px] font-mono font-semibold text-white">
+                {onlineCount.toLocaleString()}
+              </span>
+            </div>
+            <div className="relative">
+              <button
+                className="relative rounded-full bg-[#2b2b2b] p-2"
+                onClick={() => {
+                  setShowNotifications((v) => !v);
+                  if (unreadCount > 0) markRead.mutate();
+                }}
+              >
+                <Bell size={18} className="text-white" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#ff4d4f] px-0.5">
+                    <span className="text-[8px] font-bold text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-white/15 bg-black/80 backdrop-blur-md shadow-lg z-40">
+                  <div className="max-h-64 overflow-y-auto py-2">
+                    {notifications.length === 0 && (
+                      <div className="px-3 py-2 text-[10px] text-white/70">
+                        No notifications.
+                      </div>
+                    )}
+                    {notifications.slice(0, 10).map((n) => (
+                      <div
+                        key={n.id}
+                        className="px-3 py-2 text-[10px] border-b border-white/10 last:border-b-0"
+                      >
+                        <p className="font-semibold text-white">{n.title}</p>
+                        <p className="mt-0.5 text-white/70">{n.message}</p>
+                        <p className="mt-0.5 text-[9px] text-white/50">
+                          {new Date(n.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleProfileClick}
+              className="rounded-full bg-[#2b2b2b] p-2"
+            >
+              <Settings size={18} className="text-white" />
+            </button>
+          </div>
         </div>
       </div>
       {/* User row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-3">
           <button
             onClick={handleProfileClick}
@@ -80,10 +160,10 @@ const Header = () => {
             )}
           </button>
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/85">
               {isOnboarded ? "Hello," : "Welcome!"}
             </p>
-            <h1 className="font-display text-lg font-bold text-foreground">{nickname}</h1>
+            <h1 className="font-display text-lg font-bold text-white">{nickname}</h1>
             {isOnboarded ? (
               <button
                 onClick={handleProfileClick}
@@ -104,63 +184,6 @@ const Header = () => {
               </button>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* LIVE counter - top right, next to settings */}
-          <div className="flex items-center gap-1 rounded-full bg-[#111] px-2 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-[9px] font-bold text-red-500 tracking-wider">LIVE</span>
-            <span className="text-[9px] font-mono font-semibold text-white">{onlineCount.toLocaleString()}</span>
-          </div>
-          <div className="relative">
-            <button
-              className="relative rounded-full bg-secondary p-2"
-              onClick={() => {
-                setShowNotifications((v) => !v);
-                if (unreadCount > 0) {
-                  markRead.mutate();
-                }
-              }}
-            >
-              <Bell size={18} className="text-foreground" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-neon-red px-0.5">
-                  <span className="text-[8px] font-bold text-accent-foreground">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                </span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl border border-border bg-card shadow-lg z-40">
-                <div className="max-h-64 overflow-y-auto py-2">
-                  {notifications.length === 0 && (
-                    <div className="px-3 py-2 text-[10px] text-muted-foreground">
-                      No notifications.
-                    </div>
-                  )}
-                  {notifications.slice(0, 10).map((n) => (
-                    <div
-                      key={n.id}
-                      className="px-3 py-2 text-[10px] border-b border-border/40 last:border-b-0"
-                    >
-                      <p className="font-semibold text-foreground">{n.title}</p>
-                      <p className="mt-0.5 text-muted-foreground">
-                        {n.message}
-                      </p>
-                      <p className="mt-0.5 text-[9px] text-muted-foreground/70">
-                        {new Date(n.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <button onClick={handleProfileClick} className="rounded-full bg-secondary p-2">
-            <Settings size={18} className="text-muted-foreground" />
-          </button>
         </div>
       </div>
     </div>
