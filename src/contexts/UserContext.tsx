@@ -146,8 +146,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
     };
 
+    const LOADING_TIMEOUT_MS = 3000;
+
     const restoreSession = async () => {
-      try {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Session check timeout")), LOADING_TIMEOUT_MS)
+      );
+
+      const sessionWork = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
         setSession(session);
@@ -163,6 +169,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setUser(null);
         }
+      };
+
+      try {
+        await Promise.race([sessionWork(), timeoutPromise]);
       } catch {
         if (mounted) {
           setSession(null);
