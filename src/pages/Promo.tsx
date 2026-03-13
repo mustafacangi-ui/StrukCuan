@@ -42,7 +42,7 @@ export default function Promo() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
@@ -50,7 +50,7 @@ export default function Promo() {
   if (!isOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
+    <div className="min-h-screen pb-28 max-w-[420px] mx-auto">
       <PromoHeader />
 
       {/* SECTION 1: Radar Cuan (Mapbox map) */}

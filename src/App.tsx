@@ -34,7 +34,7 @@ const AdminRoute = () => {
 
   if (!user || !adminIds.includes(user.id)) {
     return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center px-4">
+      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center px-4">
         <p className="text-sm text-muted-foreground">
           You do not have access to this page.
         </p>
@@ -45,7 +45,7 @@ const AdminRoute = () => {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center px-4">
+        <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center px-4">
           <p className="text-sm text-muted-foreground">Loading admin page...</p>
         </div>
       }
@@ -83,7 +83,7 @@ const App = () => (
                 element={
                   <Suspense
                     fallback={
-                      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center px-4">
+                      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center px-4">
                         <p className="text-sm text-muted-foreground">
                           Loading receipts...
                         </p>

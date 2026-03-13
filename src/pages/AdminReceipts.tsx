@@ -88,7 +88,7 @@ export default function AdminReceipts() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-10">
+    <div className="min-h-screen pb-10">
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
         <h1 className="font-display text-lg font-bold text-foreground">
           Admin · Pending Receipts

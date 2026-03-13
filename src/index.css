@@ -94,7 +94,15 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    background: linear-gradient(
+      180deg,
+      #ff4fd8 0%,
+      #c44bff 35%,
+      #7a5cff 65%,
+      #3b3bff 100%
+    );
+    min-height: 100vh;
+    @apply text-foreground font-body antialiased;
   }
 
   #root {
@@ -102,6 +110,14 @@
     max-width: 420px;
     margin: 0 auto;
     min-height: 100vh;
+  }
+
+  /* Semi-transparent dark cards for readability on gradient */
+  .bg-card,
+  [class*="bg-card"] {
+    background: rgba(0, 0, 0, 0.35) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 }
 

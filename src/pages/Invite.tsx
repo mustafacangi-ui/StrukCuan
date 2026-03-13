@@ -42,7 +42,7 @@ export default function Invite() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex items-center justify-center">
+      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
@@ -50,9 +50,9 @@ export default function Invite() {
   if (!isOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background pb-28 max-w-[420px] mx-auto">
+    <div className="min-h-screen pb-28 max-w-[420px] mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-white/20">
         <button onClick={() => navigate("/")} className="rounded-full bg-secondary p-2">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
@@ -71,7 +71,7 @@ export default function Invite() {
         </div>
 
         {/* Invite Link Section */}
-        <div className="rounded-xl border border-primary/30 bg-card p-4">
+        <div className="rounded-2xl border border-white/20 bg-card p-4">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
             Link undangan kamu
           </p>
@@ -79,24 +79,28 @@ export default function Invite() {
             <p className="text-sm text-muted-foreground">Memuat...</p>
           ) : (
             <>
-              <div className="rounded-lg bg-secondary/50 p-3 font-mono text-xs text-foreground break-all">
-                {inviteLink || "-"}
-              </div>
-              <div className="flex gap-2 mt-3">
+              <input
+                type="text"
+                readOnly
+                value={inviteLink || ""}
+                onFocus={(e) => e.target.select()}
+                className="w-full rounded-2xl bg-black/30 p-4 font-mono text-sm text-white border-0 outline-none cursor-text"
+              />
+              <div className="flex gap-3 mt-4">
                 <button
                   onClick={handleCopyLink}
                   disabled={!inviteLink}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary py-3 font-display font-bold text-sm text-primary-foreground disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
-                  <Copy size={16} />
+                  <Copy size={18} />
                   Copy Link
                 </button>
                 <button
                   onClick={handleWhatsAppShare}
                   disabled={!referralCode}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 font-display font-bold text-sm text-white disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
-                  <MessageCircle size={16} />
+                  <MessageCircle size={18} />
                   WhatsApp
                 </button>
               </div>
@@ -105,7 +109,7 @@ export default function Invite() {
         </div>
 
         {/* Friends Joined Progress */}
-        <div className="mt-6 rounded-xl border border-border bg-card p-4">
+        <div className="mt-6 rounded-2xl border border-white/20 bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary glow-green">
               <UserPlus size={24} className="text-primary" />
@@ -122,7 +126,7 @@ export default function Invite() {
         </div>
 
         {/* Info card */}
-        <div className="mt-6 rounded-xl border border-border bg-card/50 p-4">
+        <div className="mt-6 rounded-2xl border border-white/20 bg-card p-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
             Bagikan link undangan ke teman. Saat teman daftar dan upload struk pertamanya, kamu dan teman masing-masing dapat +1 tiket!
           </p>

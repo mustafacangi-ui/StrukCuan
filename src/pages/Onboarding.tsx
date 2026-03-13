@@ -78,7 +78,7 @@ const Onboarding = () => {
 
   if (step === "splash") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 max-w-[420px] mx-auto">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 max-w-[420px] mx-auto">
         <div className="relative mb-8">
           <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary shadow-primary">
             <Camera size={40} className="text-primary" />
@@ -116,7 +116,7 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-8 max-w-[420px] mx-auto">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-8 max-w-[420px] mx-auto">
       <div className="w-full">
         <h1 className="font-display text-2xl font-bold text-foreground mb-1">
           Daftar Akun
