@@ -1,63 +1,72 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useAdTicketEvents, getCurrentEvent } from "@/hooks/useAdTicketEvents";
+import { useMonetagAdTickets } from "@/hooks/useMonetagAdTickets";
+
+const MONETAG_AD_URL = "https://omg10.com/4/10726900";
 
 /**
- * Free Ticket Event section - rewarded video ads for lottery tickets.
- * Events: Wed 20:00-21:00 (max 3), Sun 20:00-21:00 (max 5) Asia/Jakarta.
- *
- * Ad integration: Replace watchAd() with actual AdMob/AppLovin rewarded ad.
- * Use AdMob mediation for highest CPM.
+ * Free Ticket Event - Monetag Direct Ad integration.
+ * Users watch ads and earn tickets. Daily limit: 5.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
-  const { earnedCount, isLoading, event, earnTicket } = useAdTicketEvents(user?.id);
-  const [countdown, setCountdown] = useState<string | null>(null);
+  const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useMonetagAdTickets(user?.id);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [adWindowOpen, setAdWindowOpen] = useState(false);
+  const pendingGrantRef = useRef(false);
+  const adOpenedAtRef = useRef<number>(0);
+  const MIN_WATCH_SECONDS = 5;
 
-  useEffect(() => {
-    const tick = () => {
-      const ev = getCurrentEvent();
-      if (ev.active && ev.endsInMs != null) {
-        const remaining = Math.max(0, ev.endsInMs);
-        const h = Math.floor(remaining / 3600000);
-        const m = Math.floor((remaining % 3600000) / 60000);
-        const s = Math.floor((remaining % 60000) / 1000);
-        setCountdown(
-          `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-        );
-      } else if (!ev.active && ev.startsInMs != null) {
-        const remaining = Math.max(0, ev.startsInMs);
-        const h = Math.floor(remaining / 3600000);
-        const m = Math.floor((remaining % 3600000) / 60000);
-        const s = Math.floor((remaining % 60000) / 1000);
-        setCountdown(
-          `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-        );
-      } else {
-        setCountdown(null);
-      }
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [event.active, event.endsInMs, event.startsInMs]);
+  const handleWatchVideo = () => {
+    if (!user?.id || earnedCount >= maxPerDay || adWindowOpen) return;
 
-  const handleWatchVideo = async () => {
-    if (!user?.id || !event.active || earnedCount >= event.maxTickets) return;
-
-    try {
-      await watchAd();
-      await earnTicket.mutateAsync();
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2500);
-    } catch (err) {
-      console.error("Ad or earn failed:", err);
-    }
+    setAdWindowOpen(true);
+    pendingGrantRef.current = true;
+    adOpenedAtRef.current = Date.now();
+    window.open(MONETAG_AD_URL, "_blank", "noopener,noreferrer");
   };
 
-  const canWatch = event.active && earnedCount < event.maxTickets && !earnTicket.isPending;
+  useEffect(() => {
+    if (!adWindowOpen) return;
+    const timeout = setTimeout(() => {
+      setAdWindowOpen(false);
+      pendingGrantRef.current = false;
+    }, 120_000);
+    return () => clearTimeout(timeout);
+  }, [adWindowOpen]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!pendingGrantRef.current || !user?.id) return;
+
+      const elapsed = (Date.now() - adOpenedAtRef.current) / 1000;
+      if (elapsed < MIN_WATCH_SECONDS) return;
+
+      pendingGrantRef.current = false;
+      setAdWindowOpen(false);
+
+      if (earnedCount >= maxPerDay) return;
+
+      earnTicket
+        .mutateAsync()
+        .then(() => {
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 2500);
+          refetch();
+        })
+        .catch(() => {
+          setAdWindowOpen(false);
+        });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [user?.id, earnedCount, maxPerDay, earnTicket, refetch]);
+
+  const atLimit = earnedCount >= maxPerDay;
+  const canWatch = !atLimit && !adWindowOpen && !earnTicket.isPending;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -72,23 +81,24 @@ export default function FreeTicketEvent() {
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Tickets earned today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {isLoading ? "..." : `${earnedCount} / ${event.maxTickets}`}
+          {isLoading ? "..." : `${earnedCount} / ${maxPerDay}`}
         </span>
       </div>
 
-      {!event.active && countdown && (
+      {atLimit && (
         <p className="text-[11px] text-muted-foreground mb-3">
-          Free Ticket Event starts in {countdown}
+          You&apos;ve reached today&apos;s limit. Come back tomorrow for more!
         </p>
       )}
 
-      {event.active && countdown && (
+      {adWindowOpen && (
         <p className="text-[11px] text-primary font-medium mb-3">
-          Event ends in {countdown}
+          Watch the ad, then return here to earn your ticket.
         </p>
       )}
 
       <button
+        type="button"
         onClick={handleWatchVideo}
         disabled={!canWatch}
         className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-display font-bold text-sm transition-colors ${
@@ -98,7 +108,7 @@ export default function FreeTicketEvent() {
         }`}
       >
         <Ticket size={16} />
-        <span>Watch Video</span>
+        <span>{adWindowOpen ? "Watching..." : "Watch Video"}</span>
       </button>
 
       {showSuccess && (
@@ -108,19 +118,4 @@ export default function FreeTicketEvent() {
       )}
     </div>
   );
-}
-
-/**
- * Placeholder for rewarded video ad.
- * Replace with actual AdMob/AppLovin integration:
- * - Use react-native-google-mobile-ads or similar for mobile
- * - Use Google Publisher Tag for web
- * - AdMob mediation for AppLovin fallback
- */
-async function watchAd(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve();
-    }, 1500);
-  });
 }
