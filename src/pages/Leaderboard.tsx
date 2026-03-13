@@ -5,6 +5,7 @@ import { useLeaderboard } from "@/hooks/useUserStats";
 import { Trophy, Medal, ArrowLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -18,14 +19,7 @@ export default function Leaderboard() {
     }
   }, [isLoading, isOnboarded, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-  if (!isOnboarded) return null;
+  if (!isOnboarded && !isLoading) return null;
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Medal size={20} className="text-yellow-400" />;
@@ -53,8 +47,10 @@ export default function Leaderboard() {
 
       <div className="mx-4 mt-4">
         {leaderboardLoading && (
-          <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            Loading...
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
           </div>
         )}
 

@@ -16,7 +16,7 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const tiket = stats?.tiket ?? user?.tiket ?? 0;
-  const nickname = isLoading ? "Loading..." : (user?.nickname ?? "Guest");
+  const nickname = user?.nickname ?? "Guest";
   const level = stats?.level ?? user?.level ?? 1;
 
   const handleProfileClick = () => {

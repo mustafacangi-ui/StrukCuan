@@ -147,6 +147,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const LOADING_TIMEOUT_MS = 3000;
+    const FALLBACK_TIMEOUT_MS = 5000;
 
     const restoreSession = async () => {
       const timeoutPromise = new Promise<never>((_, reject) =>
@@ -171,6 +172,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
       };
 
+      const fallbackTimer = setTimeout(() => {
+        if (mounted) setIsLoading(false);
+      }, FALLBACK_TIMEOUT_MS);
+
       try {
         await Promise.race([sessionWork(), timeoutPromise]);
       } catch {
@@ -179,6 +184,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
         }
       } finally {
+        clearTimeout(fallbackTimer);
         if (mounted) setIsLoading(false);
       }
     };

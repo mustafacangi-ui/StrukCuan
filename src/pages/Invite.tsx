@@ -121,14 +121,7 @@ export default function Invite() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-  if (!isOnboarded) return null;
+  if (!isOnboarded && !isLoading) return null;
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto">
@@ -163,7 +156,10 @@ export default function Invite() {
             Link undangan kamu
           </p>
           {codeLoading && !referralUrl ? (
-            <p className="text-sm text-white/80">Memuat...</p>
+            <div className="space-y-3">
+              <div className="h-4 w-3/4 rounded bg-white/20 animate-pulse" />
+              <div className="h-10 w-full rounded-xl bg-white/10 animate-pulse" />
+            </div>
           ) : (
             <>
               <div

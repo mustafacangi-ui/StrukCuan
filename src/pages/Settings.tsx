@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -21,14 +22,7 @@ const Settings = () => {
     navigate("/");
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-  if (!isOnboarded) return null;
+  if (!isOnboarded && !isLoading) return null;
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28">
@@ -43,23 +37,36 @@ const Settings = () => {
       {/* Profile card */}
       <div className="mx-4 mt-4 rounded-xl border border-primary/30 bg-card p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary glow-green">
-            <span className="font-display text-2xl font-bold text-primary">
-              {user?.nickname?.[0]?.toUpperCase() || "?"}
-            </span>
-          </div>
-          <div>
-            <h2 className="font-display text-lg font-bold text-foreground">{user?.nickname || "User"}</h2>
-            <div className="flex items-center gap-1 mt-0.5">
-              <Shield size={10} className="text-primary" />
-              <span className="text-[10px] font-bold text-primary glow-green-text">
-                Level {user?.level || 1} · Receipt Hunter
+          {isLoading ? (
+            <Skeleton className="h-14 w-14 rounded-full shrink-0" />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary glow-green">
+              <span className="font-display text-2xl font-bold text-primary">
+                {user?.nickname?.[0]?.toUpperCase() || "?"}
               </span>
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <Phone size={10} className="text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{user?.phone || "+62..."}</span>
-            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            {isLoading ? (
+              <>
+                <Skeleton className="h-5 w-24 mb-1" />
+                <Skeleton className="h-3 w-32" />
+              </>
+            ) : (
+              <>
+                <h2 className="font-display text-lg font-bold text-foreground">{user?.nickname || "User"}</h2>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Shield size={10} className="text-primary" />
+                  <span className="text-[10px] font-bold text-primary glow-green-text">
+                    Level {user?.level || 1} · Receipt Hunter
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <Phone size={10} className="text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">{user?.phone || "+62..."}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -27,11 +27,11 @@ export interface PromoRow {
 
 const PROMO_EXPIRY_HOURS = 24;
 
-const PROMOS_QUERY_KEY = ["promos"];
+export const PROMOS_QUERY_KEY = ["promos"];
 const MAX_PROMOS_PER_DAY = 3;
 const STORE_COOLDOWN_MINUTES = 30;
 
-async function fetchPromosNearby(
+export async function fetchPromosNearby(
   userLat: number,
   userLng: number,
   userId?: string | null,

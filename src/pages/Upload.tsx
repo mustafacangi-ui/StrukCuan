@@ -6,6 +6,7 @@ import { useCreateReceipt } from "@/hooks/useReceipts";
 import { useReceiptsToday } from "@/hooks/useReceipts";
 import RewardPopup from "@/components/RewardPopup";
 import { Camera, ArrowLeft, Check, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -48,14 +49,6 @@ export default function Upload() {
       navigate("/onboarding", { replace: true });
     }
   }, [isLoading, user, isOnboarded, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
 
   const revokePreviewUrl = useCallback(() => {
     if (previewUrl) {
@@ -178,13 +171,7 @@ export default function Upload() {
     }
   }, [userId, image, todayCount, createReceipt, handleRetake]);
 
-  if (!user || !isOnboarded) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Redirecting...</p>
-      </div>
-    );
-  }
+  if (!isLoading && (!user || !isOnboarded)) return null;
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28">
@@ -201,7 +188,13 @@ export default function Upload() {
       </div>
 
       <div className="mx-4 mt-6">
-        {step === "camera" && (
+        {isLoading ? (
+          <div className="flex flex-col items-center">
+            <Skeleton className="h-32 w-32 rounded-full" />
+            <Skeleton className="h-4 w-48 mt-4" />
+            <Skeleton className="h-3 w-36 mt-2" />
+          </div>
+        ) : step === "camera" ? (
           <div className="flex flex-col items-center">
             <input
               ref={fileInputRef}
@@ -224,9 +217,7 @@ export default function Upload() {
               JPG/PNG max 5MB · Max 3 receipts/day
             </p>
           </div>
-        )}
-
-        {step === "preview" && previewUrl && (
+        ) : step === "preview" && previewUrl ? (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <img
@@ -258,7 +249,7 @@ export default function Upload() {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
         {showReward && (
           <RewardPopup onClose={() => setShowReward(false)} />

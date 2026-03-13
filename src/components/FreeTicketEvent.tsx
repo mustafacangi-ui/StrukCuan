@@ -1,14 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useMonetagAdTickets } from "@/hooks/useMonetagAdTickets";
 
 const MONETAG_AD_URL = "https://omg10.com/4/10726900";
 const WAIT_AFTER_RETURN_MS = 5000;
+const MUTATION_FALLBACK_MS = 10000;
 
 /**
  * Free Ticket Event - Monetag Direct Ad integration.
  * Users watch ads and earn tickets. Daily limit: 5.
+ * Listens for visibilitychange AND window focus for reliable reward flow.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
@@ -17,7 +19,22 @@ export default function FreeTicketEvent() {
   const [adOpened, setAdOpened] = useState(false);
   const [isGranting, setIsGranting] = useState(false);
   const grantTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mutationFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingRef = useRef(false);
+
+  const resetButtonState = useCallback(() => {
+    setAdOpened(false);
+    setIsGranting(false);
+    isProcessingRef.current = false;
+    if (grantTimeoutRef.current) {
+      clearTimeout(grantTimeoutRef.current);
+      grantTimeoutRef.current = null;
+    }
+    if (mutationFallbackRef.current) {
+      clearTimeout(mutationFallbackRef.current);
+      mutationFallbackRef.current = null;
+    }
+  }, []);
 
   const handleWatchVideo = () => {
     if (!user?.id || earnedCount >= maxPerDay || adOpened) return;
@@ -26,58 +43,80 @@ export default function FreeTicketEvent() {
     window.open(MONETAG_AD_URL, "_blank");
   };
 
+  const tryGrantTicket = useCallback(() => {
+    if (!adOpened || !user?.id || isProcessingRef.current) return;
+    if (grantTimeoutRef.current) return;
+    if (earnedCount >= maxPerDay) {
+      resetButtonState();
+      return;
+    }
+
+    grantTimeoutRef.current = setTimeout(() => {
+      grantTimeoutRef.current = null;
+      isProcessingRef.current = true;
+      setAdOpened(false);
+      setIsGranting(true);
+
+      mutationFallbackRef.current = setTimeout(() => {
+        mutationFallbackRef.current = null;
+        isProcessingRef.current = false;
+        setIsGranting(false);
+      }, MUTATION_FALLBACK_MS);
+
+      earnTicket
+        .mutateAsync()
+        .then(() => {
+          if (mutationFallbackRef.current) {
+            clearTimeout(mutationFallbackRef.current);
+            mutationFallbackRef.current = null;
+          }
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 2500);
+          refetch();
+        })
+        .catch(() => {
+          resetButtonState();
+        })
+        .finally(() => {
+          isProcessingRef.current = false;
+          setIsGranting(false);
+          if (mutationFallbackRef.current) {
+            clearTimeout(mutationFallbackRef.current);
+            mutationFallbackRef.current = null;
+          }
+        });
+    }, WAIT_AFTER_RETURN_MS);
+  }, [adOpened, user?.id, earnedCount, maxPerDay, earnTicket, refetch, resetButtonState]);
+
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") return;
-      if (!adOpened || !user?.id || isProcessingRef.current) return;
-      if (grantTimeoutRef.current) return;
-      if (earnedCount >= maxPerDay) {
-        setAdOpened(false);
-        return;
-      }
-
-      grantTimeoutRef.current = setTimeout(() => {
-        grantTimeoutRef.current = null;
-        isProcessingRef.current = true;
-        setAdOpened(false);
-        setIsGranting(true);
-
-        earnTicket
-          .mutateAsync()
-          .then(() => {
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 2500);
-            refetch();
-          })
-          .catch(() => {})
-          .finally(() => {
-            isProcessingRef.current = false;
-            setIsGranting(false);
-          });
-      }, WAIT_AFTER_RETURN_MS);
+      if (document.visibilityState === "visible") tryGrantTicket();
     };
 
+    const handleFocus = () => tryGrantTicket();
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
       if (grantTimeoutRef.current) {
         clearTimeout(grantTimeoutRef.current);
         grantTimeoutRef.current = null;
       }
+      if (mutationFallbackRef.current) {
+        clearTimeout(mutationFallbackRef.current);
+        mutationFallbackRef.current = null;
+      }
     };
-  }, [adOpened, user?.id, earnedCount, maxPerDay, earnTicket, refetch]);
+  }, [tryGrantTicket]);
 
   useEffect(() => {
     if (!adOpened) return;
-    const fallback = setTimeout(() => {
-      setAdOpened(false);
-      if (grantTimeoutRef.current) {
-        clearTimeout(grantTimeoutRef.current);
-        grantTimeoutRef.current = null;
-      }
-    }, 180_000);
+    const fallback = setTimeout(() => resetButtonState(), 180_000);
     return () => clearTimeout(fallback);
-  }, [adOpened]);
+  }, [adOpened, resetButtonState]);
 
   const atLimit = earnedCount >= maxPerDay;
   const canWatch = !atLimit && !adOpened && !earnTicket.isPending && !isGranting;
@@ -88,8 +127,14 @@ export default function FreeTicketEvent() {
         <Ticket size={18} className="text-primary" />
         <h3 className="font-display text-sm font-bold text-foreground">Free Tickets</h3>
       </div>
+      <p className="text-[11px] text-muted-foreground mb-2">
+        Watch a short ad (~20 seconds)
+      </p>
+      <p className="text-[11px] text-muted-foreground mb-1">
+        Earn 1 ticket
+      </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        Watch ads and earn tickets for the weekly reward draw.
+        Daily limit: {maxPerDay} tickets
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
