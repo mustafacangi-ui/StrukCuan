@@ -1,18 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-const BASE_URL = "https://struk-cuan.vercel.app";
-
-export const WHATSAPP_MESSAGE = (referralCode: string) =>
+export const WHATSAPP_MESSAGE = (referralUrl: string) =>
   `Aku lagi kumpulin tiket di StrukCuan 🎟️
 Upload struk belanja dan menangkan voucher Rp100.000 setiap minggu.
 
 Daftar pakai link aku dan dapat tiket gratis!
 
-👉 ${BASE_URL}?r=${referralCode}`;
+👉 ${referralUrl}`;
 
 export function useReferralCode(userId: string | undefined) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["referral_code", userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -25,6 +25,31 @@ export function useReferralCode(userId: string | undefined) {
     },
     enabled: !!userId,
   });
+
+  const ensureReferralCode = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", userId)
+        .select("referral_code")
+        .single();
+      if (error) throw error;
+      return data?.referral_code as string | null;
+    },
+    onSuccess: (code) => {
+      if (code) {
+        queryClient.setQueryData(["referral_code", userId], code);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["referral_code", userId] });
+      }
+    },
+  });
+
+  return {
+    ...query,
+    ensureReferralCode: () => ensureReferralCode.mutateAsync(),
+  };
 }
 
 export function useReferralCount(userId: string | undefined) {

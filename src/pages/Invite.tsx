@@ -7,14 +7,12 @@ import LegalFooter from "@/components/LegalFooter";
 import { useReferralCode, useReferralCount, WHATSAPP_MESSAGE } from "@/hooks/useReferrals";
 import { toast } from "sonner";
 
-const BASE_URL = "https://struk-cuan.vercel.app";
-
 const INVITE_MESSAGE = "Aku lagi kumpulin tiket di StrukCuan! Daftar pakai link aku dan dapat tiket gratis.";
 
 export default function Invite() {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading } = useUser();
-  const { data: referralCode, isLoading: codeLoading } = useReferralCode(user?.id);
+  const { data: referralCode, isLoading: codeLoading, ensureReferralCode, isFetching: codeFetching } = useReferralCode(user?.id);
   const { data: friendsJoined = 0 } = useReferralCount(user?.id);
 
   useEffect(() => {
@@ -24,48 +22,57 @@ export default function Invite() {
     }
   }, [isLoading, isOnboarded, navigate]);
 
-  const inviteLink = referralCode ? `${BASE_URL}?r=${referralCode}` : "";
+  // Ensure referral_code exists on first visit (triggers DB trigger to generate)
+  useEffect(() => {
+    if (user?.id && !codeLoading && !codeFetching && !referralCode) {
+      ensureReferralCode().catch(() => {});
+    }
+  }, [user?.id, codeLoading, codeFetching, referralCode, ensureReferralCode]);
+
+  const referralUrl = referralCode
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://struk-cuan.vercel.app"}?r=${referralCode}`
+    : "";
 
   const handleCopyLink = async () => {
-    if (!inviteLink) return;
+    if (!referralUrl) return;
     try {
-      await navigator.clipboard.writeText(inviteLink);
-      toast.success("Link copied");
+      await navigator.clipboard.writeText(referralUrl);
+      toast.success("Link copied!");
     } catch {
       toast.error("Failed to copy");
     }
   };
 
   const handleWhatsAppShare = () => {
-    if (!referralCode) return;
-    const text = encodeURIComponent(WHATSAPP_MESSAGE(referralCode));
+    if (!referralUrl) return;
+    const text = encodeURIComponent(WHATSAPP_MESSAGE(referralUrl));
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
   const handleTelegramShare = () => {
-    if (!inviteLink) return;
+    if (!referralUrl) return;
     const text = encodeURIComponent(INVITE_MESSAGE);
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${text}`, "_blank");
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${text}`, "_blank");
   };
 
   const handleFacebookShare = () => {
-    if (!inviteLink) return;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`, "_blank");
+    if (!referralUrl) return;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`, "_blank");
   };
 
   const handleTikTokShare = async () => {
-    if (!inviteLink) return;
+    if (!referralUrl) return;
     if (navigator.share) {
       try {
         await navigator.share({
           title: "StrukCuan",
           text: INVITE_MESSAGE,
-          url: inviteLink,
+          url: referralUrl,
         });
         toast.success("Shared!");
       } catch {
         try {
-          await navigator.clipboard.writeText(inviteLink);
+          await navigator.clipboard.writeText(referralUrl);
           toast.success("Link copied");
         } catch {
           toast.error("Failed to copy");
@@ -73,7 +80,7 @@ export default function Invite() {
       }
     } else {
       try {
-        await navigator.clipboard.writeText(inviteLink);
+        await navigator.clipboard.writeText(referralUrl);
         toast.success("Link copied");
       } catch {
         toast.error("Failed to copy");
@@ -82,18 +89,18 @@ export default function Invite() {
   };
 
   const handleInstagramShare = async () => {
-    if (!inviteLink) return;
+    if (!referralUrl) return;
     if (navigator.share) {
       try {
         await navigator.share({
           title: "StrukCuan",
           text: INVITE_MESSAGE,
-          url: inviteLink,
+          url: referralUrl,
         });
         toast.success("Shared!");
       } catch {
         try {
-          await navigator.clipboard.writeText(inviteLink);
+          await navigator.clipboard.writeText(referralUrl);
           toast.success("Link copied");
         } catch {
           toast.error("Failed to copy");
@@ -101,7 +108,7 @@ export default function Invite() {
       }
     } else {
       try {
-        await navigator.clipboard.writeText(inviteLink);
+        await navigator.clipboard.writeText(referralUrl);
         toast.success("Link copied");
       } catch {
         toast.error("Failed to copy");
@@ -166,14 +173,14 @@ export default function Invite() {
                 <input
                   type="text"
                   readOnly
-                  value={inviteLink || ""}
+                  value={referralUrl}
                   onFocus={(e) => e.target.select()}
                   className="w-full rounded-xl bg-black/40 p-3 font-mono text-sm text-white border border-white/10 outline-none cursor-text"
                 />
               </div>
               <button
                 onClick={handleCopyLink}
-                disabled={!inviteLink}
+                disabled={!referralUrl}
                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity mb-4"
               >
                 <Copy size={18} />
@@ -182,7 +189,7 @@ export default function Invite() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handleWhatsAppShare}
-                  disabled={!referralCode}
+                  disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   <MessageCircle size={16} />
@@ -190,7 +197,7 @@ export default function Invite() {
                 </button>
                 <button
                   onClick={handleTelegramShare}
-                  disabled={!inviteLink}
+                  disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#0088cc] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   <Send size={16} />
@@ -198,7 +205,7 @@ export default function Invite() {
                 </button>
                 <button
                   onClick={handleFacebookShare}
-                  disabled={!inviteLink}
+                  disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#1877f2] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   <Share2 size={16} />
@@ -206,7 +213,7 @@ export default function Invite() {
                 </button>
                 <button
                   onClick={handleTikTokShare}
-                  disabled={!inviteLink}
+                  disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-black py-2.5 font-display font-semibold text-xs text-white border border-white/20 disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   <Camera size={16} />
@@ -214,7 +221,7 @@ export default function Invite() {
                 </button>
                 <button
                   onClick={handleInstagramShare}
-                  disabled={!inviteLink}
+                  disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#833ab4] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   <Instagram size={16} />
