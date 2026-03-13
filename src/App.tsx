@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
 import Promo from "./pages/Promo";
+import Invite from "./pages/Invite";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
