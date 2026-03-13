@@ -4,6 +4,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useMonetagAdTickets } from "@/hooks/useMonetagAdTickets";
 
 const MONETAG_AD_URL = "https://omg10.com/4/10726900";
+const WAIT_AFTER_RETURN_MS = 5000;
 
 /**
  * Free Ticket Event - Monetag Direct Ad integration.
@@ -13,60 +14,73 @@ export default function FreeTicketEvent() {
   const { user } = useUser();
   const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useMonetagAdTickets(user?.id);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [adWindowOpen, setAdWindowOpen] = useState(false);
-  const pendingGrantRef = useRef(false);
-  const adOpenedAtRef = useRef<number>(0);
-  const MIN_WATCH_SECONDS = 5;
+  const [adOpened, setAdOpened] = useState(false);
+  const [isGranting, setIsGranting] = useState(false);
+  const grantTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProcessingRef = useRef(false);
 
   const handleWatchVideo = () => {
-    if (!user?.id || earnedCount >= maxPerDay || adWindowOpen) return;
+    if (!user?.id || earnedCount >= maxPerDay || adOpened) return;
 
-    setAdWindowOpen(true);
-    pendingGrantRef.current = true;
-    adOpenedAtRef.current = Date.now();
-    window.open(MONETAG_AD_URL, "_blank", "noopener,noreferrer");
+    setAdOpened(true);
+    window.open(MONETAG_AD_URL, "_blank");
   };
-
-  useEffect(() => {
-    if (!adWindowOpen) return;
-    const timeout = setTimeout(() => {
-      setAdWindowOpen(false);
-      pendingGrantRef.current = false;
-    }, 120_000);
-    return () => clearTimeout(timeout);
-  }, [adWindowOpen]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
-      if (!pendingGrantRef.current || !user?.id) return;
+      if (!adOpened || !user?.id || isProcessingRef.current) return;
+      if (grantTimeoutRef.current) return;
+      if (earnedCount >= maxPerDay) {
+        setAdOpened(false);
+        return;
+      }
 
-      const elapsed = (Date.now() - adOpenedAtRef.current) / 1000;
-      if (elapsed < MIN_WATCH_SECONDS) return;
+      grantTimeoutRef.current = setTimeout(() => {
+        grantTimeoutRef.current = null;
+        isProcessingRef.current = true;
+        setAdOpened(false);
+        setIsGranting(true);
 
-      pendingGrantRef.current = false;
-      setAdWindowOpen(false);
-
-      if (earnedCount >= maxPerDay) return;
-
-      earnTicket
-        .mutateAsync()
-        .then(() => {
-          setShowSuccess(true);
-          setTimeout(() => setShowSuccess(false), 2500);
-          refetch();
-        })
-        .catch(() => {
-          setAdWindowOpen(false);
-        });
+        earnTicket
+          .mutateAsync()
+          .then(() => {
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 2500);
+            refetch();
+          })
+          .catch(() => {})
+          .finally(() => {
+            isProcessingRef.current = false;
+            setIsGranting(false);
+          });
+      }, WAIT_AFTER_RETURN_MS);
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [user?.id, earnedCount, maxPerDay, earnTicket, refetch]);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (grantTimeoutRef.current) {
+        clearTimeout(grantTimeoutRef.current);
+        grantTimeoutRef.current = null;
+      }
+    };
+  }, [adOpened, user?.id, earnedCount, maxPerDay, earnTicket, refetch]);
+
+  useEffect(() => {
+    if (!adOpened) return;
+    const fallback = setTimeout(() => {
+      setAdOpened(false);
+      if (grantTimeoutRef.current) {
+        clearTimeout(grantTimeoutRef.current);
+        grantTimeoutRef.current = null;
+      }
+    }, 180_000);
+    return () => clearTimeout(fallback);
+  }, [adOpened]);
 
   const atLimit = earnedCount >= maxPerDay;
-  const canWatch = !atLimit && !adWindowOpen && !earnTicket.isPending;
+  const canWatch = !atLimit && !adOpened && !earnTicket.isPending && !isGranting;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -91,9 +105,15 @@ export default function FreeTicketEvent() {
         </p>
       )}
 
-      {adWindowOpen && (
+      {adOpened && (
         <p className="text-[11px] text-primary font-medium mb-3">
           Watch the ad, then return here to earn your ticket.
+        </p>
+      )}
+
+      {isGranting && (
+        <p className="text-[11px] text-primary font-medium mb-3">
+          Granting ticket...
         </p>
       )}
 
@@ -108,7 +128,7 @@ export default function FreeTicketEvent() {
         }`}
       >
         <Ticket size={16} />
-        <span>{adWindowOpen ? "Watching..." : "Watch Video"}</span>
+        <span>{adOpened || isGranting ? "Watching..." : "Watch Video"}</span>
       </button>
 
       {showSuccess && (
