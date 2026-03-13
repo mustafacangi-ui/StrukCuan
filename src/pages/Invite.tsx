@@ -35,7 +35,7 @@ export default function Invite() {
 
   const effectiveCode = referralCode || fallbackCode;
   const referralUrl = effectiveCode
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://struk-cuan.vercel.app"}?r=${effectiveCode}`
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://www.strukcuan.com"}?r=${effectiveCode}`
     : "";
 
   const handleCopyLink = async () => {
