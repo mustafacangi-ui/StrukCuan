@@ -1,125 +1,42 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useMonetagAdTickets } from "@/hooks/useMonetagAdTickets";
-
-const MONETAG_AD_URL = "https://omg10.com/4/10726900";
-const WAIT_AFTER_RETURN_MS = 5000;
-const MUTATION_FALLBACK_MS = 10000;
+import { useRewardedAdTickets } from "@/hooks/useRewardedAdTickets";
+import RewardedAdModal from "@/components/RewardedAdModal";
 
 /**
- * Free Ticket Event - Monetag Direct Ad integration.
- * Users watch ads and earn tickets. Daily limit: 5.
- * Listens for visibilitychange AND window focus for reliable reward flow.
+ * Free Ticket Event - Hybrid rewarded ad system.
+ * In-page modal with iframe. Mediation: Monetag → Adsterra → PropellerAds.
+ * Daily limit: 5 ads per user.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
-  const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useMonetagAdTickets(user?.id);
+  const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useRewardedAdTickets(user?.id);
+  const [showModal, setShowModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [adOpened, setAdOpened] = useState(false);
-  const [isGranting, setIsGranting] = useState(false);
-  const grantTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mutationFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isProcessingRef = useRef(false);
-
-  const resetButtonState = useCallback(() => {
-    setAdOpened(false);
-    setIsGranting(false);
-    isProcessingRef.current = false;
-    if (grantTimeoutRef.current) {
-      clearTimeout(grantTimeoutRef.current);
-      grantTimeoutRef.current = null;
-    }
-    if (mutationFallbackRef.current) {
-      clearTimeout(mutationFallbackRef.current);
-      mutationFallbackRef.current = null;
-    }
-  }, []);
 
   const handleWatchVideo = () => {
-    if (!user?.id || earnedCount >= maxPerDay || adOpened) return;
-
-    setAdOpened(true);
-    window.open(MONETAG_AD_URL, "_blank");
+    if (!user?.id || earnedCount >= maxPerDay) return;
+    setShowModal(true);
   };
 
-  const tryGrantTicket = useCallback(() => {
-    if (!adOpened || !user?.id || isProcessingRef.current) return;
-    if (grantTimeoutRef.current) return;
-    if (earnedCount >= maxPerDay) {
-      resetButtonState();
-      return;
+  const handleModalClose = () => {
+    setShowModal(false);
+  };
+
+  const handleAdComplete = async () => {
+    try {
+      await earnTicket.mutateAsync();
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2500);
+      refetch();
+    } catch {
+      setShowModal(false);
     }
-
-    grantTimeoutRef.current = setTimeout(() => {
-      grantTimeoutRef.current = null;
-      isProcessingRef.current = true;
-      setAdOpened(false);
-      setIsGranting(true);
-
-      mutationFallbackRef.current = setTimeout(() => {
-        mutationFallbackRef.current = null;
-        isProcessingRef.current = false;
-        setIsGranting(false);
-      }, MUTATION_FALLBACK_MS);
-
-      earnTicket
-        .mutateAsync()
-        .then(() => {
-          if (mutationFallbackRef.current) {
-            clearTimeout(mutationFallbackRef.current);
-            mutationFallbackRef.current = null;
-          }
-          setShowSuccess(true);
-          setTimeout(() => setShowSuccess(false), 2500);
-          refetch();
-        })
-        .catch(() => {
-          resetButtonState();
-        })
-        .finally(() => {
-          isProcessingRef.current = false;
-          setIsGranting(false);
-          if (mutationFallbackRef.current) {
-            clearTimeout(mutationFallbackRef.current);
-            mutationFallbackRef.current = null;
-          }
-        });
-    }, WAIT_AFTER_RETURN_MS);
-  }, [adOpened, user?.id, earnedCount, maxPerDay, earnTicket, refetch, resetButtonState]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") tryGrantTicket();
-    };
-
-    const handleFocus = () => tryGrantTicket();
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-      if (grantTimeoutRef.current) {
-        clearTimeout(grantTimeoutRef.current);
-        grantTimeoutRef.current = null;
-      }
-      if (mutationFallbackRef.current) {
-        clearTimeout(mutationFallbackRef.current);
-        mutationFallbackRef.current = null;
-      }
-    };
-  }, [tryGrantTicket]);
-
-  useEffect(() => {
-    if (!adOpened) return;
-    const fallback = setTimeout(() => resetButtonState(), 180_000);
-    return () => clearTimeout(fallback);
-  }, [adOpened, resetButtonState]);
+  };
 
   const atLimit = earnedCount >= maxPerDay;
-  const canWatch = !atLimit && !adOpened && !earnTicket.isPending && !isGranting;
+  const canWatch = !atLimit && !showModal && !earnTicket.isPending;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -150,18 +67,6 @@ export default function FreeTicketEvent() {
         </p>
       )}
 
-      {adOpened && (
-        <p className="text-[11px] text-primary font-medium mb-3">
-          Watch the ad, then return here to earn your ticket.
-        </p>
-      )}
-
-      {isGranting && (
-        <p className="text-[11px] text-primary font-medium mb-3">
-          Granting ticket...
-        </p>
-      )}
-
       <button
         type="button"
         onClick={handleWatchVideo}
@@ -173,7 +78,7 @@ export default function FreeTicketEvent() {
         }`}
       >
         <Ticket size={16} />
-        <span>{adOpened || isGranting ? "Watching..." : "Watch Video"}</span>
+        <span>{showModal ? "Watching..." : "Watch Video"}</span>
       </button>
 
       {showSuccess && (
@@ -181,6 +86,12 @@ export default function FreeTicketEvent() {
           <span className="text-sm font-bold text-primary">🎟 Ticket earned!</span>
         </div>
       )}
+
+      <RewardedAdModal
+        open={showModal}
+        onClose={handleModalClose}
+        onComplete={handleAdComplete}
+      />
     </div>
   );
 }
