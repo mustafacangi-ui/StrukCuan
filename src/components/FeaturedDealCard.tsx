@@ -24,12 +24,12 @@ export default function FeaturedDealCard({ deal }: FeaturedDealCardProps) {
   return (
     <div className="relative rounded-xl border border-border bg-card overflow-hidden">
       {/* LIVE badge */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-neon-red/20 px-1.5 py-0.5 border border-neon-red/30">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-[#111] px-1.5 py-0.5">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-red opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-red" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
         </span>
-        <span className="text-[8px] font-bold text-neon-red">LIVE</span>
+        <span className="text-[8px] font-bold text-red-500">LIVE</span>
       </div>
 
       {deal.image && (

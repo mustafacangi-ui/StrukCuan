@@ -43,7 +43,7 @@ const Header = () => {
   const cuan = stats?.cuan ?? 0;
 
   return (
-    <div className="px-4 pt-3 pb-2">
+    <div className="px-4 pt-3 pb-2 rounded-b-2xl bg-black/35 backdrop-blur-md">
       <div className="flex items-center justify-center gap-3 mb-3">
         <div className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/20 px-3 py-1.5">
           <Ticket size={14} className="text-red-400" />
@@ -107,10 +107,10 @@ const Header = () => {
         </div>
         <div className="flex items-center gap-2">
           {/* LIVE counter - top right, next to settings */}
-          <div className="flex items-center gap-1 rounded-full border border-neon-red/30 bg-neon-red/10 px-2 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-neon-red animate-pulse" />
-            <span className="text-[9px] font-bold text-neon-red tracking-wider">LIVE</span>
-            <span className="text-[9px] font-mono font-semibold text-foreground">{onlineCount.toLocaleString()}</span>
+          <div className="flex items-center gap-1 rounded-full bg-[#111] px-2 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[9px] font-bold text-red-500 tracking-wider">LIVE</span>
+            <span className="text-[9px] font-mono font-semibold text-white">{onlineCount.toLocaleString()}</span>
           </div>
           <div className="relative">
             <button

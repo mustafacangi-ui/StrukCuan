@@ -10,10 +10,10 @@
   .dark {
     /* Primary: #00FF88, Background: #0B0F14, Promo: #FF3B3B */
     --background: 210 29% 6%;
-    --foreground: 0 0% 95%;
+    --foreground: 0 0% 100%;
 
     --card: 210 20% 8%;
-    --card-foreground: 0 0% 95%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 210 20% 8%;
     --popover-foreground: 0 0% 95%;
@@ -25,7 +25,7 @@
     --secondary-foreground: 0 0% 95%;
 
     --muted: 210 20% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted-foreground: 0 0% 85%;
 
     --accent: 0 100% 61%;
     --accent-foreground: 0 0% 100%;
@@ -115,7 +115,7 @@
   /* Semi-transparent dark cards for readability on gradient */
   .bg-card,
   [class*="bg-card"] {
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.45) !important;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }

@@ -18,12 +18,12 @@ interface PromoCardProps {
 const PromoCard = ({ store, branch, discount, product, price, distance, time, expiry, views, trending, verified }: PromoCardProps) => (
   <div className="relative min-w-[260px] rounded-xl border border-neon-red/30 bg-card p-3 animate-pulse-red">
     {/* LIVE indicator */}
-    <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-neon-red/20 px-1.5 py-0.5">
+    <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-[#111] px-1.5 py-0.5">
       <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-red opacity-75" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-red" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
       </span>
-      <span className="text-[8px] font-bold text-neon-red">LIVE</span>
+      <span className="text-[8px] font-bold text-red-500">LIVE</span>
     </div>
     <div className="flex items-start justify-between mb-2 pr-12">
       <div>
