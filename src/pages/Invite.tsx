@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Copy, MessageCircle, Send, Share2, Camera, Instagram, UserPlus } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -12,8 +12,10 @@ const INVITE_MESSAGE = "Aku lagi kumpulin tiket di StrukCuan! Daftar pakai link 
 export default function Invite() {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading } = useUser();
-  const { data: referralCode, isLoading: codeLoading, ensureReferralCode, isFetching: codeFetching } = useReferralCode(user?.id);
+  const { data: referralCode, isLoading: codeLoading, ensureReferralCode, fallbackCode } = useReferralCode(user?.id);
   const { data: friendsJoined = 0 } = useReferralCount(user?.id);
+
+  const [ensured, setEnsured] = React.useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -22,15 +24,18 @@ export default function Invite() {
     }
   }, [isLoading, isOnboarded, navigate]);
 
-  // Ensure referral_code exists on first visit (triggers DB trigger to generate)
+  // Ensure referral_code exists when we have user but no code from DB
   useEffect(() => {
-    if (user?.id && !codeLoading && !codeFetching && !referralCode) {
+    if (!user?.id || ensured) return;
+    if (!codeLoading && !referralCode) {
+      setEnsured(true);
       ensureReferralCode().catch(() => {});
     }
-  }, [user?.id, codeLoading, codeFetching, referralCode, ensureReferralCode]);
+  }, [user?.id, codeLoading, referralCode, ensured, ensureReferralCode]);
 
-  const referralUrl = referralCode
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://struk-cuan.vercel.app"}?r=${referralCode}`
+  const effectiveCode = referralCode || fallbackCode;
+  const referralUrl = effectiveCode
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://struk-cuan.vercel.app"}?r=${effectiveCode}`
     : "";
 
   const handleCopyLink = async () => {
@@ -157,7 +162,7 @@ export default function Invite() {
           <p className="text-[10px] uppercase tracking-wider text-white/80 mb-2 font-semibold">
             Link undangan kamu
           </p>
-          {codeLoading ? (
+          {codeLoading && !referralUrl ? (
             <p className="text-sm text-white/80">Memuat...</p>
           ) : (
             <>
@@ -179,6 +184,7 @@ export default function Invite() {
                 />
               </div>
               <button
+                type="button"
                 onClick={handleCopyLink}
                 disabled={!referralUrl}
                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity mb-4"
@@ -188,6 +194,7 @@ export default function Invite() {
               </button>
               <div className="flex flex-wrap gap-2">
                 <button
+                  type="button"
                   onClick={handleWhatsAppShare}
                   disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
@@ -196,6 +203,7 @@ export default function Invite() {
                   WhatsApp
                 </button>
                 <button
+                  type="button"
                   onClick={handleTelegramShare}
                   disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#0088cc] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
@@ -204,6 +212,7 @@ export default function Invite() {
                   Telegram
                 </button>
                 <button
+                  type="button"
                   onClick={handleFacebookShare}
                   disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-[#1877f2] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
@@ -212,6 +221,7 @@ export default function Invite() {
                   Facebook
                 </button>
                 <button
+                  type="button"
                   onClick={handleTikTokShare}
                   disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-black py-2.5 font-display font-semibold text-xs text-white border border-white/20 disabled:opacity-50 hover:opacity-90 transition-opacity"
@@ -220,6 +230,7 @@ export default function Invite() {
                   TikTok
                 </button>
                 <button
+                  type="button"
                   onClick={handleInstagramShare}
                   disabled={!referralUrl}
                   className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#833ab4] py-2.5 font-display font-semibold text-xs text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
