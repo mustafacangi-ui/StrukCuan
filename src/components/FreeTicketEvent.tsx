@@ -1,31 +1,44 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useRewardedAdTickets } from "@/hooks/useRewardedAdTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
+import { AD_NETWORKS } from "@/config/adNetworks";
 
 /**
- * Free Ticket Event - Hybrid rewarded ad system.
- * In-page modal with iframe. Mediation: Adsterra → Monetag → PropellerAds.
+ * Free Ticket Event - Monetag rewarded ad (popup).
+ * Monetag omg10.com links are redirect/popunder - open in popup, not iframe.
  * Daily limit: 5 ads per user. Persists to Supabase ad_ticket_events.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
   const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useRewardedAdTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleWatchVideo = () => {
+  const handleWatchVideo = useCallback(() => {
     if (!user?.id) {
       toast.error("Please log in to earn tickets");
       return;
     }
     if (earnedCount >= maxPerDay) return;
     setErrorMsg(null);
+    setPopupBlocked(false);
+
+    const monetagUrl = AD_NETWORKS[0].url;
+    const popup = window.open(
+      monetagUrl,
+      "monetag_ad",
+      "width=600,height=700,scrollbars=yes,resizable=yes"
+    );
+    if (!popup || popup.closed) {
+      setPopupBlocked(true);
+    }
     setShowModal(true);
-  };
+  }, [user?.id, earnedCount, maxPerDay]);
 
   const handleModalClose = () => {
     setShowModal(false);
@@ -115,6 +128,7 @@ export default function FreeTicketEvent() {
         open={showModal}
         onClose={handleModalClose}
         onComplete={handleAdComplete}
+        popupBlocked={popupBlocked}
       />
     </div>
   );
