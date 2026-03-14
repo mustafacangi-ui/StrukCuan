@@ -164,34 +164,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    const isOAuthCallback = () => {
-      if (typeof window === "undefined") return false;
-      const hash = window.location.hash || "";
-      const search = window.location.search || "";
-      return (
-        /[#?](access_token|refresh_token)=/.test(hash + search) ||
-        /[?]code=/.test(search)
-      );
-    };
-
     const initSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        let session = data.session;
-        if (!session && isOAuthCallback()) {
-          await new Promise((r) => setTimeout(r, 400));
-          const retry = await supabase.auth.getSession();
-          session = retry.data.session;
-        }
-        if (!session && isOAuthCallback()) {
-          await new Promise((r) => setTimeout(r, 800));
-          const retry = await supabase.auth.getSession();
-          session = retry.data.session;
-        }
-        if (!session) {
-          const { data: refreshData } = await supabase.auth.refreshSession();
-          session = refreshData.session;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
         await applySession(session);
       } catch (err) {
@@ -206,9 +181,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
-        await applySession(session);
+        setSession(session);
+        if (session) {
+          buildUserFromSession(session).then((userData) => {
+            if (mounted) setUser(userData);
+          });
+        } else {
+          setUser(null);
+        }
       }
     );
 
