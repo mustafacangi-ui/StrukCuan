@@ -28,18 +28,15 @@ export type TodayTicket = {
   created_at: string;
 };
 
-export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> {
-  const dateId = getTodayDateId();
+export async function fetchTodayTickets(userId: string) {
   const { data, error } = await supabase
     .from("ad_ticket_events")
-    .select("id, ticket_number, created_at")
-    .eq("user_id", userId)
-    .eq("event_type", "rewarded")
-    .eq("week_id", dateId)
-    .order("created_at", { ascending: false });
+    .select("*")
+    .eq("user_id", userId);
 
   if (error) throw error;
-  return (data ?? []) as TodayTicket[];
+  console.log("DEBUG EVENTS:", data);
+  return data ?? [];
 }
 
 export function useTodayRewardedTickets() {
@@ -54,9 +51,6 @@ export function useTodayRewardedTickets() {
   });
 
   const adsWatched = query.data?.length ?? 0;
-
-  console.log("AD EVENTS:", query.data);
-  console.log("ADS WATCHED:", adsWatched);
 
   return {
     adsWatched,
