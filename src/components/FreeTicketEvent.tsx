@@ -1,31 +1,28 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useRewardedAdTickets } from "@/hooks/useRewardedAdTickets";
+import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
 
 /**
  * Free Ticket Event - Monetag rewarded ad (popup).
- * Monetag omg10.com links are redirect/popunder - open in popup, not iframe.
- * Daily limit: 5 ads per user. Persists to Supabase ad_ticket_events.
+ * Watch ad → Close → grant_ticket RPC → ticket earned.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
-  const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useRewardedAdTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const adCompleteFiredRef = useRef(false);
+  const [ticketsEarned, setTicketsEarned] = useState(0);
 
   const handleWatchVideo = useCallback(() => {
     if (!user?.id) {
       toast.error("Please log in to earn tickets");
       return;
     }
-    if (earnedCount >= maxPerDay) return;
     setErrorMsg(null);
     setPopupBlocked(false);
 
@@ -39,36 +36,27 @@ export default function FreeTicketEvent() {
       setPopupBlocked(true);
     }
     setShowModal(true);
-  }, [user?.id, earnedCount, maxPerDay]);
+  }, [user?.id]);
 
   const handleModalClose = () => {
     setShowModal(false);
-    adCompleteFiredRef.current = false;
-    refetch();
   };
 
   const handleAdComplete = useCallback(async () => {
-    if (adCompleteFiredRef.current || earnTicket.isPending) return;
-    adCompleteFiredRef.current = true;
     setErrorMsg(null);
     try {
-      await earnTicket.mutateAsync();
-      await refetch();
+      await grantTicket();
+      setTicketsEarned((n) => n + 1);
       setShowSuccess(true);
-      setErrorMsg(null);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
-      adCompleteFiredRef.current = false;
       const msg = err instanceof Error ? err.message : "Failed to grant ticket";
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(msg);
       toast.error(msg);
       throw err;
     }
-  }, [earnTicket, refetch]);
-
-  const atLimit = earnedCount >= maxPerDay;
-  const canWatch = !!user?.id && !atLimit && !showModal && !earnTicket.isPending;
+  }, []);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -83,30 +71,24 @@ export default function FreeTicketEvent() {
         Earn 1 ticket
       </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        Daily limit: {maxPerDay} tickets
+        Daily limit: 5 tickets
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Tickets earned today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {isLoading ? "..." : `${earnedCount} / ${maxPerDay}`}
+          {ticketsEarned}
         </span>
       </div>
-
-      {atLimit && (
-        <p className="text-[11px] text-muted-foreground mb-3">
-          Daily limit reached
-        </p>
-      )}
 
       <button
         type="button"
         onClick={handleWatchVideo}
-        disabled={!canWatch}
+        disabled={showModal}
         className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-display font-bold text-sm transition-colors ${
-          canWatch
-            ? "bg-primary text-primary-foreground hover:opacity-90"
-            : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
+          showModal
+            ? "bg-secondary/50 text-muted-foreground cursor-not-allowed"
+            : "bg-primary text-primary-foreground hover:opacity-90"
         }`}
       >
         {showModal ? (
@@ -114,9 +96,7 @@ export default function FreeTicketEvent() {
         ) : (
           <Ticket size={16} />
         )}
-        <span>
-          {showModal ? "Watching..." : atLimit ? "Limit Reached" : "Watch Video"}
-        </span>
+        <span>{showModal ? "Watching..." : "Watch Video"}</span>
       </button>
 
       {errorMsg && (
