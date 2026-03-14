@@ -16,7 +16,7 @@ interface RewardedAdModalProps {
  * First to load within 5s wins. If current fails, try next. No redirect.
  */
 export default function RewardedAdModal({ open, onClose, onComplete }: RewardedAdModalProps) {
-  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   const [canClose, setCanClose] = useState(false);
   const [showTicketEarned, setShowTicketEarned] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -26,6 +26,7 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
   const currentIndexRef = useRef(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProcessingRef = useRef(false);
 
   currentIndexRef.current = currentIndex;
   const currentNetwork = adNetworks[currentIndex];
@@ -70,54 +71,58 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
 
     loadedIdsRef.current.clear();
     currentIndexRef.current = 0;
-    setCountdown(COUNTDOWN_SECONDS);
+    setSecondsLeft(COUNTDOWN_SECONDS);
     setCanClose(false);
     setShowTicketEarned(false);
     setCurrentIndex(0);
     setWinnerId(null);
     setLoading(true);
+    isProcessingRef.current = false;
 
     timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
 
-    countdownRef.current = setInterval(() => {
-      setCountdown((prev) => {
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
         if (prev <= 1) {
-          if (countdownRef.current) {
-            clearInterval(countdownRef.current);
-            countdownRef.current = null;
-          }
+          clearInterval(timer);
           setCanClose(true);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
+    countdownRef.current = timer;
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
+      clearInterval(timer);
+      countdownRef.current = null;
     };
   }, [open, tryNextNetwork]);
 
   const handleClose = useCallback(async () => {
     if (!canClose) return;
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
-    setShowTicketEarned(true);
-    await new Promise((r) => setTimeout(r, 800));
+
     try {
+      setShowTicketEarned(true);
+      await new Promise((r) => setTimeout(r, 600));
       await onComplete();
       onClose();
-    } catch {
+    } catch (err) {
+      console.warn("Reward grant failed:", err);
       onClose();
+    } finally {
+      isProcessingRef.current = false;
     }
   }, [canClose, onComplete, onClose]);
 
@@ -165,7 +170,7 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
           {canClose ? (
             "Tap Close to earn your ticket"
           ) : (
-            <>Close in <span className="font-bold text-primary">{countdown}</span>s</>
+            <>Close in <span className="font-bold text-primary">{secondsLeft}</span>s</>
           )}
         </span>
         <button
