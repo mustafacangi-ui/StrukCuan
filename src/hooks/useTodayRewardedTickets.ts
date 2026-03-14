@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-const DAILY_MAX = 5;
+/** Daily limit: 10 ads. 5 ads = 1 ticket, 10 ads = 2 tickets. */
+const DAILY_MAX_ADS = 10;
+const ADS_PER_TICKET = 5;
 
 /** Get today's date (YYYY-MM-DD) in Asia/Jakarta timezone */
 function getTodayDateId(): string {
@@ -67,13 +69,21 @@ export function useTodayRewardedTickets(userId: string | undefined) {
     enabled: !!userId,
   });
 
+  const allEvents = query.data ?? [];
+  const adsWatched = allEvents.length;
+  const ticketsEarned = Math.floor(adsWatched / ADS_PER_TICKET);
+
   return {
-    tickets: query.data ?? [],
-    ticketsToday: (query.data ?? []).length,
+    tickets: allEvents.filter((t) => t.ticket_number != null),
+    ticketsToday: ticketsEarned,
+    adsWatched,
     isLoading: query.isLoading,
-    maxPerDay: DAILY_MAX,
+    maxAds: DAILY_MAX_ADS,
+    maxPerDay: Math.floor(DAILY_MAX_ADS / ADS_PER_TICKET),
     refetch: query.refetch,
     invalidate: () =>
-      queryClient.invalidateQueries({ queryKey: ["today_rewarded_tickets"] }),
+      queryClient.invalidateQueries({ queryKey: ["today_rewarded_tickets"] }).then(() =>
+        queryClient.refetchQueries({ queryKey: ["today_rewarded_tickets"] })
+      ),
   };
 }

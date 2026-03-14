@@ -14,13 +14,13 @@ import { AD_NETWORKS } from "@/config/adNetworks";
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
-  const { tickets, ticketsToday, maxPerDay, invalidate } = useTodayRewardedTickets(user?.id);
+  const { tickets, ticketsToday, adsWatched, maxAds, invalidate } = useTodayRewardedTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const limitReached = ticketsToday >= maxPerDay;
+  const limitReached = adsWatched >= maxAds;
 
   const handleWatchVideo = useCallback(() => {
     if (!user?.id) {
@@ -28,7 +28,7 @@ export default function FreeTicketEvent() {
       return;
     }
     if (limitReached) {
-      toast.error("Daily limit reached");
+      toast.error("Daily limit reached (10 ads watched)");
       return;
     }
     setErrorMsg(null);
@@ -63,7 +63,7 @@ export default function FreeTicketEvent() {
           ? String((err as { message?: string }).message)
           : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      const displayMsg = isLimitReached ? "Daily limit reached. Come back tomorrow." : msg;
+      const displayMsg = isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg;
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(displayMsg);
       toast.error(displayMsg);
@@ -85,13 +85,13 @@ export default function FreeTicketEvent() {
         Earn 1 ticket
       </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        Daily limit: 5 tickets
+        Daily limit: 10 ads (5 ads = 1 ticket)
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
-        <span className="text-xs text-muted-foreground">Tickets earned today:</span>
+        <span className="text-xs text-muted-foreground">Ads watched today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {ticketsToday}
+          {adsWatched}/10 · {ticketsToday} ticket{ticketsToday !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -117,7 +117,7 @@ export default function FreeTicketEvent() {
 
       {limitReached && (
         <p className="mb-3 text-xs text-muted-foreground">
-          Daily limit reached. Come back tomorrow.
+          Daily limit reached (10 ads watched). Come back tomorrow.
         </p>
       )}
 
