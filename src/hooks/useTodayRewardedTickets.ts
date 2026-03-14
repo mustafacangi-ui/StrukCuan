@@ -54,6 +54,9 @@ export function useTodayRewardedTickets(userId: string | undefined) {
   const allEvents = query.data ?? [];
   const adsWatched = allEvents.length;
 
+  console.log("AD EVENTS:", query.data);
+  console.log("ADS WATCHED:", adsWatched);
+
   return {
     adsWatched,
     ticketsToday: Math.floor(adsWatched / 5),
