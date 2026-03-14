@@ -95,15 +95,19 @@ export default function Promo() {
 
   const handleAdComplete = useCallback(async () => {
     setJustEarnedTicket(false);
+    console.log("[Promo] handleAdComplete - ad finished, granting ticket...");
     try {
-      await grantTicket();
+      const result = await grantTicket();
+      console.log("[Promo] grantTicket OK:", result);
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      console.log("[Promo] Refetched, adsWatched should update");
       setJustEarnedTicket(true);
       if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
       setTimeout(() => setJustEarnedTicket(false), 3000);
     } catch (err: unknown) {
+      console.error("[Promo] handleAdComplete error:", err);
       const msg = err && typeof err === "object" && "message" in err
         ? String((err as { message?: string }).message)
         : "Failed to grant ticket";

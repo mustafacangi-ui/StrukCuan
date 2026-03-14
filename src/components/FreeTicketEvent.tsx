@@ -56,14 +56,18 @@ export default function FreeTicketEvent() {
 
   const handleAdComplete = useCallback(async () => {
     setErrorMsg(null);
+    console.log("[FreeTicketEvent] handleAdComplete called - ad finished, granting ticket...");
     try {
-      await grantTicket();
+      const result = await grantTicket();
+      console.log("[FreeTicketEvent] grantTicket OK, result:", result);
       await invalidate();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      console.log("[FreeTicketEvent] Queries invalidated, adsWatched should refresh");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err: unknown) {
+      console.error("[FreeTicketEvent] handleAdComplete error:", err);
       const msg =
         err && typeof err === "object" && "message" in err
           ? String((err as { message?: string }).message)

@@ -39,10 +39,22 @@ export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> 
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Failed to fetch ad_ticket_events:", { message: error.message, code: error.code });
+    console.error("[useTodayRewardedTickets] Fetch error:", {
+      message: error.message,
+      code: error.code,
+      userId,
+      dateId,
+    });
     throw error;
   }
-  return (data ?? []) as TodayTicket[];
+  const rows = (data ?? []) as TodayTicket[];
+  console.log("[useTodayRewardedTickets] Fetched ad_ticket_events:", {
+    userId,
+    dateId,
+    rowCount: rows.length,
+    rows,
+  });
+  return rows;
 }
 
 export function useTodayRewardedTickets() {
