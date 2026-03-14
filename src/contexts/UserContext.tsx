@@ -174,21 +174,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       );
     };
 
-    const tryGetSession = async (): Promise<Session | null> => {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
-    };
-
     const initSession = async () => {
       try {
-        let session = await tryGetSession();
+        const { data } = await supabase.auth.getSession();
+        let session = data.session;
         if (!session && isOAuthCallback()) {
           await new Promise((r) => setTimeout(r, 400));
-          session = await tryGetSession();
+          const retry = await supabase.auth.getSession();
+          session = retry.data.session;
         }
         if (!session && isOAuthCallback()) {
           await new Promise((r) => setTimeout(r, 800));
-          session = await tryGetSession();
+          const retry = await supabase.auth.getSession();
+          session = retry.data.session;
+        }
+        if (!session) {
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          session = refreshData.session;
         }
         if (!mounted) return;
         await applySession(session);
