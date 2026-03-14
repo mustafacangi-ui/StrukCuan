@@ -147,8 +147,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
     };
 
-    const FALLBACK_TIMEOUT_MS = 3000;
-
     const applySession = async (session: Session | null) => {
       if (!mounted) return;
       setSession(session);
@@ -166,44 +164,57 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    const restoreSession = async () => {
+    const isOAuthCallback = () => {
+      if (typeof window === "undefined") return false;
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      return (
+        /[#?](access_token|refresh_token)=/.test(hash + search) ||
+        /[?]code=/.test(search)
+      );
+    };
+
+    const tryGetSession = async (): Promise<Session | null> => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    };
+
+    const initSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        let session = await tryGetSession();
+        if (!session && isOAuthCallback()) {
+          await new Promise((r) => setTimeout(r, 400));
+          session = await tryGetSession();
+        }
+        if (!session && isOAuthCallback()) {
+          await new Promise((r) => setTimeout(r, 800));
+          session = await tryGetSession();
+        }
         if (!mounted) return;
         await applySession(session);
       } catch (err) {
         console.warn("Session restore error:", err);
-        if (mounted) setSession(null);
-        if (mounted) setUser(null);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
     };
 
-    restoreSession();
-
-    const fallbackTimer = setTimeout(() => {
-      if (mounted) setIsLoading(false);
-    }, FALLBACK_TIMEOUT_MS);
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
-        setSession(session);
-        if (session) {
-          const u = session.user as SupabaseUser & { phone?: string };
-          const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
-          if (displayName || u.email) {
-            await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
-          }
-          processReferral(u.id).catch(() => {});
-          const userData = await buildUserFromSession(session);
-          if (mounted) setUser(userData);
-        } else {
-          setUser(null);
-        }
+        await applySession(session);
       }
     );
+
+    initSession();
+
+    const fallbackTimer = setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, 3000);
 
     return () => {
       clearTimeout(fallbackTimer);
@@ -298,7 +309,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         session,
-        isOnboarded: !!user && !!session,
+        isOnboarded: !!session || !!user,
         isLoading,
         loginWithPhone,
         verifyOtp,

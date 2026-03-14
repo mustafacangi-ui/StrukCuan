@@ -12,15 +12,16 @@ if (!supabaseUrl || !supabaseKey) {
 /**
  * Explicit localStorage for session persistence (browser + PWA).
  * flowType: "pkce" improves OAuth reliability in PWAs.
+ * detectSessionInUrl: true lets Supabase read tokens from OAuth redirect URL.
  */
-const storage = typeof window !== "undefined" ? window.localStorage : undefined
+const storage = typeof window !== "undefined" ? window.localStorage : undefined;
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    autoRefreshToken: true,
     persistSession: true,
+    autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage,
+    storage: storage ?? undefined,
     flowType: "pkce",
   },
-})
+});

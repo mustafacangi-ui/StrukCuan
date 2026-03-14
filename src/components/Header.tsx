@@ -7,7 +7,7 @@ import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotificat
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, isOnboarded, isLoading, requireLogin } = useUser();
+  const { user, session, isOnboarded, isLoading, requireLogin } = useUser();
 
   const { data: stats } = useUserStats(user?.id);
   const { data: notifications = [] } = useNotifications(user?.id);
@@ -16,7 +16,13 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const tiket = stats?.tiket ?? user?.tiket ?? 0;
-  const nickname = user?.nickname ?? "Guest";
+  const nickname =
+    user?.nickname ??
+    session?.user?.user_metadata?.full_name ??
+    session?.user?.user_metadata?.name ??
+    session?.user?.user_metadata?.display_name ??
+    session?.user?.email ??
+    "Guest";
   const level = stats?.level ?? user?.level ?? 1;
 
   const handleProfileClick = () => {
