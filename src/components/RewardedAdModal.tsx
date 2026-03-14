@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Loader2, AlertCircle } from "lucide-react";
-import { adNetworks } from "@/config/adNetworks";
+import { AD_NETWORKS } from "@/config/adNetworks";
 
 const COUNTDOWN_SECONDS = 20;
-const AD_LOAD_TIMEOUT_MS = 5000;
 const AD_LOAD_FAIL_TIMEOUT_MS = 15000;
 
 interface RewardedAdModalProps {
@@ -13,90 +12,34 @@ interface RewardedAdModalProps {
 }
 
 /**
- * Hybrid ad mediation: loads Adsterra, Monetag, PropellerAds in parallel.
- * First to load within 5s wins. If current fails, try next. No redirect.
+ * Monetag rewarded ad modal.
+ * Loads single iframe, 20s countdown, then user can close to earn ticket.
  */
 export default function RewardedAdModal({ open, onClose, onComplete }: RewardedAdModalProps) {
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   const [canClose, setCanClose] = useState(false);
   const [showTicketEarned, setShowTicketEarned] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [winnerId, setWinnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const loadedIdsRef = useRef<Set<string>>(new Set());
-  const currentIndexRef = useRef(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingRef = useRef(false);
 
-  currentIndexRef.current = currentIndex;
-  const currentNetwork = adNetworks[currentIndex];
-
-  const handleAdLoaded = useCallback((name: string) => {
-    loadedIdsRef.current.add(name);
-    setLoadFailed(false);
-    setWinnerId((prev) => {
-      if (prev) return prev;
-      setLoading(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (failTimeoutRef.current) {
-        clearTimeout(failTimeoutRef.current);
-        failTimeoutRef.current = null;
-      }
-      return name;
-    });
-  }, []);
-
-  const tryNextNetwork = useCallback(() => {
-    const idx = currentIndexRef.current;
-    if (idx >= adNetworks.length - 1) {
-      setLoading(false);
-      setWinnerId(adNetworks[0].name);
-      if (loadedIdsRef.current.size === 0) {
-        setLoadFailed(true);
-      }
-      return;
-    }
-    const nextIndex = idx + 1;
-    const next = adNetworks[nextIndex];
-    setCurrentIndex(nextIndex);
-    setWinnerId(next.name);
-    setLoading(false);
-    if (loadedIdsRef.current.has(next.name)) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    } else {
-      timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
-    }
-  }, []);
+  const monetagUrl = AD_NETWORKS[0].url;
 
   useEffect(() => {
     if (!open) return;
 
-    loadedIdsRef.current.clear();
-    currentIndexRef.current = 0;
     setSecondsLeft(COUNTDOWN_SECONDS);
     setCanClose(false);
     setShowTicketEarned(false);
     setLoadFailed(false);
-    setCurrentIndex(0);
-    setWinnerId(null);
     setLoading(true);
     isProcessingRef.current = false;
 
-    timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
     failTimeoutRef.current = setTimeout(() => {
-      if (loadedIdsRef.current.size === 0) {
-        setLoadFailed(true);
-        setLoading(false);
-      }
+      setLoadFailed(true);
+      setLoading(false);
     }, AD_LOAD_FAIL_TIMEOUT_MS);
 
     const timer = setInterval(() => {
@@ -112,10 +55,6 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
     countdownRef.current = timer;
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
       if (failTimeoutRef.current) {
         clearTimeout(failTimeoutRef.current);
         failTimeoutRef.current = null;
@@ -123,7 +62,16 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
       clearInterval(timer);
       countdownRef.current = null;
     };
-  }, [open, tryNextNetwork]);
+  }, [open]);
+
+  const handleAdLoaded = useCallback(() => {
+    setLoading(false);
+    setLoadFailed(false);
+    if (failTimeoutRef.current) {
+      clearTimeout(failTimeoutRef.current);
+      failTimeoutRef.current = null;
+    }
+  }, []);
 
   const handleClose = useCallback(async () => {
     if (isProcessingRef.current) return;
@@ -196,23 +144,22 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
           <div className="absolute inset-0 z-[50] flex flex-col items-center justify-center gap-4 bg-black">
             <Loader2 className="h-14 w-14 animate-spin text-primary" />
             <p className="text-base font-medium text-white animate-pulse">Loading ad...</p>
-            <p className="text-xs text-white/60">Trying {currentNetwork?.name}...</p>
+            <p className="text-xs text-white/60">Monetag</p>
           </div>
         )}
-        {adNetworks.map(({ name, url }) => (
-          <iframe
-            key={name}
-            src={open ? url : undefined}
-            title={name}
-            className="absolute inset-0 w-full h-full border-0"
-            style={{
-              zIndex: winnerId === name ? 2 : 1,
-              visibility: !loading && winnerId === name ? "visible" : "hidden",
-            }}
-            sandbox="allow-scripts allow-same-origin allow-popups"
-            onLoad={() => handleAdLoaded(name)}
-          />
-        ))}
+        <iframe
+          src={open ? monetagUrl : undefined}
+          title="Monetag"
+          className="absolute inset-0 w-full h-full border-0"
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            visibility: loading && !loadFailed ? "hidden" : "visible",
+          }}
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          onLoad={handleAdLoaded}
+        />
       </div>
 
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 bg-black/95 border-t border-white/10">
