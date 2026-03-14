@@ -14,7 +14,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
-  const { tickets, ticketsToday, adsWatched, maxAds, invalidate } = useTodayRewardedTickets(user?.id);
+  const { tickets, ticketsToday, adsWatched, maxAds, invalidate } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);

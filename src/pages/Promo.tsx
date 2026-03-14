@@ -50,7 +50,7 @@ function getPromoState(
 export default function Promo() {
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
-  const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets(user?.id);
+  const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets();
 
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);

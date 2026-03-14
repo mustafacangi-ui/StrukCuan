@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
@@ -41,18 +42,18 @@ export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> 
   return (data ?? []) as TodayTicket[];
 }
 
-export function useTodayRewardedTickets(userId: string | undefined) {
+export function useTodayRewardedTickets() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
   const dateId = getTodayDateId();
 
   const query = useQuery({
-    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, userId, dateId],
-    queryFn: () => fetchTodayTickets(userId!),
-    enabled: !!userId,
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, dateId],
+    queryFn: () => fetchTodayTickets(user!.id),
+    enabled: !!user,
   });
 
-  const allEvents = query.data ?? [];
-  const adsWatched = allEvents.length;
+  const adsWatched = query.data?.length ?? 0;
 
   console.log("AD EVENTS:", query.data);
   console.log("ADS WATCHED:", adsWatched);
@@ -60,7 +61,7 @@ export function useTodayRewardedTickets(userId: string | undefined) {
   return {
     adsWatched,
     ticketsToday: Math.floor(adsWatched / 5),
-    tickets: allEvents,
+    tickets: query.data ?? [],
     isLoading: query.isLoading,
     maxAds: DAILY_MAX_ADS,
     maxPerDay: DAILY_MAX_ADS,
