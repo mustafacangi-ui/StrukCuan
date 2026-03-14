@@ -15,7 +15,8 @@ interface RewardedAdModalProps {
 /**
  * Monetag rewarded ad modal.
  * Monetag omg10.com links are redirect/popunder - they do NOT work in iframes.
- * We open the ad in a popup, show countdown, grant ticket when user closes.
+ * We open the ad in a popup, show countdown. When user clicks "Close & Claim Ticket",
+ * onComplete is called (RPC) and modal must NOT close until onComplete finishes.
  */
 export default function RewardedAdModal({
   open,
@@ -29,6 +30,8 @@ export default function RewardedAdModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completionFiredRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const monetagUrl = AD_NETWORKS[0].url;
 
@@ -72,7 +75,7 @@ export default function RewardedAdModal({
     }
 
     try {
-      await onComplete();
+      await onCompleteRef.current();
       setShowTicketEarned(true);
       await new Promise((r) => setTimeout(r, 1500));
       onClose();
@@ -83,7 +86,7 @@ export default function RewardedAdModal({
     } finally {
       setIsProcessing(false);
     }
-  }, [canClose, isProcessing, onComplete, onClose]);
+  }, [canClose, isProcessing, onClose]);
 
   if (!open) return null;
 

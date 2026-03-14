@@ -81,9 +81,9 @@ export function useTodayRewardedTickets(userId: string | undefined) {
     maxAds: DAILY_MAX_ADS,
     maxPerDay: Math.floor(DAILY_MAX_ADS / ADS_PER_TICKET),
     refetch: query.refetch,
-    invalidate: () =>
-      queryClient.invalidateQueries({ queryKey: ["today_rewarded_tickets"] }).then(() =>
-        queryClient.refetchQueries({ queryKey: ["today_rewarded_tickets"] })
-      ),
+    invalidate: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["today_rewarded_tickets"] });
+      await queryClient.refetchQueries({ queryKey: ["today_rewarded_tickets"] });
+    },
   };
 }
