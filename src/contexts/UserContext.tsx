@@ -147,7 +147,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
     };
 
-    const FALLBACK_TIMEOUT_MS = 8000;
+    const FALLBACK_TIMEOUT_MS = 3000;
 
     const applySession = async (session: Session | null) => {
       if (!mounted) return;

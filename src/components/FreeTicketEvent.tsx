@@ -64,7 +64,7 @@ export default function FreeTicketEvent() {
 
       {atLimit && (
         <p className="text-[11px] text-muted-foreground mb-3">
-          You&apos;ve reached today&apos;s limit. Come back tomorrow for more!
+          Daily limit reached
         </p>
       )}
 
@@ -79,7 +79,9 @@ export default function FreeTicketEvent() {
         }`}
       >
         <Ticket size={16} />
-        <span>{showModal ? "Watching..." : "Watch Video"}</span>
+        <span>
+          {showModal ? "Watching..." : atLimit ? "Daily limit reached" : "Watch Video"}
+        </span>
       </button>
 
       {showSuccess && (

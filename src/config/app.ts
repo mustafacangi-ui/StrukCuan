@@ -4,5 +4,5 @@
  */
 export const APP_URL = "https://www.strukcuan.com";
 
-/** Hostname that should redirect to APP_URL */
-export const LEGACY_HOST = "struk-cuan.vercel.app";
+/** Hostnames that must redirect to APP_URL (auth runs only on production) */
+export const REDIRECT_HOSTS = ["struk-cuan.vercel.app", "strukcuan.com"];
