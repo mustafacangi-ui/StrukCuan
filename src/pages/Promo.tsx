@@ -52,7 +52,7 @@ export default function Promo() {
   const queryClient = useQueryClient();
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
-  const { tickets, ticketsToday, adsWatched, maxAds } = useTodayRewardedTickets(user?.id);
+  const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets(user?.id);
 
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -98,7 +98,8 @@ export default function Promo() {
     try {
       await grantTicket();
       await queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      await queryClient.refetchQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
+      await new Promise((r) => setTimeout(r, 100));
+      await refetch();
       setJustEarnedTicket(true);
       if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
       setTimeout(() => setJustEarnedTicket(false), 3000);
@@ -108,13 +109,10 @@ export default function Promo() {
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
       toast.error(isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg);
-      if (isLimitReached) {
-        await queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-        await queryClient.refetchQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      }
+      if (isLimitReached) await refetch();
       throw err;
     }
-  }, [queryClient, bonusUnlocked]);
+  }, [queryClient, refetch, bonusUnlocked]);
 
   const handleUnlockBonus = useCallback(() => {
     setBonusUnlocked(true);

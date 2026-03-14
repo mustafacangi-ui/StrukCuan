@@ -47,12 +47,14 @@ export type TodayTicket = {
 };
 
 export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> {
+  const dateId = getTodayDateId();
   const { start, end } = getTodayJakartaBounds();
   const { data, error } = await supabase
     .from("ad_ticket_events")
     .select("id, ticket_number, created_at")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
+    .eq("week_id", dateId)
     .gte("created_at", start)
     .lte("created_at", end)
     .order("created_at", { ascending: false });
