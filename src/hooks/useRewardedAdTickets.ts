@@ -37,15 +37,12 @@ export function useRewardedAdTickets(userId: string | undefined) {
       if (!userId) throw new Error("Not logged in");
       const count = await fetchRewardedAdCountToday(userId);
       if (count >= DAILY_MAX) throw new Error("Daily limit reached");
-      const { error } = await supabase.from("ad_ticket_events").insert({
-        user_id: userId,
-        event_type: REWARDED_EVENT_TYPE,
-        week_id: dateId,
-      });
+      const { data, error } = await supabase.rpc("earn_rewarded_ticket");
       if (error) {
         const msg = error.message ?? error.code ?? "Database error";
         throw new Error(msg);
       }
+      return data;
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["rewarded_ad_tickets", userId, dateId] });
