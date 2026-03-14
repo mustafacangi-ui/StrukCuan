@@ -44,7 +44,19 @@ export function useRewardedAdTickets(userId: string | undefined) {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["rewarded_ad_tickets", userId, dateId] });
+      const prev = queryClient.getQueryData<number>(["rewarded_ad_tickets", userId, dateId]);
+      const next = Math.min((prev ?? 0) + 1, DAILY_MAX);
+      queryClient.setQueryData(["rewarded_ad_tickets", userId, dateId], next);
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev != null) {
+        queryClient.setQueryData(["rewarded_ad_tickets", userId, dateId], ctx.prev);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["rewarded_ad_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["monetag_ad_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });

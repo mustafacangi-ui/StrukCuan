@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertCircle } from "lucide-react";
 import { adNetworks } from "@/config/adNetworks";
 
 const COUNTDOWN_SECONDS = 20;
 const AD_LOAD_TIMEOUT_MS = 5000;
+const AD_LOAD_FAIL_TIMEOUT_MS = 15000;
 
 interface RewardedAdModalProps {
   open: boolean;
@@ -22,10 +23,12 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
   const [currentIndex, setCurrentIndex] = useState(0);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const loadedIdsRef = useRef<Set<string>>(new Set());
   const currentIndexRef = useRef(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingRef = useRef(false);
 
   currentIndexRef.current = currentIndex;
@@ -33,12 +36,17 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
 
   const handleAdLoaded = useCallback((name: string) => {
     loadedIdsRef.current.add(name);
+    setLoadFailed(false);
     setWinnerId((prev) => {
       if (prev) return prev;
       setLoading(false);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
+      }
+      if (failTimeoutRef.current) {
+        clearTimeout(failTimeoutRef.current);
+        failTimeoutRef.current = null;
       }
       return name;
     });
@@ -49,6 +57,9 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
     if (idx >= adNetworks.length - 1) {
       setLoading(false);
       setWinnerId(adNetworks[0].name);
+      if (loadedIdsRef.current.size === 0) {
+        setLoadFailed(true);
+      }
       return;
     }
     const nextIndex = idx + 1;
@@ -74,12 +85,19 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
     setSecondsLeft(COUNTDOWN_SECONDS);
     setCanClose(false);
     setShowTicketEarned(false);
+    setLoadFailed(false);
     setCurrentIndex(0);
     setWinnerId(null);
     setLoading(true);
     isProcessingRef.current = false;
 
     timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
+    failTimeoutRef.current = setTimeout(() => {
+      if (loadedIdsRef.current.size === 0) {
+        setLoadFailed(true);
+        setLoading(false);
+      }
+    }, AD_LOAD_FAIL_TIMEOUT_MS);
 
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -98,19 +116,33 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      if (failTimeoutRef.current) {
+        clearTimeout(failTimeoutRef.current);
+        failTimeoutRef.current = null;
+      }
       clearInterval(timer);
       countdownRef.current = null;
     };
   }, [open, tryNextNetwork]);
 
   const handleClose = useCallback(async () => {
-    if (!canClose) return;
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
 
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
+    }
+
+    if (loadFailed) {
+      onClose();
+      isProcessingRef.current = false;
+      return;
+    }
+
+    if (!canClose) {
+      isProcessingRef.current = false;
+      return;
     }
 
     try {
@@ -124,12 +156,27 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
     } finally {
       isProcessingRef.current = false;
     }
-  }, [canClose, onComplete, onClose]);
+  }, [canClose, loadFailed, onComplete, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-black">
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-black">
+      {loadFailed && (
+        <div className="absolute inset-0 z-[120] flex flex-col items-center justify-center gap-4 bg-black/95 p-6">
+          <AlertCircle className="h-12 w-12 text-amber-500" />
+          <p className="text-center text-sm font-medium text-white">
+            Ad couldn&apos;t load. Please try again later.
+          </p>
+          <button
+            type="button"
+            onClick={() => onClose()}
+            className="rounded-lg bg-primary px-6 py-2 font-bold text-primary-foreground"
+          >
+            Close
+          </button>
+        </div>
+      )}
       {showTicketEarned && (
         <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/95 animate-in fade-in">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-primary/20 border-2 border-primary px-8 py-6">
@@ -142,10 +189,10 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
       )}
 
       <div className="flex-1 relative min-h-0 overflow-hidden">
-        {loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-white/90 animate-pulse">Loading ad...</p>
+        {loading && !loadFailed && (
+          <div className="absolute inset-0 z-[50] flex flex-col items-center justify-center gap-4 bg-black">
+            <Loader2 className="h-14 w-14 animate-spin text-primary" />
+            <p className="text-base font-medium text-white animate-pulse">Loading ad...</p>
             <p className="text-xs text-white/60">Trying {currentNetwork?.name}...</p>
           </div>
         )}
@@ -167,7 +214,9 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
 
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 bg-black/95 border-t border-white/10">
         <span className="text-sm text-white/90">
-          {canClose ? (
+          {loadFailed ? (
+            "Ad unavailable"
+          ) : canClose ? (
             "Tap Close to earn your ticket"
           ) : (
             <>Close in <span className="font-bold text-primary">{secondsLeft}</span>s</>
@@ -176,7 +225,7 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
         <button
           type="button"
           onClick={handleClose}
-          disabled={!canClose}
+          disabled={!canClose && !loadFailed}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 font-display font-bold text-sm transition-colors ${
             canClose
               ? "bg-primary text-primary-foreground hover:opacity-90"

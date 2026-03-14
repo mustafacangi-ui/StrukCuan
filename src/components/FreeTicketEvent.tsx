@@ -1,22 +1,29 @@
 import { useState } from "react";
-import { Ticket } from "lucide-react";
+import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useRewardedAdTickets } from "@/hooks/useRewardedAdTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
+import { toast } from "sonner";
 
 /**
  * Free Ticket Event - Hybrid rewarded ad system.
- * In-page modal with iframe. Mediation: Monetag → Adsterra → PropellerAds.
- * Daily limit: 5 ads per user.
+ * In-page modal with iframe. Mediation: Adsterra → Monetag → PropellerAds.
+ * Daily limit: 5 ads per user. Persists to Supabase ad_ticket_events.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
   const { earnedCount, isLoading, maxPerDay, earnTicket, refetch } = useRewardedAdTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleWatchVideo = () => {
-    if (!user?.id || earnedCount >= maxPerDay) return;
+    if (!user?.id) {
+      toast.error("Please log in to earn tickets");
+      return;
+    }
+    if (earnedCount >= maxPerDay) return;
+    setErrorMsg(null);
     setShowModal(true);
   };
 
@@ -31,13 +38,16 @@ export default function FreeTicketEvent() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to grant ticket";
       console.warn("Failed to grant ticket:", err);
+      setErrorMsg(msg);
+      toast.error(msg);
       throw err;
     }
   };
 
   const atLimit = earnedCount >= maxPerDay;
-  const canWatch = !atLimit && !showModal && !earnTicket.isPending;
+  const canWatch = !!user?.id && !atLimit && !showModal && !earnTicket.isPending;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -78,11 +88,19 @@ export default function FreeTicketEvent() {
             : "bg-secondary/50 text-muted-foreground cursor-not-allowed"
         }`}
       >
-        <Ticket size={16} />
+        {showModal ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Ticket size={16} />
+        )}
         <span>
-          {showModal ? "Watching..." : atLimit ? "Daily limit reached" : "Watch Video"}
+          {showModal ? "Watching..." : atLimit ? "Limit Reached" : "Watch Video"}
         </span>
       </button>
+
+      {errorMsg && (
+        <p className="mt-2 text-[11px] text-destructive">{errorMsg}</p>
+      )}
 
       {showSuccess && (
         <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary/20 border border-primary/40 py-2 animate-in fade-in">
