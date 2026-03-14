@@ -4,6 +4,26 @@ import { supabase } from "@/lib/supabase";
 const REWARDED_EVENT_TYPE = "rewarded";
 const DAILY_MAX = 5;
 
+let rewardInProgress = false;
+
+async function grantTicketSafe(): Promise<void> {
+  if (rewardInProgress) return;
+  rewardInProgress = true;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("User not authenticated");
+    }
+    const { error } = await supabase.rpc("grant_ticket");
+    if (error) {
+      console.error("Reward grant failed", error);
+      throw error;
+    }
+  } finally {
+    rewardInProgress = false;
+  }
+}
+
 function getTodayDateId(): string {
   const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
   return d.toISOString().slice(0, 10);
@@ -35,16 +55,9 @@ export function useRewardedAdTickets(userId: string | undefined) {
   const earnTicket = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Not logged in");
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
       const count = await fetchRewardedAdCountToday(userId);
       if (count >= DAILY_MAX) throw new Error("Daily limit reached");
-      const { data, error } = await supabase.rpc("grant_ticket");
-      if (error) {
-        const msg = error.message ?? error.code ?? "Database error";
-        throw new Error(msg);
-      }
-      return data;
+      await grantTicketSafe();
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["rewarded_ad_tickets", userId, dateId] });

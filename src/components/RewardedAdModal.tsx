@@ -26,8 +26,9 @@ export default function RewardedAdModal({
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   const [canClose, setCanClose] = useState(false);
   const [showTicketEarned, setShowTicketEarned] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isProcessingRef = useRef(false);
+  const completionFiredRef = useRef(false);
 
   const monetagUrl = AD_NETWORKS[0].url;
 
@@ -37,7 +38,8 @@ export default function RewardedAdModal({
     setSecondsLeft(COUNTDOWN_SECONDS);
     setCanClose(false);
     setShowTicketEarned(false);
-    isProcessingRef.current = false;
+    setIsProcessing(false);
+    completionFiredRef.current = false;
 
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -58,17 +60,15 @@ export default function RewardedAdModal({
   }, [open]);
 
   const handleClose = useCallback(async () => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+    if (isProcessing || completionFiredRef.current) return;
+    if (!canClose) return;
+
+    setIsProcessing(true);
+    completionFiredRef.current = true;
 
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
       countdownRef.current = null;
-    }
-
-    if (!canClose) {
-      isProcessingRef.current = false;
-      return;
     }
 
     try {
@@ -78,11 +78,12 @@ export default function RewardedAdModal({
       onClose();
     } catch (err) {
       console.warn("Reward grant failed:", err);
+      completionFiredRef.current = false;
       onClose();
     } finally {
-      isProcessingRef.current = false;
+      setIsProcessing(false);
     }
-  }, [canClose, onComplete, onClose]);
+  }, [canClose, isProcessing, onComplete, onClose]);
 
   if (!open) return null;
 
@@ -142,7 +143,7 @@ export default function RewardedAdModal({
         <button
           type="button"
           onClick={handleClose}
-          disabled={!canClose}
+          disabled={!canClose || isProcessing}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 font-display font-bold text-sm transition-colors ${
             canClose
               ? "bg-primary text-primary-foreground hover:opacity-90"

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useRewardedAdTickets } from "@/hooks/useRewardedAdTickets";
@@ -18,6 +18,7 @@ export default function FreeTicketEvent() {
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const adCompleteFiredRef = useRef(false);
 
   const handleWatchVideo = useCallback(() => {
     if (!user?.id) {
@@ -42,11 +43,13 @@ export default function FreeTicketEvent() {
 
   const handleModalClose = () => {
     setShowModal(false);
+    adCompleteFiredRef.current = false;
     refetch();
   };
 
-  const handleAdComplete = async () => {
-    if (earnTicket.isPending) return;
+  const handleAdComplete = useCallback(async () => {
+    if (adCompleteFiredRef.current || earnTicket.isPending) return;
+    adCompleteFiredRef.current = true;
     setErrorMsg(null);
     try {
       await earnTicket.mutateAsync();
@@ -55,13 +58,14 @@ export default function FreeTicketEvent() {
       setErrorMsg(null);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
+      adCompleteFiredRef.current = false;
       const msg = err instanceof Error ? err.message : "Failed to grant ticket";
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(msg);
       toast.error(msg);
       throw err;
     }
-  };
+  }, [earnTicket, refetch]);
 
   const atLimit = earnedCount >= maxPerDay;
   const canWatch = !!user?.id && !atLimit && !showModal && !earnTicket.isPending;
