@@ -42,7 +42,10 @@ export function useRewardedAdTickets(userId: string | undefined) {
         event_type: REWARDED_EVENT_TYPE,
         week_id: dateId,
       });
-      if (error) throw error;
+      if (error) {
+        const msg = error.message ?? error.code ?? "Database error";
+        throw new Error(msg);
+      }
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["rewarded_ad_tickets", userId, dateId] });

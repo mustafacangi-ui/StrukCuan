@@ -166,7 +166,10 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
         <div className="absolute inset-0 z-[120] flex flex-col items-center justify-center gap-4 bg-black/95 p-6">
           <AlertCircle className="h-12 w-12 text-amber-500" />
           <p className="text-center text-sm font-medium text-white">
-            Ad couldn&apos;t load. Please try again later.
+            No ads available in your region.
+          </p>
+          <p className="text-center text-xs text-white/70">
+            This app targets Indonesia. Ads may not load from other countries. Try again later or use a VPN.
           </p>
           <button
             type="button"
@@ -215,7 +218,7 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 bg-black/95 border-t border-white/10">
         <span className="text-sm text-white/90">
           {loadFailed ? (
-            "Ad unavailable"
+            "No ads in your region — tap Close"
           ) : canClose ? (
             "Tap Close to earn your ticket"
           ) : (

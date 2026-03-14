@@ -29,13 +29,16 @@ export default function FreeTicketEvent() {
 
   const handleModalClose = () => {
     setShowModal(false);
+    refetch();
   };
 
   const handleAdComplete = async () => {
+    setErrorMsg(null);
     try {
       await earnTicket.mutateAsync();
       await refetch();
       setShowSuccess(true);
+      setErrorMsg(null);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to grant ticket";
