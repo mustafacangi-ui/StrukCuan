@@ -146,50 +146,44 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
     };
 
-    const LOADING_TIMEOUT_MS = 3000;
-    const FALLBACK_TIMEOUT_MS = 5000;
+    const FALLBACK_TIMEOUT_MS = 8000;
+
+    const applySession = async (session: Session | null) => {
+      if (!mounted) return;
+      setSession(session);
+      if (session) {
+        const u = session.user as SupabaseUser & { phone?: string };
+        const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
+        if (displayName || u.email) {
+          await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
+        }
+        processReferral(u.id).catch(() => {});
+        const userData = await buildUserFromSession(session);
+        if (mounted) setUser(userData);
+      } else {
+        setUser(null);
+      }
+    };
 
     const restoreSession = async () => {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Session check timeout")), LOADING_TIMEOUT_MS)
-      );
-
-      const sessionWork = async () => {
+      try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
-        setSession(session);
-        if (session) {
-          const u = session.user as SupabaseUser & { phone?: string };
-          const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
-          if (displayName || u.email) {
-            await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
-          }
-          processReferral(u.id).catch(() => {});
-          const userData = await buildUserFromSession(session);
-          if (mounted) setUser(userData);
-        } else {
-          setUser(null);
-        }
-      };
-
-      const fallbackTimer = setTimeout(() => {
-        if (mounted) setIsLoading(false);
-      }, FALLBACK_TIMEOUT_MS);
-
-      try {
-        await Promise.race([sessionWork(), timeoutPromise]);
-      } catch {
-        if (mounted) {
-          setSession(null);
-          setUser(null);
-        }
+        await applySession(session);
+      } catch (err) {
+        console.warn("Session restore error:", err);
+        if (mounted) setSession(null);
+        if (mounted) setUser(null);
       } finally {
-        clearTimeout(fallbackTimer);
         if (mounted) setIsLoading(false);
       }
     };
 
     restoreSession();
+
+    const fallbackTimer = setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, FALLBACK_TIMEOUT_MS);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -211,6 +205,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     );
 
     return () => {
+      clearTimeout(fallbackTimer);
       mounted = false;
       subscription.unsubscribe();
     };
