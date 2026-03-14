@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
+import { useTodayRewardedTickets } from "@/hooks/useTodayRewardedTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -9,18 +10,25 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 /**
  * Free Ticket Event - Monetag rewarded ad (popup).
  * Watch ad → Close → grant_ticket RPC → ticket earned.
+ * Daily limit: 5 tickets. Shows "My Tickets Today" with ticket codes.
  */
 export default function FreeTicketEvent() {
   const { user } = useUser();
+  const { tickets, ticketsToday, maxPerDay, invalidate } = useTodayRewardedTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [ticketsEarned, setTicketsEarned] = useState(0);
+
+  const limitReached = ticketsToday >= maxPerDay;
 
   const handleWatchVideo = useCallback(() => {
     if (!user?.id) {
       toast.error("Please log in to earn tickets");
+      return;
+    }
+    if (limitReached) {
+      toast.error("Daily limit reached");
       return;
     }
     setErrorMsg(null);
@@ -36,7 +44,7 @@ export default function FreeTicketEvent() {
       setPopupBlocked(true);
     }
     setShowModal(true);
-  }, [user?.id]);
+  }, [user?.id, limitReached]);
 
   const handleModalClose = () => {
     setShowModal(false);
@@ -46,17 +54,23 @@ export default function FreeTicketEvent() {
     setErrorMsg(null);
     try {
       await grantTicket();
-      setTicketsEarned((n) => n + 1);
+      await invalidate();
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to grant ticket";
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "Failed to grant ticket";
+      const isLimitReached = msg === "DAILY_LIMIT_REACHED";
+      const displayMsg = isLimitReached ? "Daily limit reached. Come back tomorrow." : msg;
       console.warn("Failed to grant ticket:", err);
-      setErrorMsg(msg);
-      toast.error(msg);
+      setErrorMsg(displayMsg);
+      toast.error(displayMsg);
+      if (isLimitReached) await invalidate();
       throw err;
     }
-  }, []);
+  }, [invalidate]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -77,16 +91,42 @@ export default function FreeTicketEvent() {
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Tickets earned today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {ticketsEarned}
+          {ticketsToday}
         </span>
       </div>
+
+      <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
+        <h4 className="text-xs font-semibold text-foreground mb-2">
+          🎟 My Tickets Today
+        </h4>
+        {tickets.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {tickets.map((t) => (
+              <span
+                key={t.id}
+                className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-xs text-foreground"
+              >
+                {t.ticket_number ?? `#${t.id}`}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">No tickets yet today.</p>
+        )}
+      </div>
+
+      {limitReached && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Daily limit reached. Come back tomorrow.
+        </p>
+      )}
 
       <button
         type="button"
         onClick={handleWatchVideo}
-        disabled={showModal}
+        disabled={showModal || limitReached}
         className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-display font-bold text-sm transition-colors ${
-          showModal
+          showModal || limitReached
             ? "bg-secondary/50 text-muted-foreground cursor-not-allowed"
             : "bg-primary text-primary-foreground hover:opacity-90"
         }`}
@@ -96,7 +136,13 @@ export default function FreeTicketEvent() {
         ) : (
           <Ticket size={16} />
         )}
-        <span>{showModal ? "Watching..." : "Watch Video"}</span>
+        <span>
+          {showModal
+            ? "Watching..."
+            : limitReached
+              ? "Daily limit reached"
+              : "Watch Video"}
+        </span>
       </button>
 
       {errorMsg && (
