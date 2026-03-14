@@ -52,7 +52,7 @@ export default function PromoCard({
 }: PromoCardProps) {
   const filledSegments = Math.min(adsWatched, SEGMENTS);
   const totalSegments = SEGMENTS;
-  const nextTicketAds = adsWatched < 10 ? adsWatched + 1 : null;
+  const nextTicketAds = adsWatched < 5 ? 5 : adsWatched < 10 ? 10 : null;
 
   const gradientBtn =
     "w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-sm bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";

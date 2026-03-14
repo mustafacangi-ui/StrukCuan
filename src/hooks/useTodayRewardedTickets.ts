@@ -55,9 +55,9 @@ export function useTodayRewardedTickets(userId: string | undefined) {
   const adsWatched = allEvents.length;
 
   return {
-    tickets: allEvents,
-    ticketsToday: adsWatched,
     adsWatched,
+    ticketsToday: Math.floor(adsWatched / 5),
+    tickets: allEvents,
     isLoading: query.isLoading,
     maxAds: DAILY_MAX_ADS,
     maxPerDay: DAILY_MAX_ADS,

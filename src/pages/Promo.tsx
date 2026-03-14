@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import PromoHeader from "@/components/PromoHeader";
@@ -7,7 +6,7 @@ import PromoCard from "@/components/promo/PromoCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
-import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY, getTodayDateId } from "@/hooks/useTodayRewardedTickets";
+import { useTodayRewardedTickets } from "@/hooks/useTodayRewardedTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -49,10 +48,9 @@ function getPromoState(
 }
 
 export default function Promo() {
-  const queryClient = useQueryClient();
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
-  const { tickets, ticketsToday, adsWatched, maxAds } = useTodayRewardedTickets(user?.id);
+  const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets(user?.id);
 
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -97,9 +95,7 @@ export default function Promo() {
     setJustEarnedTicket(false);
     try {
       await grantTicket();
-      const queryKey = [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayDateId()];
-      await queryClient.invalidateQueries({ queryKey });
-      await queryClient.refetchQueries({ queryKey });
+      await refetch();
       setJustEarnedTicket(true);
       if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
       setTimeout(() => setJustEarnedTicket(false), 3000);
@@ -109,13 +105,10 @@ export default function Promo() {
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
       toast.error(isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg);
-      if (isLimitReached) {
-        const queryKey = [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayDateId()];
-        await queryClient.refetchQueries({ queryKey });
-      }
+      if (isLimitReached) await refetch();
       throw err;
     }
-  }, [queryClient, user?.id, bonusUnlocked]);
+  }, [refetch, bonusUnlocked]);
 
   const handleUnlockBonus = useCallback(() => {
     setBonusUnlocked(true);
