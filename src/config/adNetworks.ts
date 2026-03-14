@@ -1,25 +1,20 @@
 /**
- * Hybrid rewarded ad mediation - configurable ad network URLs.
+ * Hybrid rewarded ad mediation - Adsterra, Monetag, PropellerAds.
  * All networks load in parallel; first to load within 5s displays.
  * Order: Adsterra → Monetag → PropellerAds (try next if current fails).
- *
- * Replace placeholder URLs with your actual publisher links:
- * - Adsterra: Smartlink URL from publisher dashboard
- * - Monetag: Zone/direct link from Monetag dashboard
- * - PropellerAds: Direct link from PropellerAds dashboard
  */
 export const adNetworks = [
   {
     name: "adsterra",
-    url: import.meta.env.VITE_ADSTERRA_SMARTLINK ?? "https://delivery.adsterratools.com/direct/your-zone-id",
+    url: import.meta.env.VITE_ADSTERRA_SMARTLINK ?? "https://www.effectivegatecpm.com/s5eup1xskn?key=ed7ce8f834a8b35ed3d8db6030a9e103",
   },
   {
     name: "monetag",
-    url: import.meta.env.VITE_MONETAG_ZONE_LINK ?? "https://omg10.com/4/10726900",
+    url: import.meta.env.VITE_MONETAG_ZONE_LINK ?? "https://omg10.com/4/10728136",
   },
   {
     name: "propeller",
-    url: import.meta.env.VITE_PROPELLER_DIRECT_LINK ?? "https://go.propellerads.com/your-campaign-id",
+    url: import.meta.env.VITE_PROPELLER_DIRECT_LINK ?? "https://go.propellerads.com/PLACE_PROP_LINK_HERE",
   },
 ] as const;
 
