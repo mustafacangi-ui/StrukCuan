@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X } from "lucide-react";
-import { AD_NETWORK_URLS } from "@/config/adNetworks";
+import { X, Loader2 } from "lucide-react";
+import { adNetworks } from "@/config/adNetworks";
 
 const COUNTDOWN_SECONDS = 20;
+const AD_LOAD_TIMEOUT_MS = 5000;
 
 interface RewardedAdModalProps {
   open: boolean;
@@ -11,56 +12,72 @@ interface RewardedAdModalProps {
 }
 
 /**
- * Fullscreen modal that loads rewarded ads via iframe.
- * Mediation: tries Monetag, Adsterra, PropellerAds - whichever loads first displays.
- * 20 second countdown, then close button enables. On close, grants ticket.
+ * Hybrid ad mediation: loads Adsterra, Monetag, PropellerAds in parallel.
+ * First to load within 5s wins. If current fails, try next. No redirect.
  */
 export default function RewardedAdModal({ open, onClose, onComplete }: RewardedAdModalProps) {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [canClose, setCanClose] = useState(false);
+  const [showTicketEarned, setShowTicketEarned] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const loadedRef = useRef(false);
+  const loadedIdsRef = useRef<Set<string>>(new Set());
+  const currentIndexRef = useRef(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleAdLoaded = useCallback((id: string) => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-    setWinnerId(id);
-    setLoading(false);
+  currentIndexRef.current = currentIndex;
+  const currentNetwork = adNetworks[currentIndex];
+
+  const handleAdLoaded = useCallback((name: string) => {
+    loadedIdsRef.current.add(name);
+    setWinnerId((prev) => {
+      if (prev) return prev;
+      setLoading(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      return name;
+    });
   }, []);
 
-  const handleClose = useCallback(async () => {
-    if (!canClose) return;
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
+  const tryNextNetwork = useCallback(() => {
+    const idx = currentIndexRef.current;
+    if (idx >= adNetworks.length - 1) {
+      setLoading(false);
+      setWinnerId(adNetworks[0].name);
+      return;
     }
-    try {
-      await onComplete();
-      onClose();
-    } catch {
-      onClose();
+    const nextIndex = idx + 1;
+    const next = adNetworks[nextIndex];
+    setCurrentIndex(nextIndex);
+    setWinnerId(next.name);
+    setLoading(false);
+    if (loadedIdsRef.current.has(next.name)) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    } else {
+      timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
     }
-  }, [canClose, onComplete, onClose]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
 
-    loadedRef.current = false;
+    loadedIdsRef.current.clear();
+    currentIndexRef.current = 0;
     setCountdown(COUNTDOWN_SECONDS);
     setCanClose(false);
+    setShowTicketEarned(false);
+    setCurrentIndex(0);
     setWinnerId(null);
     setLoading(true);
 
-    // Fallback: if no ad loads in 8s, show first network (Monetag)
-    const fallbackTimer = setTimeout(() => {
-      if (!loadedRef.current) {
-        loadedRef.current = true;
-        setWinnerId(AD_NETWORK_URLS[0].id);
-        setLoading(false);
-      }
-    }, 8000);
+    timeoutRef.current = setTimeout(tryNextNetwork, AD_LOAD_TIMEOUT_MS);
 
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -77,42 +94,72 @@ export default function RewardedAdModal({ open, onClose, onComplete }: RewardedA
     }, 1000);
 
     return () => {
-      clearTimeout(fallbackTimer);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
       }
     };
-  }, [open]);
+  }, [open, tryNextNetwork]);
+
+  const handleClose = useCallback(async () => {
+    if (!canClose) return;
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setShowTicketEarned(true);
+    await new Promise((r) => setTimeout(r, 800));
+    try {
+      await onComplete();
+      onClose();
+    } catch {
+      onClose();
+    }
+  }, [canClose, onComplete, onClose]);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black">
-      {/* Ad container - mediation: all iframes load in parallel, first to load displays on top */}
+      {showTicketEarned && (
+        <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/95 animate-in fade-in">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-primary/20 border-2 border-primary px-8 py-6">
+            <span className="text-2xl">🎟</span>
+            <p className="font-display text-lg font-bold text-primary text-center">
+              Ad finished — Ticket earned!
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 relative min-h-0 overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-10">
-            <p className="text-sm text-white/80 animate-pulse">Loading ad...</p>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-white/90 animate-pulse">Loading ad...</p>
+            <p className="text-xs text-white/60">Trying {currentNetwork?.name}...</p>
           </div>
         )}
-        {AD_NETWORK_URLS.map(({ id, url }) => (
+        {adNetworks.map(({ name, url }) => (
           <iframe
-            key={id}
+            key={name}
             src={open ? url : undefined}
-            title={id}
+            title={name}
             className="absolute inset-0 w-full h-full border-0"
             style={{
-              zIndex: winnerId === id ? 2 : 1,
-              visibility: !loading && winnerId === id ? "visible" : "hidden",
+              zIndex: winnerId === name ? 2 : 1,
+              visibility: !loading && winnerId === name ? "visible" : "hidden",
             }}
             sandbox="allow-scripts allow-same-origin allow-popups"
-            onLoad={() => handleAdLoaded(id)}
+            onLoad={() => handleAdLoaded(name)}
           />
         ))}
       </div>
 
-      {/* Bottom bar: countdown + close button */}
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 bg-black/95 border-t border-white/10">
         <span className="text-sm text-white/90">
           {canClose ? (

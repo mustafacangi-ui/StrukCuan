@@ -1,24 +1,26 @@
 /**
- * Ad network URLs for hybrid rewarded ad mediation.
- * Replace with your actual publisher URLs from each network's dashboard.
- * Order: Monetag → Adsterra → PropellerAds (first to load wins).
- * Note: Some networks may block iframe embedding (X-Frame-Options).
- * Monetag is configured and should work; add Adsterra/PropellerAds URLs when available.
+ * Hybrid rewarded ad mediation - configurable ad network URLs.
+ * All networks load in parallel; first to load within 5s displays.
+ * Order: Adsterra → Monetag → PropellerAds (try next if current fails).
+ *
+ * Replace placeholder URLs with your actual publisher links:
+ * - Adsterra: Smartlink URL from publisher dashboard
+ * - Monetag: Zone/direct link from Monetag dashboard
+ * - PropellerAds: Direct link from PropellerAds dashboard
  */
-export const AD_NETWORK_URLS = [
+export const adNetworks = [
   {
-    id: "monetag",
-    name: "Monetag",
-    url: "https://omg10.com/4/10726900",
+    name: "adsterra",
+    url: import.meta.env.VITE_ADSTERRA_SMARTLINK ?? "https://delivery.adsterratools.com/direct/your-zone-id",
   },
   {
-    id: "adsterra",
-    name: "Adsterra",
-    url: "https://delivery.adsterratools.com/direct/your-zone-id", // Replace with your Adsterra Smartlink URL
+    name: "monetag",
+    url: import.meta.env.VITE_MONETAG_ZONE_LINK ?? "https://omg10.com/4/10726900",
   },
   {
-    id: "propellerads",
-    name: "PropellerAds",
-    url: "https://go.propellerads.com/your-campaign-id", // Replace with your PropellerAds direct link
+    name: "propeller",
+    url: import.meta.env.VITE_PROPELLER_DIRECT_LINK ?? "https://go.propellerads.com/your-campaign-id",
   },
 ] as const;
+
+export type AdNetworkName = (typeof adNetworks)[number]["name"];

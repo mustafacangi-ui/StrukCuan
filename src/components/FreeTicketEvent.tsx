@@ -83,7 +83,7 @@ export default function FreeTicketEvent() {
 
       {showSuccess && (
         <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary/20 border border-primary/40 py-2 animate-in fade-in">
-          <span className="text-sm font-bold text-primary">🎟 Ticket earned!</span>
+          <span className="text-sm font-bold text-primary">Ad finished — Ticket earned!</span>
         </div>
       )}
 
