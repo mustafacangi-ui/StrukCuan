@@ -35,11 +35,7 @@ export default function Invite() {
   }, [user?.id, codeLoading, referralCode, ensured, ensureReferralCode]);
 
   const effectiveCode = referralCode || fallbackCode;
-  const referralUrl = effectiveCode
-    ? `${typeof window !== "undefined" && !window.location.origin.includes("vercel.app")
-        ? window.location.origin
-        : APP_URL}?r=${effectiveCode}`
-    : "";
+  const referralUrl = effectiveCode ? `${APP_URL}?r=${effectiveCode}` : "";
 
   const handleCopyLink = async () => {
     if (!referralUrl) return;
