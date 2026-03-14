@@ -46,6 +46,7 @@ export default function FreeTicketEvent() {
   };
 
   const handleAdComplete = async () => {
+    if (earnTicket.isPending) return;
     setErrorMsg(null);
     try {
       await earnTicket.mutateAsync();

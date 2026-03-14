@@ -35,6 +35,8 @@ export function useRewardedAdTickets(userId: string | undefined) {
   const earnTicket = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Not logged in");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
       const count = await fetchRewardedAdCountToday(userId);
       if (count >= DAILY_MAX) throw new Error("Daily limit reached");
       const { data, error } = await supabase.rpc("grant_ticket");
