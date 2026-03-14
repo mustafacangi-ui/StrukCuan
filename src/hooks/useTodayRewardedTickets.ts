@@ -29,13 +29,11 @@ export type TodayTicket = {
 };
 
 export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> {
-  const dateId = getTodayDateId();
   const { data, error } = await supabase
     .from("ad_ticket_events")
-    .select("id, ticket_number, created_at")
+    .select("*")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
-    .eq("week_id", dateId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -43,14 +41,12 @@ export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> 
       message: error.message,
       code: error.code,
       userId,
-      dateId,
     });
     throw error;
   }
   const rows = (data ?? []) as TodayTicket[];
   console.log("[useTodayRewardedTickets] Fetched ad_ticket_events:", {
     userId,
-    dateId,
     rowCount: rows.length,
     rows,
   });
@@ -60,10 +56,9 @@ export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> 
 export function useTodayRewardedTickets() {
   const queryClient = useQueryClient();
   const { user } = useUser();
-  const dateId = getTodayDateId();
 
   const query = useQuery({
-    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, dateId],
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id],
     queryFn: () => fetchTodayTickets(user!.id),
     enabled: !!user,
   });
