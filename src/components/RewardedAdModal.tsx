@@ -72,9 +72,9 @@ export default function RewardedAdModal({
     }
 
     try {
-      setShowTicketEarned(true);
-      await new Promise((r) => setTimeout(r, 600));
       await onComplete();
+      setShowTicketEarned(true);
+      await new Promise((r) => setTimeout(r, 1500));
       onClose();
     } catch (err) {
       console.warn("Reward grant failed:", err);
@@ -123,10 +123,10 @@ export default function RewardedAdModal({
           <>
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-center text-sm font-medium text-white">
-              Ad opened in new window
+              Watching ad...
             </p>
-            <p className="text-center text-xs text-white/70">
-              Watch the ad for 20 seconds, then return here and tap Close to earn your ticket.
+            <p className="text-center text-lg font-bold text-primary">
+              Reward unlocks in: {secondsLeft}s
             </p>
           </>
         )}
@@ -135,9 +135,9 @@ export default function RewardedAdModal({
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 py-3 bg-black/95 border-t border-white/10">
         <span className="text-sm text-white/90">
           {canClose ? (
-            "Tap Close to earn your ticket"
+            "Tap the button to claim your ticket"
           ) : (
-            <>Close in <span className="font-bold text-primary">{secondsLeft}</span>s</>
+            <>Reward unlocks in: <span className="font-bold text-primary">{secondsLeft}s</span></>
           )}
         </span>
         <button
@@ -150,8 +150,12 @@ export default function RewardedAdModal({
               : "bg-white/20 text-white/50 cursor-not-allowed"
           }`}
         >
-          <X size={18} />
-          Close
+          {isProcessing ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <X size={18} />
+          )}
+          {canClose ? "Close & Claim Ticket" : "Close"}
         </button>
       </div>
     </div>
