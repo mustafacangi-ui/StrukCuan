@@ -4,7 +4,7 @@
 export const AD_NETWORKS = [
   {
     name: "Monetag",
-    url: "https://omg10.com/4/10726990",
+    url: "https://omg10.com/4/10728136",
   },
 ] as const;
 
