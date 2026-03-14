@@ -37,7 +37,7 @@ export function useRewardedAdTickets(userId: string | undefined) {
       if (!userId) throw new Error("Not logged in");
       const count = await fetchRewardedAdCountToday(userId);
       if (count >= DAILY_MAX) throw new Error("Daily limit reached");
-      const { data, error } = await supabase.rpc("earn_rewarded_ticket");
+      const { data, error } = await supabase.rpc("grant_ticket");
       if (error) {
         const msg = error.message ?? error.code ?? "Database error";
         throw new Error(msg);
