@@ -34,9 +34,7 @@ export async function fetchRewardedAdCountToday(userId: string): Promise<number>
   const { count, error } = await supabase
     .from("ticket_events")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("event_type", REWARDED_EVENT_TYPE)
-    .eq("week_id", dateId);
+    .eq("user_id", userId);
 
   if (error) throw error;
   return count ?? 0;
