@@ -110,7 +110,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       .from("user_stats")
       .select("tiket, nickname, level, total_receipts")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     return {
       id: userId,

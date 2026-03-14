@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
@@ -13,6 +14,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
  * Daily limit: 5 tickets. Shows "My Tickets Today" with ticket codes.
  */
 export default function FreeTicketEvent() {
+  const queryClient = useQueryClient();
   const { user } = useUser();
   const { tickets, ticketsToday, adsWatched, maxAds, invalidate } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
@@ -55,6 +57,7 @@ export default function FreeTicketEvent() {
     try {
       await grantTicket();
       await invalidate();
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err: unknown) {
@@ -67,10 +70,13 @@ export default function FreeTicketEvent() {
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(displayMsg);
       toast.error(displayMsg);
-      if (isLimitReached) await invalidate();
+      if (isLimitReached) {
+        await invalidate();
+        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      }
       throw err;
     }
-  }, [invalidate]);
+  }, [invalidate, queryClient]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">

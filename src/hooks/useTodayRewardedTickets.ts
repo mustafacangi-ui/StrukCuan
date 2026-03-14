@@ -28,15 +28,21 @@ export type TodayTicket = {
   created_at: string;
 };
 
-export async function fetchTodayTickets(userId: string) {
+export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> {
+  const dateId = getTodayDateId();
   const { data, error } = await supabase
     .from("ad_ticket_events")
-    .select("*")
-    .eq("user_id", userId);
+    .select("id, ticket_number, created_at")
+    .eq("user_id", userId)
+    .eq("event_type", "rewarded")
+    .eq("week_id", dateId)
+    .order("created_at", { ascending: false });
 
-  if (error) throw error;
-  console.log("DEBUG EVENTS:", data);
-  return data ?? [];
+  if (error) {
+    console.error("Failed to fetch ad_ticket_events:", { message: error.message, code: error.code });
+    throw error;
+  }
+  return (data ?? []) as TodayTicket[];
 }
 
 export function useTodayRewardedTickets() {

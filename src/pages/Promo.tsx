@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import PromoHeader from "@/components/PromoHeader";
@@ -6,7 +7,7 @@ import PromoCard from "@/components/promo/PromoCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
-import { useTodayRewardedTickets } from "@/hooks/useTodayRewardedTickets";
+import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -48,6 +49,7 @@ function getPromoState(
 }
 
 export default function Promo() {
+  const queryClient = useQueryClient();
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
   const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets();
@@ -96,6 +98,8 @@ export default function Promo() {
     try {
       await grantTicket();
       await refetch();
+      queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       setJustEarnedTicket(true);
       if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
       setTimeout(() => setJustEarnedTicket(false), 3000);
@@ -105,10 +109,14 @@ export default function Promo() {
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
       toast.error(isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg);
-      if (isLimitReached) await refetch();
+      if (isLimitReached) {
+        await refetch();
+        queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      }
       throw err;
     }
-  }, [refetch, bonusUnlocked]);
+  }, [refetch, bonusUnlocked, queryClient]);
 
   const handleUnlockBonus = useCallback(() => {
     setBonusUnlocked(true);
