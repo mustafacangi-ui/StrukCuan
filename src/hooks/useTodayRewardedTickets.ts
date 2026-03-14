@@ -3,9 +3,8 @@ import { supabase } from "@/lib/supabase";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Daily limit: 10 ads. 5 ads = 1 ticket, 10 ads = 2 tickets. */
+/** Daily limit: 10 ads. 1 ad = 1 ticket. */
 const DAILY_MAX_ADS = 10;
-const ADS_PER_TICKET = 5;
 
 /** Get today's date (YYYY-MM-DD) in Asia/Jakarta timezone */
 function getTodayDateId(): string {
@@ -75,15 +74,15 @@ export function useTodayRewardedTickets(userId: string | undefined) {
 
   const allEvents = query.data ?? [];
   const adsWatched = allEvents.length;
-  const ticketsEarned = Math.floor(adsWatched / ADS_PER_TICKET);
+  const ticketsEarned = adsWatched;
 
   return {
-    tickets: allEvents.filter((t) => t.ticket_number != null),
+    tickets: allEvents,
     ticketsToday: ticketsEarned,
     adsWatched,
     isLoading: query.isLoading,
     maxAds: DAILY_MAX_ADS,
-    maxPerDay: Math.floor(DAILY_MAX_ADS / ADS_PER_TICKET),
+    maxPerDay: DAILY_MAX_ADS,
     refetch: query.refetch,
     invalidate: async () => {
       await queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });

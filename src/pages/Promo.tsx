@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import type { PromoState } from "@/components/promo/PromoCard";
 
-/** Daily limit: 10 ads. 5 ads = 1 ticket, 10 ads = 2 tickets. */
+/** Daily limit: 10 ads. 1 ad = 1 ticket. */
 const DAILY_MAX_ADS = 10;
 const BONUS_EXTRA_ADS = 5;
 
