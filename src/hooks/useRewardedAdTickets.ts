@@ -32,7 +32,7 @@ function getTodayDateId(): string {
 export async function fetchRewardedAdCountToday(userId: string): Promise<number> {
   const dateId = getTodayDateId();
   const { count, error } = await supabase
-    .from("ad_ticket_events")
+    .from("ticket_events")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("event_type", REWARDED_EVENT_TYPE)
