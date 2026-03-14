@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
-import { useTodayRewardedTickets } from "@/hooks/useTodayRewardedTickets";
+import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -34,7 +34,9 @@ export default function FreeTicketEvent() {
       return;
     }
     setErrorMsg(null);
+    setShowSuccess(false);
     setPopupBlocked(false);
+    setShowModal(true);
 
     const monetagUrl = AD_NETWORKS[0].url;
     const popup = window.open(
@@ -57,6 +59,7 @@ export default function FreeTicketEvent() {
     try {
       await grantTicket();
       await invalidate();
+      queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
@@ -72,6 +75,7 @@ export default function FreeTicketEvent() {
       toast.error(displayMsg);
       if (isLimitReached) {
         await invalidate();
+        queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       }
       throw err;
