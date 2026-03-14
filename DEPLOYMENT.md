@@ -38,12 +38,14 @@ Vercel automatically provisions SSL certificates for custom domains. HTTPS will 
 
 ## Supabase (Auth Redirect URLs)
 
-Add these to **Supabase Dashboard** → **Authentication** → **URL Configuration** → **Redirect URLs**:
+**Required for Google OAuth:** Add these to **Supabase Dashboard** → **Authentication** → **URL Configuration** → **Redirect URLs**:
 
 - `https://www.strukcuan.com`
 - `https://www.strukcuan.com/**`
 
-(Keep `https://struk-cuan.vercel.app` and `https://struk-cuan.vercel.app/**` for the backup domain.)
+The app forces OAuth redirects to `https://www.strukcuan.com` so users never land on vercel.app after login.
+
+(Optional: Keep `https://struk-cuan.vercel.app` for backup/test only.)
 
 ## Verification
 

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
+import { APP_URL } from "@/config/app";
 
 export interface UserData {
   id: string;
@@ -245,7 +246,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       email,
       options: {
         data: { display_name: displayName, nickname: displayName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: APP_URL,
       },
     });
     if (error) throw error;
@@ -255,7 +256,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: APP_URL,
       },
     });
     if (error) throw error;

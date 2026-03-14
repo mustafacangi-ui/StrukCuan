@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { useReferralCode, useReferralCount, WHATSAPP_MESSAGE } from "@/hooks/useReferrals";
 import { toast } from "sonner";
+import { APP_URL } from "@/config/app";
 
 const INVITE_MESSAGE = "Aku lagi kumpulin tiket di StrukCuan! Daftar pakai link aku dan dapat tiket gratis.";
 
@@ -35,7 +36,9 @@ export default function Invite() {
 
   const effectiveCode = referralCode || fallbackCode;
   const referralUrl = effectiveCode
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://www.strukcuan.com"}?r=${effectiveCode}`
+    ? `${typeof window !== "undefined" && !window.location.origin.includes("vercel.app")
+        ? window.location.origin
+        : APP_URL}?r=${effectiveCode}`
     : "";
 
   const handleCopyLink = async () => {
