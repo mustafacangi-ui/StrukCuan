@@ -1,6 +1,6 @@
 import { Ticket, Play, Star, ChevronRight } from "lucide-react";
 import type { TodayTicket } from "@/hooks/useTodayRewardedTickets";
-import { getAdProgressSegment, getNextTicketAt, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
+import { getNextTicketAt, ticketsFromAds, MAX_ADS_PER_DAY, SECOND_TICKET_AT, BONUS_UNLOCK_ADS } from "@/hooks/useTodayRewardedTickets";
 
 export type PromoState =
   | "start"
@@ -49,11 +49,12 @@ export default function PromoCard({
   onBack,
   isWatching = false,
 }: PromoCardProps) {
-  const { segmentProgress, segmentTarget } = getAdProgressSegment(adsWatched, bonusUnlocked ?? false);
-  const filledSegments = segmentProgress;
-  const totalSegments = segmentTarget;
   const nextTicket = getNextTicketAt(adsWatched ?? 0);
+  const progressTarget = nextTicket ?? MAX_ADS_PER_DAY;
+  const filledSegments = Math.min(adsWatched ?? 0, progressTarget);
+  const totalSegments = progressTarget;
   const nextTicketLabel = nextTicket != null ? `NEXT TICKET AT ${nextTicket} ADS` : "All Done for Today";
+  const adsToUnlock = Math.max(0, SECOND_TICKET_AT + BONUS_UNLOCK_ADS - (adsWatched ?? 0));
 
   const gradientBtn =
     "w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-sm bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -89,7 +90,7 @@ export default function PromoCard({
             </p>
             <div className="mb-4">
               <div className="mb-2 flex justify-between text-xs text-white/70">
-                <span>ADS WATCHED {segmentProgress}/{segmentTarget}</span>
+                <span>ADS WATCHED {adsWatched}/{progressTarget}</span>
                 <span>
                   {nextTicketLabel}
                 </span>
@@ -183,10 +184,10 @@ export default function PromoCard({
               Unlock Bonus
             </h3>
             <p className="mb-2 text-sm text-white/80">
-              ADS WATCHED {segmentProgress}/{segmentTarget}
+              ADS WATCHED {adsWatched}/{progressTarget}
             </p>
             <p className="mb-4 text-sm text-white/80">
-              Watch {segmentTarget - segmentProgress} more ad{segmentTarget - segmentProgress !== 1 ? "s" : ""} to unlock +5 bonus ads and 1 more ticket.
+              Watch {adsToUnlock} more ad{adsToUnlock !== 1 ? "s" : ""} to unlock +5 bonus ads and 1 more ticket.
             </p>
             <button
               type="button"
@@ -210,7 +211,7 @@ export default function PromoCard({
             </p>
             <div className="mb-4">
               <div className="mb-2 flex justify-between text-xs text-white/70">
-                <span>ADS WATCHED {segmentProgress}/{segmentTarget}</span>
+                <span>ADS WATCHED {adsWatched}/{progressTarget}</span>
                 <span>{nextTicketLabel}</span>
               </div>
               <div className="flex gap-1">

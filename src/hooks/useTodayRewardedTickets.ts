@@ -24,11 +24,12 @@ export function ticketsFromAds(adsWatched: number): number {
   return 0;
 }
 
-/** Next ticket threshold - derived ONLY from adsWatched. Do not use other variables. */
+/** Next ticket threshold - derived ONLY from adsWatched. Do not use segmentProgress/segmentTarget. */
 export function getNextTicketAt(adsWatched: number): number | null {
-  if (adsWatched < 5) return 5;
-  if (adsWatched < 10) return 10;
-  if (adsWatched < 18) return 18;
+  const n = Number(adsWatched) || 0;
+  if (n < 5) return 5;
+  if (n < 10) return 10;
+  if (n < 18) return 18;
   return null;
 }
 
