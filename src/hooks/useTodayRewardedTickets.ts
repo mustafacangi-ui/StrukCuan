@@ -35,17 +35,15 @@ export function getNextTicketAt(adsWatched: number): number | null {
 
 /** Start of today in Asia/Jakarta as ISO string, for filtering ad_ticket_events by created_at. */
 export function getTodayStartISO(): string {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find((p) => p.type === "year")?.value ?? "0";
-  const month = parts.find((p) => p.type === "month")?.value ?? "01";
-  const day = parts.find((p) => p.type === "day")?.value ?? "01";
-  return `${year}-${month}-${day}T00:00:00+07:00`;
+  const now = new Date();
+
+  const jakartaNow = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+  );
+
+  jakartaNow.setHours(0, 0, 0, 0);
+
+  return jakartaNow.toISOString();
 }
 
 /** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */

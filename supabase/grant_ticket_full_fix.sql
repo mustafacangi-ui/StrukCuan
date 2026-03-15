@@ -45,7 +45,11 @@ create trigger ad_ticket_events_reward_trigger
   after insert on public.ad_ticket_events
   for each row execute function public.on_ad_ticket_earned();
 
+-- grant_ticket RPC - SUPERSEDED by fix_ticket_creation_at_thresholds.sql
+-- Use fix_ticket_creation_at_thresholds.sql for: today-only count, 18 ads limit, tickets at 5/10/18
+--
 -- grant_ticket RPC with RAISE NOTICE for debugging
+-- Counts TODAY only (created_at) - Asia/Jakarta
 create or replace function public.grant_ticket()
 returns jsonb
 language plpgsql
@@ -56,20 +60,23 @@ declare
   uid uuid;
   v_date_id text;
   v_count integer;
+  v_today_start timestamptz;
 begin
   uid := auth.uid();
   if uid is null then
     raise exception 'User not authenticated';
   end if;
 
+  v_today_start := date_trunc('day', now() at time zone 'Asia/Jakarta') at time zone 'Asia/Jakarta';
   v_date_id := to_char((now() at time zone 'Asia/Jakarta')::date, 'YYYY-MM-DD');
   raise notice 'grant_ticket: uid=%, week_id=%', uid, v_date_id;
 
+  -- Count TODAY only (created_at) - old events must not affect today's limit
   select count(*)::integer into v_count
   from public.ad_ticket_events
-  where user_id = uid and event_type = 'rewarded' and week_id = v_date_id;
+  where user_id = uid and event_type = 'rewarded' and created_at >= v_today_start;
 
-  if v_count >= 10 then
+  if v_count >= 18 then
     raise notice 'grant_ticket: DAILY_LIMIT_REACHED for uid=%', uid;
     raise exception 'DAILY_LIMIT_REACHED' using errcode = 'P0001';
   end if;
