@@ -5,16 +5,16 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Ad reward system: 5 ads = 1 ticket, 10 ads = 2 tickets, 18 ads = 3 tickets. */
+/** Ad reward system: every 5 ads = 1 ticket. 5→1, 10→2, 15→3. Max 15 ads/day. */
 export const ADS_PER_TICKET = 5;
-export const MAX_ADS_PER_DAY = 18;
+export const MAX_ADS_PER_DAY = 15;
 export const MAX_TICKETS_PER_DAY = 3;
-/** After 10 ads, user watches 3 more (11,12,13) to unlock bonus - these do NOT give tickets. */
-export const BONUS_UNLOCK_ADS = 3;
 export const FIRST_TICKET_AT = 5;
 export const SECOND_TICKET_AT = 10;
+export const THIRD_TICKET_AT = 15;
+/** Legacy: bonus flow removed in clean reset */
+export const BONUS_UNLOCK_ADS = 0;
 export const BONUS_UNLOCK_AT = 10;
-export const THIRD_TICKET_AT = 18;
 
 /** Derive tickets from ads watched. Each ad_ticket_event is NOT a ticket - only thresholds grant tickets. */
 export function ticketsFromAds(adsWatched: number): number {
@@ -24,26 +24,19 @@ export function ticketsFromAds(adsWatched: number): number {
   return 0;
 }
 
-/** Next ticket threshold - derived ONLY from adsWatched. Do not use segmentProgress/segmentTarget. */
+/** Next ticket threshold - derived ONLY from adsWatched. */
 export function getNextTicketAt(adsWatched: number): number | null {
   const n = Number(adsWatched) || 0;
   if (n < 5) return 5;
   if (n < 10) return 10;
-  if (n < 18) return 18;
+  if (n < 15) return 15;
   return null;
 }
 
 /** Start of today in Asia/Jakarta as ISO string, for filtering ad_ticket_events by created_at. */
 export function getTodayStartISO(): string {
-  const now = new Date();
-
-  const jakartaNow = new Date(
-    now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
-  );
-
-  jakartaNow.setHours(0, 0, 0, 0);
-
-  return jakartaNow.toISOString();
+  const dateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+  return `${dateStr}T00:00:00+07:00`;
 }
 
 /** ISO week number in Asia/Jakarta (matches grant_ticket draw_week). */

@@ -11,9 +11,6 @@ import {
   useTodayRewardedTickets,
   TODAY_REWARDED_TICKETS_QUERY_KEY,
   MAX_ADS_PER_DAY,
-  SECOND_TICKET_AT,
-  BONUS_UNLOCK_ADS,
-  THIRD_TICKET_AT,
 } from "@/hooks/useTodayRewardedTickets";
 import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
@@ -24,12 +21,12 @@ import type { PromoState } from "@/components/promo/PromoCard";
 
 /**
  * Derive promo UI state from ads watched.
- * Flow: start (0) → progress (1-9, 11-12, 14-17) → daily_limit at 10 → bonus_unlock (11-13) → bonus_unlocked at 13 → final_limit (18)
+ * Clean flow: start (0) → progress (1-14) → final_limit (15)
  */
 function getPromoState(
   adsWatched: number,
   _bonusProgress: number,
-  bonusUnlocked: boolean,
+  _bonusUnlocked: boolean,
   viewOverride: "wallet" | "weekly_draw" | null,
   justEarnedTicket: boolean
 ): PromoState {
@@ -37,9 +34,6 @@ function getPromoState(
   if (viewOverride === "weekly_draw") return "weekly_draw";
   if (justEarnedTicket) return "ticket_earned";
   if (adsWatched >= MAX_ADS_PER_DAY) return "final_limit";
-  if (adsWatched === SECOND_TICKET_AT && !bonusUnlocked) return "daily_limit";
-  if (adsWatched === SECOND_TICKET_AT + BONUS_UNLOCK_ADS) return "bonus_unlocked";
-  if (adsWatched >= SECOND_TICKET_AT && adsWatched < SECOND_TICKET_AT + BONUS_UNLOCK_ADS) return "bonus_modal";
   if (adsWatched >= 1) return "progress";
   return "start";
 }
@@ -73,7 +67,7 @@ export default function Promo() {
       return;
     }
     if (adsWatched >= maxAds) {
-      toast.error("Daily limit reached (18 ads). Come back tomorrow.");
+      toast.error("Daily limit reached (15 ads). Come back tomorrow.");
       return;
     }
     setPopupBlocked(false);
@@ -102,7 +96,7 @@ export default function Promo() {
         ? String((err as { message?: string }).message)
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? "Daily limit reached (18 ads). Come back tomorrow." : msg);
+      toast.error(isLimitReached ? "Daily limit reached (15 ads). Come back tomorrow." : msg);
       if (isLimitReached) {
         await refetch();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
@@ -149,7 +143,7 @@ export default function Promo() {
           bonusUnlocked={bonusUnlocked}
           latestTicketNumber={latestTicket?.ticket_number}
           onContinueEarning={handleContinueEarning}
-          onUnlockBonus={adsWatched >= SECOND_TICKET_AT ? handleUnlockBonus : undefined}
+          onUnlockBonus={undefined}
           onKeepWatching={handleContinueEarning}
           onViewWallet={() => setViewOverride("wallet")}
           onViewWeeklyDraw={() => setViewOverride("weekly_draw")}
