@@ -33,6 +33,21 @@ export function getNextTicketAt(adsWatched: number): number | null {
   return null;
 }
 
+/** Start of today in Asia/Jakarta as ISO string, for filtering ad_ticket_events by created_at. */
+export function getTodayStartISO(): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((p) => p.type === "year")?.value ?? "0";
+  const month = parts.find((p) => p.type === "month")?.value ?? "01";
+  const day = parts.find((p) => p.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}T00:00:00+07:00`;
+}
+
 /** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */
 export function getTodayDateId(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -57,18 +72,18 @@ export type TodayTicket = {
 };
 
 /**
- * Fetch ad_ticket_events for current week (rewarded ads).
- * Schema: ad_ticket_events uses week_id (text, YYYY-WW ISO week format) - NOT draw_week.
+ * Fetch ad_ticket_events for today only (rewarded ads).
+ * Filters by created_at >= start of today (Asia/Jakarta).
  * Do NOT use for ticket count - use user_tickets.tickets for that.
  */
 export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]> {
-  const weekId = getTodayDateId();
+  const todayStart = getTodayStartISO();
   const { data, error } = await supabase
     .from("ad_ticket_events")
     .select("id, created_at")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
-    .eq("week_id", weekId)
+    .gte("created_at", todayStart)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -117,7 +132,7 @@ export function useTodayRewardedTickets() {
   const { user } = useUser();
 
   const query = useQuery({
-    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayDateId()],
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayStartISO().slice(0, 10)],
     queryFn: () => fetchTodayAdEvents(user!.id),
     enabled: !!user,
   });
