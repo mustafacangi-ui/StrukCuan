@@ -1,5 +1,6 @@
 import { Ticket, Play, Star, ChevronRight } from "lucide-react";
 import type { TodayTicket } from "@/hooks/useTodayRewardedTickets";
+import { getAdProgressSegment } from "@/hooks/useTodayRewardedTickets";
 
 export type PromoState =
   | "start"
@@ -21,7 +22,6 @@ interface PromoCardProps {
   /** Today's ad events for display (e.g. wallet list) */
   tickets: TodayTicket[];
   maxAds: number;
-  bonusProgress?: number;
   bonusUnlocked?: boolean;
   latestTicketNumber?: string | null;
   onContinueEarning: () => void;
@@ -33,15 +33,12 @@ interface PromoCardProps {
   isWatching?: boolean;
 }
 
-const SEGMENTS = 3;
-
 export default function PromoCard({
   state,
   adsWatched,
   ticketsThisWeek,
   tickets,
   maxAds,
-  bonusProgress = 0,
   bonusUnlocked = false,
   latestTicketNumber,
   onContinueEarning,
@@ -52,9 +49,10 @@ export default function PromoCard({
   onBack,
   isWatching = false,
 }: PromoCardProps) {
-  const filledSegments = Math.min(adsWatched, SEGMENTS);
-  const totalSegments = SEGMENTS;
-  const nextTicketAds = adsWatched < 3 ? adsWatched + 1 : null;
+  const { segmentProgress, segmentTarget, nextTicketAt, phase } = getAdProgressSegment(adsWatched, bonusUnlocked ?? false);
+  const filledSegments = segmentProgress;
+  const totalSegments = segmentTarget;
+  const nextTicketLabel = nextTicketAt != null ? `NEXT TICKET AT ${nextTicketAt} ADS` : phase === "bonus_unlock" ? "UNLOCK IN PROGRESS" : "Daily limit";
 
   const gradientBtn =
     "w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-sm bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -90,9 +88,9 @@ export default function PromoCard({
             </p>
             <div className="mb-4">
               <div className="mb-2 flex justify-between text-xs text-white/70">
-                <span>ADS WATCHED {adsWatched}/{totalSegments}</span>
+                <span>ADS WATCHED {segmentProgress}/{segmentTarget}</span>
                 <span>
-                  {nextTicketAds ? `NEXT TICKET at ${nextTicketAds} ads` : "Daily limit"}
+                  {nextTicketLabel}
                 </span>
               </div>
               <div className="flex gap-1">
@@ -143,28 +141,28 @@ export default function PromoCard({
           </div>
         )}
 
-        {(state === "daily_limit" || state === "bonus_modal") && (
+        {state === "daily_limit" && (
           <>
             <h3 className="mb-2 font-display text-lg font-bold text-white">
               Daily Limit Reached
             </h3>
             <p className="mb-2 text-sm text-white/80">
-              Daily limit reached (10 ads watched)
+              You earned 2 tickets! (10 ads watched)
             </p>
             <p className="mb-4 text-sm text-white/80">
-              But you can unlock bonus ads.
+              Watch 3 more ads to unlock bonus and earn 1 more ticket.
             </p>
             <p className="mb-2 text-sm font-semibold text-white/90">
-              Watch 3 ads to unlock:
+              Bonus unlock (3 ads):
             </p>
             <ul className="mb-4 space-y-2 text-sm text-white/90">
               <li className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-amber-400" />
-                +5 extra ads
+                +5 extra ads (14–18)
               </li>
               <li className="flex items-center gap-2">
                 <Ticket className="h-4 w-4 text-amber-400" />
-                +1 ticket
+                +1 ticket at 18 ads
               </li>
             </ul>
             <button
@@ -178,22 +176,58 @@ export default function PromoCard({
           </>
         )}
 
+        {state === "bonus_modal" && (
+          <>
+            <h3 className="mb-2 font-display text-lg font-bold text-white">
+              Unlock Bonus
+            </h3>
+            <p className="mb-2 text-sm text-white/80">
+              ADS WATCHED {segmentProgress}/{segmentTarget}
+            </p>
+            <p className="mb-4 text-sm text-white/80">
+              Watch {segmentTarget - segmentProgress} more ad{segmentTarget - segmentProgress !== 1 ? "s" : ""} to unlock +5 bonus ads and 1 more ticket.
+            </p>
+            <button
+              type="button"
+              onClick={onContinueEarning}
+              disabled={isWatching}
+              className={gradientBtn}
+            >
+              <Play size={18} fill="currentColor" />
+              Continue Earning
+            </button>
+          </>
+        )}
+
         {state === "bonus_unlocked" && (
           <>
             <h3 className="mb-2 font-display text-lg font-bold text-white">
-              Bonus Unlocked
+              Bonus Unlocked!
             </h3>
-            <ul className="mb-4 space-y-2 text-sm text-white/90">
-              <li className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-400" />
-                +5 extra ads
-              </li>
-              <li className="flex items-center gap-2">
-                <Ticket className="h-4 w-4 text-amber-400" />
-                +1 ticket
-              </li>
-            </ul>
-            <button type="button" onClick={onKeepWatching} className={gradientBtn}>
+            <p className="mb-4 text-sm text-white/80">
+              Watch 5 more ads (14–18) to earn your 3rd ticket.
+            </p>
+            <div className="mb-4">
+              <div className="mb-2 flex justify-between text-xs text-white/70">
+                <span>ADS WATCHED {segmentProgress}/{segmentTarget}</span>
+                <span>NEXT TICKET AT 18 ADS</span>
+              </div>
+              <div className="flex gap-1">
+                {Array.from({ length: totalSegments }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-2 flex-1 rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      background:
+                        i < filledSegments
+                          ? "linear-gradient(90deg, #ec4899, #a855f7)"
+                          : "rgba(255,255,255,0.1)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <button type="button" onClick={onKeepWatching} disabled={isWatching} className={gradientBtn}>
               <Play size={18} fill="currentColor" />
               Keep Watching
             </button>

@@ -7,20 +7,24 @@ import PromoCard from "@/components/promo/PromoCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
-import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
+import {
+  useTodayRewardedTickets,
+  TODAY_REWARDED_TICKETS_QUERY_KEY,
+  MAX_ADS_PER_DAY,
+  SECOND_TICKET_AT,
+  BONUS_UNLOCK_ADS,
+  THIRD_TICKET_AT,
+} from "@/hooks/useTodayRewardedTickets";
 import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import type { PromoState } from "@/components/promo/PromoCard";
 
-/** Daily limit: 3 ads. 1 ad = 1 ticket. */
-const DAILY_MAX_ADS = 3;
-const BONUS_EXTRA_ADS = 0;
 
 /**
  * Derive promo UI state from ads watched.
- * Flow: start (0) → progress (1–2) → daily_limit (3)
+ * Flow: start (0) → progress (1-9, 11-12, 14-17) → daily_limit at 10 → bonus_unlock (11-13) → bonus_unlocked at 13 → final_limit (18)
  */
 function getPromoState(
   adsWatched: number,
@@ -32,8 +36,11 @@ function getPromoState(
   if (viewOverride === "wallet") return "wallet";
   if (viewOverride === "weekly_draw") return "weekly_draw";
   if (justEarnedTicket) return "ticket_earned";
-  if (adsWatched >= DAILY_MAX_ADS && !bonusUnlocked) return "daily_limit";
-  if (adsWatched >= 1 && adsWatched < DAILY_MAX_ADS) return "progress";
+  if (adsWatched >= MAX_ADS_PER_DAY) return "final_limit";
+  if (adsWatched === SECOND_TICKET_AT && !bonusUnlocked) return "daily_limit";
+  if (adsWatched === SECOND_TICKET_AT + BONUS_UNLOCK_ADS) return "bonus_unlocked";
+  if (adsWatched >= SECOND_TICKET_AT && adsWatched < SECOND_TICKET_AT + BONUS_UNLOCK_ADS) return "bonus_modal";
+  if (adsWatched >= 1) return "progress";
   return "start";
 }
 
@@ -48,17 +55,10 @@ export default function Promo() {
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [viewOverride, setViewOverride] = useState<"wallet" | "weekly_draw" | null>(null);
   const [justEarnedTicket, setJustEarnedTicket] = useState(false);
-  const [bonusProgress, setBonusProgress] = useState(0);
   const [bonusUnlocked, setBonusUnlocked] = useState(false);
 
-  const totalAds = bonusUnlocked ? Math.min(adsWatched + bonusProgress, DAILY_MAX_ADS + BONUS_EXTRA_ADS) : adsWatched;
-  const state = getPromoState(
-    adsWatched,
-    bonusProgress,
-    bonusUnlocked,
-    viewOverride,
-    justEarnedTicket
-  );
+  const totalAds = adsWatched;
+  const state = getPromoState(adsWatched, 0, bonusUnlocked, viewOverride, justEarnedTicket);
 
   useEffect(() => {
     if (isLoading) return;
@@ -72,8 +72,8 @@ export default function Promo() {
       toast.error("Please log in to earn tickets");
       return;
     }
-    if (adsWatched >= maxAds && !bonusUnlocked) {
-      toast.error("Daily limit reached (3 ads watched)");
+    if (adsWatched >= maxAds) {
+      toast.error("Daily limit reached (18 ads). Come back tomorrow.");
       return;
     }
     setPopupBlocked(false);
@@ -81,7 +81,7 @@ export default function Promo() {
     const popup = window.open(monetagUrl, "monetag_ad", "width=600,height=700,scrollbars=yes,resizable=yes");
     if (!popup || popup.closed) setPopupBlocked(true);
     setShowModal(true);
-  }, [user?.id, adsWatched, maxAds, bonusUnlocked]);
+  }, [user?.id, adsWatched, maxAds]);
 
   const handleAdComplete = useCallback(async () => {
     setJustEarnedTicket(false);
@@ -94,7 +94,6 @@ export default function Promo() {
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       console.log("[Promo] Refetched, adsWatched should update");
       setJustEarnedTicket(true);
-      if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
       setTimeout(() => setJustEarnedTicket(false), 3000);
     } catch (err: unknown) {
       console.error("[Promo] handleAdComplete error:", err);
@@ -102,7 +101,7 @@ export default function Promo() {
         ? String((err as { message?: string }).message)
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? "Daily limit reached (3 ads watched). Come back tomorrow." : msg);
+      toast.error(isLimitReached ? "Daily limit reached (18 ads). Come back tomorrow." : msg);
       if (isLimitReached) {
         await refetch();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
@@ -110,11 +109,10 @@ export default function Promo() {
       }
       throw err;
     }
-  }, [refetch, bonusUnlocked, queryClient]);
+  }, [refetch, queryClient]);
 
   const handleUnlockBonus = useCallback(() => {
     setBonusUnlocked(true);
-    setBonusProgress(0);
   }, []);
 
   const handleModalClose = useCallback(() => {
@@ -142,15 +140,14 @@ export default function Promo() {
       <div className="mt-6 px-4">
         <PromoCard
           state={state}
-          adsWatched={bonusUnlocked ? totalAds : adsWatched}
+          adsWatched={adsWatched}
           ticketsThisWeek={ticketsThisWeek}
           tickets={tickets}
           maxAds={maxAds}
-          bonusProgress={bonusProgress}
           bonusUnlocked={bonusUnlocked}
           latestTicketNumber={latestTicket?.ticket_number}
           onContinueEarning={handleContinueEarning}
-          onUnlockBonus={adsWatched >= DAILY_MAX_ADS ? handleUnlockBonus : undefined}
+          onUnlockBonus={adsWatched >= SECOND_TICKET_AT ? handleUnlockBonus : undefined}
           onKeepWatching={handleContinueEarning}
           onViewWallet={() => setViewOverride("wallet")}
           onViewWeeklyDraw={() => setViewOverride("weekly_draw")}
@@ -159,7 +156,7 @@ export default function Promo() {
         />
       </div>
 
-      {adsWatched >= maxAds && !viewOverride && (
+      {adsWatched >= MAX_ADS_PER_DAY && !viewOverride && (
         <p className="mt-4 px-4 text-center text-xs text-white/60">
           Come back tomorrow for more chances to earn tickets.
         </p>

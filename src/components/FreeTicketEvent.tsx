@@ -12,7 +12,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 /**
  * Free Ticket Event - Monetag rewarded ad (popup).
  * Watch ad → Close → grant_ticket RPC → ticket earned.
- * Daily limit: 5 tickets. Shows "My Tickets Today" with ticket codes.
+ * 5 ads = 1 ticket, 10 = 2, 18 = 3. Max 18 ads / 3 tickets per day.
  */
 export default function FreeTicketEvent() {
   const queryClient = useQueryClient();
@@ -31,7 +31,7 @@ export default function FreeTicketEvent() {
       return;
     }
     if (limitReached) {
-      toast.error("Daily limit reached (3 ads watched)");
+      toast.error("Daily limit reached (18 ads). Come back tomorrow.");
       return;
     }
     setErrorMsg(null);
@@ -73,7 +73,7 @@ export default function FreeTicketEvent() {
           ? String((err as { message?: string }).message)
           : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      const displayMsg = isLimitReached ? "Daily limit reached (3 ads watched). Come back tomorrow." : msg;
+      const displayMsg = isLimitReached ? "Daily limit reached (18 ads). Come back tomorrow." : msg;
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(displayMsg);
       toast.error(displayMsg);
@@ -96,16 +96,16 @@ export default function FreeTicketEvent() {
         Watch a short ad (~20 seconds)
       </p>
       <p className="text-[11px] text-muted-foreground mb-1">
-        Earn 1 ticket
+        5 ads → 1 ticket · 10 ads → 2 tickets · 18 ads → 3 tickets
       </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        Daily limit: 3 ads (1 ad = 1 ticket)
+        5 ads = 1 ticket · 10 ads = 2 tickets · 18 ads = 3 tickets (max/day)
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Ads watched today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {adsWatched}/{maxAds} · {adsWatched} ticket{adsWatched !== 1 ? "s" : ""} today
+          {adsWatched}/{maxAds}
         </span>
       </div>
 
@@ -131,7 +131,7 @@ export default function FreeTicketEvent() {
 
       {limitReached && (
         <p className="mb-3 text-xs text-muted-foreground">
-          Daily limit reached (3 ads watched). Come back tomorrow.
+          Daily limit reached (18 ads). Come back tomorrow.
         </p>
       )}
 

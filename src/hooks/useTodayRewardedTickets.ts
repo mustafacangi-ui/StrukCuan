@@ -4,8 +4,16 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Daily limit: 3 ads. 1 ad = 1 ticket. */
-const DAILY_MAX_ADS = 3;
+/** Ad reward system: 5 ads = 1 ticket, 10 ads = 2 tickets, 18 ads = 3 tickets. */
+export const ADS_PER_TICKET = 5;
+export const MAX_ADS_PER_DAY = 18;
+export const MAX_TICKETS_PER_DAY = 3;
+/** After 10 ads, user watches 3 more (11,12,13) to unlock bonus - these do NOT give tickets. */
+export const BONUS_UNLOCK_ADS = 3;
+export const FIRST_TICKET_AT = 5;
+export const SECOND_TICKET_AT = 10;
+export const BONUS_UNLOCK_AT = 10;
+export const THIRD_TICKET_AT = 18;
 
 /** Get today's date (YYYY-MM-DD) in Asia/Jakarta timezone */
 export function getTodayDateId(): string {
@@ -54,6 +62,32 @@ export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]>
   return (data ?? []) as TodayTicket[];
 }
 
+/** Get progress segment for UI: X/5, NEXT TICKET AT Y ADS */
+export function getAdProgressSegment(adsWatched: number, bonusUnlocked: boolean): {
+  segmentProgress: number;
+  segmentTarget: number;
+  nextTicketAt: number | null;
+  phase: "first" | "second" | "bonus_modal" | "bonus_unlock" | "third" | "final";
+} {
+  if (adsWatched < FIRST_TICKET_AT) {
+    return { segmentProgress: adsWatched, segmentTarget: ADS_PER_TICKET, nextTicketAt: FIRST_TICKET_AT, phase: "first" };
+  }
+  if (adsWatched < SECOND_TICKET_AT) {
+    return { segmentProgress: adsWatched - FIRST_TICKET_AT, segmentTarget: ADS_PER_TICKET, nextTicketAt: SECOND_TICKET_AT, phase: "second" };
+  }
+  if (adsWatched === SECOND_TICKET_AT && !bonusUnlocked) {
+    return { segmentProgress: 5, segmentTarget: ADS_PER_TICKET, nextTicketAt: null, phase: "bonus_modal" };
+  }
+  if (adsWatched >= SECOND_TICKET_AT && adsWatched < SECOND_TICKET_AT + BONUS_UNLOCK_ADS) {
+    return { segmentProgress: adsWatched - SECOND_TICKET_AT, segmentTarget: BONUS_UNLOCK_ADS, nextTicketAt: null, phase: "bonus_unlock" };
+  }
+  if (adsWatched < THIRD_TICKET_AT) {
+    const progress = adsWatched - (SECOND_TICKET_AT + BONUS_UNLOCK_ADS);
+    return { segmentProgress: progress, segmentTarget: ADS_PER_TICKET, nextTicketAt: THIRD_TICKET_AT, phase: "third" };
+  }
+  return { segmentProgress: ADS_PER_TICKET, segmentTarget: ADS_PER_TICKET, nextTicketAt: null, phase: "final" };
+}
+
 /**
  * Ads watched today only (from ad_ticket_events).
  * Ticket count for the week must come from useUserTickets (user_tickets.tickets).
@@ -76,8 +110,8 @@ export function useTodayRewardedTickets() {
     /** Today's ad events for display (e.g. "My Tickets Today" list). */
     tickets: query.data ?? [],
     isLoading: query.isLoading,
-    maxAds: DAILY_MAX_ADS,
-    maxPerDay: DAILY_MAX_ADS,
+    maxAds: MAX_ADS_PER_DAY,
+    maxPerDay: MAX_ADS_PER_DAY,
     refetch: query.refetch,
     invalidate: async () => {
       await queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
