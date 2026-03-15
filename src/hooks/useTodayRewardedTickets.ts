@@ -46,6 +46,22 @@ export function getTodayStartISO(): string {
   return jakartaNow.toISOString();
 }
 
+/** ISO week number in Asia/Jakarta (matches grant_ticket draw_week). */
+export function getDrawWeekJakarta(): number {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parseInt(parts.find((p) => p.type === "year")?.value ?? "0", 10);
+  const month = parseInt(parts.find((p) => p.type === "month")?.value ?? "0", 10);
+  const day = parseInt(parts.find((p) => p.type === "day")?.value ?? "0", 10);
+  const d = new Date(year, month - 1, day);
+  return getISOWeek(d);
+}
+
 /** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */
 export function getTodayDateId(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {

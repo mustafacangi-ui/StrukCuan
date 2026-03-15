@@ -92,6 +92,7 @@ export default function Promo() {
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       console.log("[Promo] Refetched, adsWatched should update");
       setJustEarnedTicket(true);
       setTimeout(() => setJustEarnedTicket(false), 3000);
@@ -106,6 +107,7 @@ export default function Promo() {
         await refetch();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       }
       throw err;
     }

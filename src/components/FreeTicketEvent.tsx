@@ -65,6 +65,7 @@ export default function FreeTicketEvent() {
       await invalidate();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err: unknown) {
@@ -82,6 +83,7 @@ export default function FreeTicketEvent() {
         await invalidate();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       }
       throw err;
     }
