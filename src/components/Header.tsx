@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
+import { useUserTickets } from "@/hooks/useUserTickets";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
 
 const Header = () => {
@@ -10,12 +11,13 @@ const Header = () => {
   const { user, session, isOnboarded, isLoading, requireLogin } = useUser();
 
   const { data: stats } = useUserStats(user?.id);
+  const { data: weeklyTickets } = useUserTickets(user?.id);
   const { data: notifications = [] } = useNotifications(user?.id);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const markRead = useMarkNotificationsRead(user?.id);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const tiket = stats?.tiket ?? user?.tiket ?? 0;
+  const tiket = weeklyTickets !== undefined ? weeklyTickets : (stats?.tiket ?? user?.tiket ?? 0);
   const nickname =
     user?.nickname ??
     session?.user?.user_metadata?.full_name ??

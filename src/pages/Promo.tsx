@@ -8,22 +8,23 @@ import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
+import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import type { PromoState } from "@/components/promo/PromoCard";
 
-/** Daily limit: 10 ads. 1 ad = 1 ticket. */
-const DAILY_MAX_ADS = 10;
-const BONUS_EXTRA_ADS = 5;
+/** Daily limit: 3 ads. 1 ad = 1 ticket. */
+const DAILY_MAX_ADS = 3;
+const BONUS_EXTRA_ADS = 0;
 
 /**
- * Derive promo UI state from ads watched and bonus progress.
- * Flow: start (0) → progress (1–4) → ticket_earned (5) → progress_5_10 (6–9) → daily_limit (10) → bonus_modal → bonus_unlocked → final_limit
+ * Derive promo UI state from ads watched.
+ * Flow: start (0) → progress (1–2) → daily_limit (3)
  */
 function getPromoState(
   adsWatched: number,
-  bonusProgress: number,
+  _bonusProgress: number,
   bonusUnlocked: boolean,
   viewOverride: "wallet" | "weekly_draw" | null,
   justEarnedTicket: boolean
@@ -31,20 +32,8 @@ function getPromoState(
   if (viewOverride === "wallet") return "wallet";
   if (viewOverride === "weekly_draw") return "weekly_draw";
   if (justEarnedTicket) return "ticket_earned";
-
-  const totalAds = bonusUnlocked ? DAILY_MAX_ADS + bonusProgress : adsWatched;
-
   if (adsWatched >= DAILY_MAX_ADS && !bonusUnlocked) return "daily_limit";
-  if (adsWatched >= DAILY_MAX_ADS && bonusUnlocked && totalAds >= DAILY_MAX_ADS + BONUS_EXTRA_ADS) {
-    return "final_limit";
-  }
-  if (adsWatched >= DAILY_MAX_ADS && bonusUnlocked) return "bonus_unlocked";
-  if (bonusUnlocked && totalAds > DAILY_MAX_ADS && totalAds < DAILY_MAX_ADS + BONUS_EXTRA_ADS) {
-    return "progress_5_10";
-  }
-  if (adsWatched >= 6 && adsWatched <= 9) return "progress_5_10";
-  if (adsWatched === 5) return "ticket_earned";
-  if (adsWatched >= 1 && adsWatched <= 4) return "progress";
+  if (adsWatched >= 1 && adsWatched < DAILY_MAX_ADS) return "progress";
   return "start";
 }
 
@@ -83,7 +72,7 @@ export default function Promo() {
       return;
     }
     if (adsWatched >= maxAds && !bonusUnlocked) {
-      toast.error("Daily limit reached (10 ads watched)");
+      toast.error("Daily limit reached (3 ads watched)");
       return;
     }
     setPopupBlocked(false);
@@ -102,6 +91,7 @@ export default function Promo() {
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       console.log("[Promo] Refetched, adsWatched should update");
       setJustEarnedTicket(true);
       if (bonusUnlocked) setBonusProgress((p) => Math.min(p + 1, BONUS_EXTRA_ADS));
@@ -112,11 +102,12 @@ export default function Promo() {
         ? String((err as { message?: string }).message)
         : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg);
+      toast.error(isLimitReached ? "Daily limit reached (3 ads watched). Come back tomorrow." : msg);
       if (isLimitReached) {
         await refetch();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       }
       throw err;
     }

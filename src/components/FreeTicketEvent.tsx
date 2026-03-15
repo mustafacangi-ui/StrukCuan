@@ -4,6 +4,7 @@ import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
+import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -30,7 +31,7 @@ export default function FreeTicketEvent() {
       return;
     }
     if (limitReached) {
-      toast.error("Daily limit reached (10 ads watched)");
+      toast.error("Daily limit reached (3 ads watched)");
       return;
     }
     setErrorMsg(null);
@@ -63,7 +64,7 @@ export default function FreeTicketEvent() {
       await invalidate();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      console.log("[FreeTicketEvent] Queries invalidated, adsWatched should refresh");
+      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err: unknown) {
@@ -73,7 +74,7 @@ export default function FreeTicketEvent() {
           ? String((err as { message?: string }).message)
           : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      const displayMsg = isLimitReached ? "Daily limit reached (10 ads watched). Come back tomorrow." : msg;
+      const displayMsg = isLimitReached ? "Daily limit reached (3 ads watched). Come back tomorrow." : msg;
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(displayMsg);
       toast.error(displayMsg);
@@ -81,6 +82,7 @@ export default function FreeTicketEvent() {
         await invalidate();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       }
       throw err;
     }
@@ -99,13 +101,13 @@ export default function FreeTicketEvent() {
         Earn 1 ticket
       </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        Daily limit: 10 ads (5 ads = 1 ticket)
+        Daily limit: 3 ads (1 ad = 1 ticket)
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Ads watched today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {adsWatched}/10 · {ticketsToday} ticket{ticketsToday !== 1 ? "s" : ""}
+          {adsWatched}/3 · {ticketsToday} ticket{ticketsToday !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -131,7 +133,7 @@ export default function FreeTicketEvent() {
 
       {limitReached && (
         <p className="mb-3 text-xs text-muted-foreground">
-          Daily limit reached (10 ads watched). Come back tomorrow.
+          Daily limit reached (3 ads watched). Come back tomorrow.
         </p>
       )}
 

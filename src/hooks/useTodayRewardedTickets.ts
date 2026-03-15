@@ -4,8 +4,8 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Daily limit: 10 ads. 1 ad = 1 ticket. */
-const DAILY_MAX_ADS = 10;
+/** Daily limit: 3 ads. 1 ad = 1 ticket. */
+const DAILY_MAX_ADS = 3;
 
 /** Get today's date (YYYY-MM-DD) in Asia/Jakarta timezone */
 export function getTodayDateId(): string {
@@ -67,7 +67,7 @@ export function useTodayRewardedTickets() {
 
   return {
     adsWatched,
-    ticketsToday: Math.floor(adsWatched / 5),
+    ticketsToday: adsWatched,
     tickets: query.data ?? [],
     isLoading: query.isLoading,
     maxAds: DAILY_MAX_ADS,

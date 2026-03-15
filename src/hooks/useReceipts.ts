@@ -221,6 +221,7 @@ export function useApproveReceipt() {
         queryKey: RECEIPTS_QUERY_KEY,
       });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -251,6 +252,7 @@ export function useApproveReceiptWithRewards() {
         queryKey: RECEIPTS_QUERY_KEY,
       });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });

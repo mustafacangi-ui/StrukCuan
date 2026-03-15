@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Trophy, X, Award, Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useUserStats } from "@/hooks/useUserStats";
+import { useUserTickets } from "@/hooks/useUserTickets";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import { useTotalTicketsThisWeek } from "@/hooks/useWeeklyDraw";
 
@@ -25,14 +25,13 @@ function getNextDrawTime(): Date {
 
 const PrizeSection = () => {
   const { user } = useUser();
-  const { data: stats } = useUserStats(user?.id);
+  const { data: ticketCount = 0 } = useUserTickets(user?.id);
   const { data: winners = [] } = useLotteryWinners(5);
   const { data: totalTicketsThisWeek = 0 } = useTotalTicketsThisWeek();
   const [showWinners, setShowWinners] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  const ticketCount = stats?.tiket ?? user?.tiket ?? 0;
-  const progressTarget = 10;
+  const progressTarget = 40;
   const progressPercent = Math.min(100, (ticketCount / progressTarget) * 100);
 
   useEffect(() => {
@@ -166,7 +165,7 @@ const PrizeSection = () => {
 
           {/* Progress bar */}
           <div className="mt-2">
-            <p className="text-[10px] text-amber-900/80 mb-1">Progress ke tier hadiah berikutnya</p>
+            <p className="text-[10px] text-amber-900/80 mb-1">Progress ke batas tiket mingguan</p>
             <div className="h-2.5 rounded-full bg-amber-900/20 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500 ease-out"
@@ -180,7 +179,7 @@ const PrizeSection = () => {
 
           {/* FOMO social proof */}
           <p className="text-xs text-amber-900/90 mt-2">
-            🎟 {totalTicketsThisWeek.toLocaleString()} tiket terkumpul minggu ini
+            🔥 {totalTicketsThisWeek.toLocaleString()} tiket minggu ini
           </p>
 
           {/* Countdown */}
