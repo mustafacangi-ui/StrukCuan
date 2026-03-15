@@ -133,6 +133,18 @@ export default function Promo() {
 
       <PromoHeader />
 
+      {/* SECTION 1 — Reward Guide (Top) */}
+      <div className="mt-6 px-4">
+        <div className="overflow-hidden rounded-xl border border-pink-500/30 bg-black/30 backdrop-blur-sm">
+          <img
+            src="/reward-guide.png"
+            alt="Reward System Guide: 5 ads → 1 ticket, 10 ads → 2 tickets, Super bonus, 17 ads → 3 tickets"
+            className="w-full object-contain"
+          />
+        </div>
+      </div>
+
+      {/* SECTION 2 — Reward Action Panel (Below) */}
       <div className="mt-6 px-4">
         <PromoCard
           state={state}
