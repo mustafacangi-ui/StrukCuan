@@ -3,27 +3,41 @@ import { Trophy, X, Award, Ticket } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
+import { useTotalTicketsThisWeek } from "@/hooks/useWeeklyDraw";
 
-const getNextSunday = () => {
+/** Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC */
+function getNextDrawTime(): Date {
   const now = new Date();
-  const target = new Date(now);
-  const day = target.getDay();
-  const daysUntil = day === 0 ? 7 : 7 - day;
-  target.setDate(target.getDate() + daysUntil);
-  target.setHours(23, 59, 59, 999);
-  return target;
-};
+  const day = now.getUTCDay();
+  const hour = now.getUTCHours();
+  const minute = now.getUTCMinutes();
+
+  let daysToAdd = (7 - day) % 7;
+  if (daysToAdd === 0 && (hour > 14 || (hour === 14 && minute >= 0))) {
+    daysToAdd = 7;
+  }
+
+  const next = new Date(now);
+  next.setUTCDate(next.getUTCDate() + daysToAdd);
+  next.setUTCHours(14, 0, 0, 0);
+  return next;
+}
 
 const PrizeSection = () => {
   const { user } = useUser();
   const { data: stats } = useUserStats(user?.id);
   const { data: winners = [] } = useLotteryWinners(5);
+  const { data: totalTicketsThisWeek = 0 } = useTotalTicketsThisWeek();
   const [showWinners, setShowWinners] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
+  const ticketCount = stats?.tiket ?? user?.tiket ?? 0;
+  const progressTarget = 10;
+  const progressPercent = Math.min(100, (ticketCount / progressTarget) * 100);
+
   useEffect(() => {
     const tick = () => {
-      const diff = getNextSunday().getTime() - Date.now();
+      const diff = getNextDrawTime().getTime() - Date.now();
       if (diff <= 0) return setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       setTimeLeft({
         days: Math.floor(diff / 86400000),
@@ -38,7 +52,6 @@ const PrizeSection = () => {
   }, []);
 
   const pad = (n: number) => String(n).padStart(2, "0");
-  const tickets = stats?.tiket ?? user?.tiket ?? 0;
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -90,99 +103,135 @@ const PrizeSection = () => {
       )}
 
       <div
-        className="relative mx-4 rounded-xl border border-primary/30 p-4 overflow-hidden"
+        className="relative mx-4 rounded-2xl overflow-hidden p-6 transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_15px_50px_rgba(255,200,50,0.4)]"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at top right, rgba(255,255,255,0.25), transparent 60%), linear-gradient(to top, #0B0B0B, #3A2A00, #C89B2C, #FFD85A)",
-          boxShadow: "0 10px 30px rgba(255, 215, 90, 0.25)",
+          background: "linear-gradient(135deg, #FFD86B, #F6B73C, #E89A24)",
+          boxShadow: "0 10px 40px rgba(255,200,50,0.35)",
         }}
       >
-        <div className="flex items-center justify-between gap-2 mb-1 pr-1">
-          <div className="flex items-center gap-2">
-            <Trophy size={16} className="text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              HADIAH BELANJA MINGGUAN
+        {/* Noise overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.15] mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🎁</span>
+            <span className="text-sm font-semibold uppercase tracking-wider text-amber-900/90">
+              Hadiah Belanja Mingguan
             </span>
           </div>
+
+          {/* Main title */}
+          <h2 className="font-display text-2xl font-bold text-amber-950">
+            Menang Voucher Belanja
+          </h2>
+
+          {/* Prize highlight */}
+          <p className="text-2xl font-display font-bold text-amber-950 mt-1">
+            Rp100.000
+          </p>
+
+          {/* Subtext */}
+          <p className="text-sm text-amber-900/80 mt-0.5">
+            5 pemenang setiap minggu
+          </p>
+
+          {/* Instruction box */}
           <div
-            className="pointer-events-none flex-shrink-0 p-3"
-            style={{ filter: "drop-shadow(0 0 10px rgba(255,46,99,0.6))" }}
+            className="mt-4 rounded-xl px-4 py-3 border border-amber-900/20"
+            style={{
+              background: "rgba(0,0,0,0.35)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+            }}
           >
-            <Ticket size={32} color="#FF2E63" />
+            <p className="text-xs text-amber-50 leading-relaxed">
+              Upload struk belanja untuk mendapatkan tiket undian.
+              <br />
+              1 struk = 1 tiket.
+              <br />
+              Semakin banyak struk, semakin besar peluang menang.
+            </p>
           </div>
-        </div>
 
-        <p className="font-display text-2xl font-bold text-foreground mt-1">
-          Menang Voucher Belanja
-        </p>
-        <p className="text-lg font-bold text-primary mt-0.5">
-          Rp100.000
-        </p>
-        <p className="text-[10px] text-[#F8F8F8] mt-0.5 leading-tight">
-          5 pemenang setiap minggu
-          <br />
-          masing-masing mendapatkan voucher belanja Rp100.000
-        </p>
-
-        <div
-          className="mt-3 rounded-lg border border-primary/20 px-3 py-2"
-          style={{
-            background: "rgba(0,0,0,0.35)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
-        >
-          <p className="text-[10px] text-[#F8F8F8] leading-relaxed">
-            Upload struk belanja untuk mendapatkan kesempatan hadiah.
-            <br />
-            1 struk = 1 kesempatan hadiah.
-            <br />
-            Semakin banyak struk, semakin besar peluang.
+          {/* User ticket info */}
+          <p className="mt-4 text-sm font-bold text-amber-950">
+            Kesempatan hadiah Anda: {ticketCount.toLocaleString()} tiket
           </p>
-          <p className="text-sm font-bold text-primary mt-0.5">
-            Kesempatan hadiah Anda: {tickets.toLocaleString()}
-          </p>
-        </div>
 
-        <p className="text-[9px] text-[#F8F8F8] mt-3 text-center">
-          Pengumuman hadiah dalam
-        </p>
-        <div className="mt-1 flex items-center justify-center gap-1.5">
-          {[
-            { val: pad(timeLeft.days), label: "Days" },
-            { val: pad(timeLeft.hours), label: "Hrs" },
-            { val: pad(timeLeft.minutes), label: "Min" },
-            { val: pad(timeLeft.seconds), label: "Sec" },
-          ].map((block, i) => (
-            <div key={block.label} className="flex items-center gap-1.5">
-              <div className="flex flex-col items-center">
-                <div className="rounded-lg bg-secondary border border-primary/20 px-2.5 py-1 font-display text-lg font-bold text-primary tabular-nums">
+          {/* Progress bar */}
+          <div className="mt-2">
+            <p className="text-[10px] text-amber-900/80 mb-1">Progress ke tier hadiah berikutnya</p>
+            <div className="h-2.5 rounded-full bg-amber-900/20 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-amber-900/80 mt-1">
+              {Math.min(ticketCount, progressTarget)} / {progressTarget} tiket
+            </p>
+          </div>
+
+          {/* FOMO social proof */}
+          <p className="text-xs text-amber-900/90 mt-2">
+            🎟 {totalTicketsThisWeek.toLocaleString()} tiket terkumpul minggu ini
+          </p>
+
+          {/* Countdown */}
+          <p className="text-[10px] text-amber-900/80 mt-4 text-center font-medium">
+            Pengumuman pemenang dalam
+          </p>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            {[
+              { val: pad(timeLeft.days), label: "Days" },
+              { val: pad(timeLeft.hours), label: "Hours" },
+              { val: pad(timeLeft.minutes), label: "Min" },
+              { val: pad(timeLeft.seconds), label: "Sec" },
+            ].map((block, i) => (
+              <div key={block.label} className="flex flex-col items-center">
+                <div
+                  className="rounded-lg px-3 py-2 font-display text-lg font-bold text-emerald-950 tabular-nums font-mono"
+                  style={{
+                    background: "rgba(0,0,0,0.2)",
+                    boxShadow: "0 0 15px rgba(0,255,150,0.5)",
+                    border: "1px solid rgba(46,229,157,0.4)",
+                  }}
+                >
                   {block.val}
                 </div>
-                <span className="mt-0.5 text-[7px] uppercase tracking-wider text-[#F8F8F8]">
+                <span className="mt-1 text-[9px] uppercase tracking-wider text-amber-900/80">
                   {block.label}
                 </span>
               </div>
-              {i < 3 && <span className="text-sm font-bold text-primary mt-[-10px]">:</span>}
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Action button */}
+          <button
+            onClick={() => setShowWinners(true)}
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-base text-white transition-all duration-200 hover:opacity-95 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg, #2EE59D, #14C38E)",
+              boxShadow: "0 4px 20px rgba(46,229,157,0.4)",
+            }}
+          >
+            <Award size={18} />
+            Lihat Pemenang
+          </button>
+
+          {/* Footer */}
+          <p className="text-[9px] text-amber-900/70 mt-4 text-center leading-relaxed">
+            Program ini adalah program promosi StrukCuan.
+            <br />
+            Pemenang menerima voucher setelah verifikasi struk.
+          </p>
         </div>
-
-        <button
-          onClick={() => setShowWinners(true)}
-          className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 py-2.5 font-display font-bold text-sm text-primary"
-        >
-          <Award size={14} className="text-primary" />
-          <span>Lihat Pemenang</span>
-        </button>
-
-        <p className="text-[8px] mt-3 leading-relaxed" style={{ color: "#F2F2F2" }}>
-          Program ini adalah program promosi StrukCuan.
-          <br />
-          Pemenang menerima voucher belanja setelah verifikasi struk.
-          <br />
-          Program ini bukan perjudian atau sistem taruhan.
-        </p>
       </div>
     </>
   );
