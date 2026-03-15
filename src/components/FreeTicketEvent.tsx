@@ -3,8 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Ticket, Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
-import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
-import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
+import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -17,7 +17,8 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 export default function FreeTicketEvent() {
   const queryClient = useQueryClient();
   const { user } = useUser();
-  const { tickets, adsWatched, maxAds, invalidate } = useTodayRewardedTickets();
+  const { adsWatched, ticketsFromAdsToday, maxAds, invalidate } = useTodayRewardedTickets();
+  const { data: ticketsThisWeek = 0 } = useUserTickets(user?.id);
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -95,15 +96,12 @@ export default function FreeTicketEvent() {
       <p className="text-[11px] text-muted-foreground mb-2">
         Watch a short ad (~20 seconds)
       </p>
-      <p className="text-[11px] text-muted-foreground mb-1">
-        5 ads → 1 ticket · 10 ads → 2 tickets · 18 ads → 3 tickets
-      </p>
       <p className="text-[11px] text-muted-foreground mb-3">
         5 ads = 1 ticket · 10 ads = 2 tickets · 18 ads = 3 tickets (max/day)
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
-        <span className="text-xs text-muted-foreground">Ads watched today:</span>
+        <span className="text-xs text-muted-foreground">Ads watched:</span>
         <span className="font-display text-sm font-bold text-primary">
           {adsWatched}/{maxAds}
         </span>
@@ -111,22 +109,14 @@ export default function FreeTicketEvent() {
 
       <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
         <h4 className="text-xs font-semibold text-foreground mb-2">
-          🎟 My Tickets Today
+          🎟 My Tickets
         </h4>
-        {tickets.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {tickets.map((t) => (
-              <span
-                key={t.id}
-                className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-xs text-foreground"
-              >
-                {t.ticket_number ?? `#${t.id}`}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground">No tickets yet today.</p>
-        )}
+        <p className="text-sm font-bold text-primary">
+          {ticketsThisWeek} ticket{ticketsThisWeek !== 1 ? "s" : ""} this week
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          From ads today: {ticketsFromAdsToday} (5→1, 10→2, 18→3)
+        </p>
       </div>
 
       {limitReached && (

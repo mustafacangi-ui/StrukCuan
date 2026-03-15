@@ -1,6 +1,6 @@
 import { Ticket, Play, Star, ChevronRight } from "lucide-react";
 import type { TodayTicket } from "@/hooks/useTodayRewardedTickets";
-import { getAdProgressSegment } from "@/hooks/useTodayRewardedTickets";
+import { getAdProgressSegment, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
 
 export type PromoState =
   | "start"
@@ -270,23 +270,17 @@ export default function PromoCard({
             <h3 className="mb-4 font-display text-lg font-bold text-white">
               My Tickets
             </h3>
-            <ul className="mb-4 space-y-2">
-              {tickets.length > 0 ? (
-                tickets.map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2"
-                  >
-                    <Ticket className="h-5 w-5 text-amber-400 shrink-0" />
-                    <span className="font-mono text-sm text-white">
-                      {t.ticket_number ?? `#${t.id}`}
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <p className="text-sm text-white/60">No tickets yet today.</p>
-              )}
-            </ul>
+            <div className="mb-4 space-y-3">
+              <div className="rounded-lg bg-white/5 px-4 py-3">
+                <p className="text-xs text-white/60 mb-1">Tickets this week (for draw)</p>
+                <p className="font-display text-2xl font-bold text-amber-300">
+                  {ticketsThisWeek} Ticket{ticketsThisWeek !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-4 py-2">
+                <p className="text-xs text-white/60">Ads watched today: {adsWatched} · Tickets from ads: {ticketsFromAds(adsWatched)}</p>
+              </div>
+            </div>
             {onBack && (
               <button
                 type="button"

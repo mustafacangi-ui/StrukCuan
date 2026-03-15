@@ -16,6 +16,14 @@ export const SECOND_TICKET_AT = 10;
 export const BONUS_UNLOCK_AT = 10;
 export const THIRD_TICKET_AT = 18;
 
+/** Derive tickets from ads watched. Each ad_ticket_event is NOT a ticket - only thresholds grant tickets. */
+export function ticketsFromAds(adsWatched: number): number {
+  if (adsWatched >= THIRD_TICKET_AT) return 3;
+  if (adsWatched >= SECOND_TICKET_AT) return 2;
+  if (adsWatched >= FIRST_TICKET_AT) return 1;
+  return 0;
+}
+
 /** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */
 export function getTodayDateId(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -108,9 +116,11 @@ export function useTodayRewardedTickets() {
   const adsWatchedToday = query.data?.length ?? 0;
 
   return {
-    /** Ads watched today (for daily limit progress bar). From ad_ticket_events. */
+    /** Count of ad_ticket_events (event_type='rewarded'). Each row = 1 ad, NOT 1 ticket. */
     adsWatched: adsWatchedToday,
-    /** Today's ad events for display (e.g. "My Tickets Today" list). */
+    /** Tickets derived from adsWatched thresholds: 5→1, 10→2, 18→3. For display only; actual tickets in user_tickets. */
+    ticketsFromAdsToday: ticketsFromAds(adsWatchedToday),
+    /** Raw ad events - do NOT treat as tickets. Use for latest event display only. */
     tickets: query.data ?? [],
     isLoading: query.isLoading,
     maxAds: MAX_ADS_PER_DAY,
