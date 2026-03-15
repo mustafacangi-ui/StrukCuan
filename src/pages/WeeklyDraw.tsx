@@ -136,9 +136,9 @@ export default function WeeklyDraw() {
               </div>
             </div>
 
-            {/* Total Tickets */}
+            {/* Total Tickets This Week */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Tickets This Week</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TOTAL TICKETS THIS WEEK</p>
               <p className="text-xl font-display font-bold text-white">
                 {ticketsLoading ? "..." : totalTickets ?? 0}
               </p>
@@ -151,14 +151,14 @@ export default function WeeklyDraw() {
                 <p className="text-sm text-muted-foreground">Loading...</p>
               ) : lastWinner ? (
                 <div className="rounded-lg bg-gradient-to-b from-amber-500/10 to-amber-600/10 border border-amber-400/30 p-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">Ticket ID</p>
-                      <p className="font-display font-bold text-amber-300">
-                        {lastWinner.ticket_number ?? lastWinner.ticket_id ?? `#${lastWinner.id}`}
+                      <p className="text-xs text-muted-foreground">User ID</p>
+                      <p className="font-display font-bold text-amber-300 truncate">
+                        {lastWinner.user_id ?? "—"}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">Prize</p>
                       <p className="font-display font-bold text-amber-300">
                         ${lastWinner.prize ?? PRIZE_POOL}
