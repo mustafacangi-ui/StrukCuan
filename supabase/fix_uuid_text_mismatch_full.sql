@@ -161,6 +161,24 @@ $$;
 
 grant execute on function public.grant_ticket() to authenticated;
 
+-- 7b) GET_TODAY_REWARDED_COUNT - RPC for progress bar (bypasses RLS, same date logic as grant_ticket)
+-- =============================================================================
+create or replace function public.get_today_rewarded_count()
+returns integer language sql security definer set search_path = public stable as $$
+  select count(*)::integer from public.ad_ticket_events
+  where user_id = auth.uid()
+    and event_type = 'rewarded'
+    and created_at >= (date_trunc('day', now() at time zone 'Asia/Jakarta') at time zone 'Asia/Jakarta');
+$$;
+grant execute on function public.get_today_rewarded_count() to authenticated;
+
+-- 7c) RLS for ad_ticket_events (ensure users can read own rows for fallback)
+-- =============================================================================
+alter table if exists public.ad_ticket_events enable row level security;
+drop policy if exists "Users can read own ad_ticket_events" on public.ad_ticket_events;
+create policy "Users can read own ad_ticket_events" on public.ad_ticket_events
+  for select to authenticated using (user_id = auth.uid());
+
 -- 8) APPROVE_RECEIPT - pass uuid to user_stats (receipts.user_id is text)
 -- =============================================================================
 create or replace function public.approve_receipt(p_receipt_id bigint)

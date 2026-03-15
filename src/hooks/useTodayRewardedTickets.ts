@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getISOWeek } from "date-fns";
 import { supabase } from "@/lib/supabase";
@@ -79,9 +80,28 @@ export type TodayTicket = {
 };
 
 /**
- * Fetch ad_ticket_events for today only (rewarded ads).
- * Filters by created_at >= start of today (Asia/Jakarta).
- * Do NOT use for ticket count - use user_tickets.tickets for that.
+ * Fetch today's rewarded ad count via RPC (bypasses RLS, uses same date logic as grant_ticket).
+ * Returns count from ad_ticket_events where event_type='rewarded' and created_at >= start of today (Asia/Jakarta).
+ */
+export async function fetchTodayRewardedCount(): Promise<number> {
+  const { data, error } = await supabase.rpc("get_today_rewarded_count");
+  if (error) {
+    console.error("[useTodayRewardedTickets] Fetch count error:", {
+      message: error.message,
+      code: error.code,
+    });
+    throw error;
+  }
+  const count = typeof data === "number" ? data : 0;
+  if (import.meta.env.DEV) {
+    console.log("[useTodayRewardedTickets] get_today_rewarded_count RPC returned:", count);
+  }
+  return count;
+}
+
+/**
+ * Fetch ad_ticket_events for today (fallback for tickets array).
+ * Uses table query - may be blocked by RLS if policy missing.
  */
 export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]> {
   const todayStart = getTodayStartISO();
@@ -94,12 +114,12 @@ export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]>
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("[useTodayRewardedTickets] Fetch error:", {
+    console.error("[useTodayRewardedTickets] Fetch events error:", {
       message: error.message,
       code: error.code,
       userId,
     });
-    throw error;
+    return [];
   }
   return (data ?? []) as TodayTicket[];
 }
@@ -131,32 +151,43 @@ export function getAdProgressSegment(adsWatched: number, bonusUnlocked: boolean)
 }
 
 /**
- * Ads watched today only (from ad_ticket_events).
+ * Ads watched today only (from ad_ticket_events via get_today_rewarded_count RPC).
+ * Uses RPC to bypass RLS and ensure same date logic as grant_ticket (Asia/Jakarta).
  * Ticket count for the week must come from useUserTickets (user_tickets.tickets).
  */
 export function useTodayRewardedTickets() {
   const queryClient = useQueryClient();
   const { user } = useUser();
 
-  const query = useQuery({
-    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayStartISO().slice(0, 10)],
+  const countQuery = useQuery({
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, "count", getTodayStartISO().slice(0, 10)],
+    queryFn: () => fetchTodayRewardedCount(),
+    enabled: !!user,
+  });
+
+  const eventsQuery = useQuery({
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, "events", getTodayStartISO().slice(0, 10)],
     queryFn: () => fetchTodayAdEvents(user!.id),
     enabled: !!user,
   });
 
-  const adsWatchedToday = query.data?.length ?? 0;
+  const adsWatchedToday = countQuery.data ?? 0;
+
+  const refetch = useCallback(async () => {
+    await Promise.all([countQuery.refetch(), eventsQuery.refetch()]);
+  }, [countQuery.refetch, eventsQuery.refetch]);
 
   return {
-    /** Count of ad_ticket_events (event_type='rewarded'). Each row = 1 ad, NOT 1 ticket. */
+    /** Count of ad_ticket_events (event_type='rewarded') today. Each row = 1 ad, NOT 1 ticket. */
     adsWatched: adsWatchedToday,
-    /** Tickets derived from adsWatched thresholds: 5→1, 10→2, 18→3. For display only; actual tickets in user_tickets. */
+    /** Tickets derived from adsWatched thresholds: 5→1, 10→2, 15→3. For display only; actual tickets in user_tickets. */
     ticketsFromAdsToday: ticketsFromAds(adsWatchedToday),
     /** Raw ad events - do NOT treat as tickets. Use for latest event display only. */
-    tickets: query.data ?? [],
-    isLoading: query.isLoading,
+    tickets: eventsQuery.data ?? [],
+    isLoading: countQuery.isLoading,
     maxAds: MAX_ADS_PER_DAY,
     maxPerDay: MAX_ADS_PER_DAY,
-    refetch: query.refetch,
+    refetch,
     invalidate: async () => {
       await queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       await queryClient.refetchQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
