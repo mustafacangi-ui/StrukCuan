@@ -5,7 +5,8 @@ import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { useTotalTicketsThisWeek, useLastWinner } from "@/hooks/useWeeklyDraw";
 
-const PRIZE_POOL = 50;
+const PRIZE_POOL_TOTAL = 500_000;
+const PRIZE_PER_WINNER = 100_000;
 /** Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC */
 function getNextDrawTime(): Date {
   const now = new Date();
@@ -157,11 +158,14 @@ export default function WeeklyDraw() {
                       <p className="font-display font-bold text-amber-300 truncate">
                         {lastWinner.user_id ?? "—"}
                       </p>
+                      {lastWinner.draw_date && (
+                        <p className="text-xs text-muted-foreground mt-1">Draw: {lastWinner.draw_date}</p>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">Prize</p>
                       <p className="font-display font-bold text-amber-300">
-                        ${lastWinner.prize ?? PRIZE_POOL}
+                        Rp {(lastWinner.prize_amount ?? lastWinner.prize ?? PRIZE_PER_WINNER).toLocaleString()}
                       </p>
                     </div>
                   </div>

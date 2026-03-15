@@ -4,10 +4,10 @@ import { getISOWeek } from "date-fns";
 
 export interface WeeklyWinner {
   id: number;
-  ticket_id?: string;
-  ticket_number?: string;
-  prize?: string | number;
   user_id?: string;
+  draw_date?: string;
+  prize_amount?: number;
+  prize?: string | number; // legacy
   created_at: string;
   [key: string]: unknown;
 }
@@ -29,7 +29,7 @@ async function fetchTotalTicketsThisWeek(): Promise<number> {
 async function fetchLastWinner(): Promise<WeeklyWinner | null> {
   const { data, error } = await supabase
     .from("weekly_winners")
-    .select("*")
+    .select("id, user_id, draw_date, prize_amount, created_at")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
