@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getISOWeek } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 
@@ -15,7 +16,7 @@ export const SECOND_TICKET_AT = 10;
 export const BONUS_UNLOCK_AT = 10;
 export const THIRD_TICKET_AT = 18;
 
-/** Get today's date (YYYY-MM-DD) in Asia/Jakarta timezone */
+/** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */
 export function getTodayDateId(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",
@@ -24,10 +25,12 @@ export function getTodayDateId(): string {
     day: "2-digit",
   });
   const parts = formatter.formatToParts(new Date());
-  const year = parts.find((p) => p.type === "year")?.value ?? "";
-  const month = parts.find((p) => p.type === "month")?.value ?? "";
-  const day = parts.find((p) => p.type === "day")?.value ?? "";
-  return `${year}-${month}-${day}`;
+  const year = parseInt(parts.find((p) => p.type === "year")?.value ?? "0", 10);
+  const month = parseInt(parts.find((p) => p.type === "month")?.value ?? "0", 10);
+  const day = parseInt(parts.find((p) => p.type === "day")?.value ?? "0", 10);
+  const d = new Date(year, month - 1, day);
+  const week = getISOWeek(d);
+  return `${year}-${String(week).padStart(2, "0")}`;
 }
 
 export type TodayTicket = {
@@ -37,18 +40,18 @@ export type TodayTicket = {
 };
 
 /**
- * Fetch today's ad_ticket_events only (rewarded ads watched today).
- * Schema: ad_ticket_events uses week_id (text, YYYY-MM-DD) - NOT draw_week.
+ * Fetch ad_ticket_events for current week (rewarded ads).
+ * Schema: ad_ticket_events uses week_id (text, YYYY-WW ISO week format) - NOT draw_week.
  * Do NOT use for ticket count - use user_tickets.tickets for that.
  */
 export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]> {
-  const todayId = getTodayDateId();
+  const weekId = getTodayDateId();
   const { data, error } = await supabase
     .from("ad_ticket_events")
     .select("id, created_at")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
-    .eq("week_id", todayId)
+    .eq("week_id", weekId)
     .order("created_at", { ascending: false });
 
   if (error) {
