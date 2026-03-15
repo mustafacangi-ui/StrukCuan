@@ -1,6 +1,6 @@
 import { Ticket, Play, Star, ChevronRight } from "lucide-react";
 import type { TodayTicket } from "@/hooks/useTodayRewardedTickets";
-import { getAdProgressSegment, getNextTicketLabel, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
+import { getAdProgressSegment, getNextTicketAt, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
 
 export type PromoState =
   | "start"
@@ -52,7 +52,8 @@ export default function PromoCard({
   const { segmentProgress, segmentTarget } = getAdProgressSegment(adsWatched, bonusUnlocked ?? false);
   const filledSegments = segmentProgress;
   const totalSegments = segmentTarget;
-  const nextTicketLabel = getNextTicketLabel(adsWatched);
+  const nextTicket = getNextTicketAt(adsWatched ?? 0);
+  const nextTicketLabel = nextTicket != null ? `NEXT TICKET AT ${nextTicket} ADS` : "All Done for Today";
 
   const gradientBtn =
     "w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-sm bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
