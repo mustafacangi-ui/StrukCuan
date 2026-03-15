@@ -4,6 +4,10 @@ import { getISOWeek } from "date-fns";
 
 export const USER_TICKETS_QUERY_KEY = ["user_tickets"] as const;
 
+/**
+ * Fetch user_tickets for current week.
+ * Schema: user_tickets uses draw_week (integer, ISO week) - NOT week_id.
+ */
 async function fetchUserTickets(userId: string): Promise<number> {
   const drawWeek = getISOWeek(new Date());
   const { data, error } = await supabase

@@ -38,14 +38,14 @@ export type TodayTicket = {
 
 /**
  * Fetch today's ad_ticket_events only (rewarded ads watched today).
- * Uses week_id = today's date (matches backend grant_ticket daily limit).
+ * Schema: ad_ticket_events uses week_id (text, YYYY-MM-DD) - NOT draw_week.
  * Do NOT use for ticket count - use user_tickets.tickets for that.
  */
 export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]> {
   const todayId = getTodayDateId();
   const { data, error } = await supabase
     .from("ad_ticket_events")
-    .select("id, ticket_number, created_at")
+    .select("id, created_at")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
     .eq("week_id", todayId)
