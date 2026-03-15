@@ -24,6 +24,14 @@ export function ticketsFromAds(adsWatched: number): number {
   return 0;
 }
 
+/** Dynamic next ticket label based on adsWatched. Do not show 18 unless user passed 10 ads. */
+export function getNextTicketLabel(adsWatched: number): string {
+  if (adsWatched >= THIRD_TICKET_AT) return "All Done for Today";
+  if (adsWatched >= SECOND_TICKET_AT) return "NEXT TICKET AT 18 ADS";
+  if (adsWatched >= FIRST_TICKET_AT) return "NEXT TICKET AT 10 ADS";
+  return "NEXT TICKET AT 5 ADS";
+}
+
 /** Get week_id in ISO week format (YYYY-WW) for ad_ticket_events. Uses Asia/Jakarta timezone. */
 export function getTodayDateId(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {

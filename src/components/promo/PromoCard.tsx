@@ -1,6 +1,6 @@
 import { Ticket, Play, Star, ChevronRight } from "lucide-react";
 import type { TodayTicket } from "@/hooks/useTodayRewardedTickets";
-import { getAdProgressSegment, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
+import { getAdProgressSegment, getNextTicketLabel, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
 
 export type PromoState =
   | "start"
@@ -49,10 +49,10 @@ export default function PromoCard({
   onBack,
   isWatching = false,
 }: PromoCardProps) {
-  const { segmentProgress, segmentTarget, nextTicketAt, phase } = getAdProgressSegment(adsWatched, bonusUnlocked ?? false);
+  const { segmentProgress, segmentTarget } = getAdProgressSegment(adsWatched, bonusUnlocked ?? false);
   const filledSegments = segmentProgress;
   const totalSegments = segmentTarget;
-  const nextTicketLabel = nextTicketAt != null ? `NEXT TICKET AT ${nextTicketAt} ADS` : phase === "bonus_unlock" ? "UNLOCK IN PROGRESS" : "Daily limit";
+  const nextTicketLabel = getNextTicketLabel(adsWatched);
 
   const gradientBtn =
     "w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-display font-bold text-sm bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -210,7 +210,7 @@ export default function PromoCard({
             <div className="mb-4">
               <div className="mb-2 flex justify-between text-xs text-white/70">
                 <span>ADS WATCHED {segmentProgress}/{segmentTarget}</span>
-                <span>NEXT TICKET AT 18 ADS</span>
+                <span>{nextTicketLabel}</span>
               </div>
               <div className="flex gap-1">
                 {Array.from({ length: totalSegments }).map((_, i) => (
