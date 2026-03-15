@@ -28,12 +28,19 @@ export type TodayTicket = {
   created_at: string;
 };
 
-export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> {
+/**
+ * Fetch today's ad_ticket_events only (rewarded ads watched today).
+ * Uses week_id = today's date (matches backend grant_ticket daily limit).
+ * Do NOT use for ticket count - use user_tickets.tickets for that.
+ */
+export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]> {
+  const todayId = getTodayDateId();
   const { data, error } = await supabase
     .from("ad_ticket_events")
-    .select("*")
+    .select("id, ticket_number, created_at")
     .eq("user_id", userId)
     .eq("event_type", "rewarded")
+    .eq("week_id", todayId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -44,30 +51,29 @@ export async function fetchTodayTickets(userId: string): Promise<TodayTicket[]> 
     });
     throw error;
   }
-  const rows = (data ?? []) as TodayTicket[];
-  console.log("[useTodayRewardedTickets] Fetched ad_ticket_events:", {
-    userId,
-    rowCount: rows.length,
-    rows,
-  });
-  return rows;
+  return (data ?? []) as TodayTicket[];
 }
 
+/**
+ * Ads watched today only (from ad_ticket_events).
+ * Ticket count for the week must come from useUserTickets (user_tickets.tickets).
+ */
 export function useTodayRewardedTickets() {
   const queryClient = useQueryClient();
   const { user } = useUser();
 
   const query = useQuery({
-    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id],
-    queryFn: () => fetchTodayTickets(user!.id),
+    queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, getTodayDateId()],
+    queryFn: () => fetchTodayAdEvents(user!.id),
     enabled: !!user,
   });
 
-  const adsWatched = query.data?.length ?? 0;
+  const adsWatchedToday = query.data?.length ?? 0;
 
   return {
-    adsWatched,
-    ticketsToday: adsWatched,
+    /** Ads watched today (for daily limit progress bar). From ad_ticket_events. */
+    adsWatched: adsWatchedToday,
+    /** Today's ad events for display (e.g. "My Tickets Today" list). */
     tickets: query.data ?? [],
     isLoading: query.isLoading,
     maxAds: DAILY_MAX_ADS,

@@ -17,7 +17,8 @@ const Header = () => {
   const markRead = useMarkNotificationsRead(user?.id);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const tiket = weeklyTickets !== undefined ? weeklyTickets : (stats?.tiket ?? user?.tiket ?? 0);
+  /** Ticket count from user_tickets only - never fall back to user_stats (avoids stale data after weekly draw reset) */
+  const tiket = weeklyTickets ?? 0;
   const nickname =
     user?.nickname ??
     session?.user?.user_metadata?.full_name ??

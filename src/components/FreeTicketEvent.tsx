@@ -17,7 +17,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 export default function FreeTicketEvent() {
   const queryClient = useQueryClient();
   const { user } = useUser();
-  const { tickets, ticketsToday, adsWatched, maxAds, invalidate } = useTodayRewardedTickets();
+  const { tickets, adsWatched, maxAds, invalidate } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -63,7 +63,6 @@ export default function FreeTicketEvent() {
       console.log("[FreeTicketEvent] grantTicket OK, result:", result);
       await invalidate();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
@@ -81,7 +80,6 @@ export default function FreeTicketEvent() {
       if (isLimitReached) {
         await invalidate();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       }
       throw err;
@@ -107,7 +105,7 @@ export default function FreeTicketEvent() {
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
         <span className="text-xs text-muted-foreground">Ads watched today:</span>
         <span className="font-display text-sm font-bold text-primary">
-          {adsWatched}/3 · {ticketsToday} ticket{ticketsToday !== 1 ? "s" : ""}
+          {adsWatched}/{maxAds} · {adsWatched} ticket{adsWatched !== 1 ? "s" : ""} today
         </span>
       </div>
 

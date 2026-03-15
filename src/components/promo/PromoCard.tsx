@@ -16,7 +16,9 @@ export type PromoState =
 interface PromoCardProps {
   state: PromoState;
   adsWatched: number;
-  ticketsToday: number;
+  /** Tickets this week from user_tickets.tickets (source of truth for draw) */
+  ticketsThisWeek: number;
+  /** Today's ad events for display (e.g. wallet list) */
   tickets: TodayTicket[];
   maxAds: number;
   bonusProgress?: number;
@@ -36,7 +38,7 @@ const SEGMENTS = 3;
 export default function PromoCard({
   state,
   adsWatched,
-  ticketsToday,
+  ticketsThisWeek,
   tickets,
   maxAds,
   bonusProgress = 0,
@@ -69,12 +71,12 @@ export default function PromoCard({
       <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/5 via-transparent to-purple-600/5" />
 
       <div className="relative z-10">
-        {/* Header: ticket counter - 🎟 X Tickets */}
+        {/* Header: ticket counter - from user_tickets.tickets only */}
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🎟</span>
             <h2 className="font-display text-lg font-bold text-white">
-              {ticketsToday} Ticket{ticketsToday !== 1 ? "s" : ""}
+              {ticketsThisWeek} Ticket{ticketsThisWeek !== 1 ? "s" : ""}
             </h2>
           </div>
           <span className={ticketBadge}>Free Tickets</span>

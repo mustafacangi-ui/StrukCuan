@@ -21,8 +21,9 @@ async function fetchUserTickets(userId: string): Promise<number> {
 }
 
 export function useUserTickets(userId: string | undefined) {
+  const drawWeek = getISOWeek(new Date());
   return useQuery({
-    queryKey: [...USER_TICKETS_QUERY_KEY, userId],
+    queryKey: [...USER_TICKETS_QUERY_KEY, userId, drawWeek],
     queryFn: () => fetchUserTickets(userId!),
     enabled: !!userId,
   });

@@ -8,7 +8,7 @@ import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY } from "@/hooks/useTodayRewardedTickets";
-import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -41,7 +41,8 @@ export default function Promo() {
   const queryClient = useQueryClient();
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
-  const { tickets, ticketsToday, adsWatched, maxAds, refetch } = useTodayRewardedTickets();
+  const { tickets, adsWatched, maxAds, refetch } = useTodayRewardedTickets();
+  const { data: ticketsThisWeek = 0 } = useUserTickets(user?.id);
 
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -90,7 +91,6 @@ export default function Promo() {
       console.log("[Promo] grantTicket OK:", result);
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       console.log("[Promo] Refetched, adsWatched should update");
       setJustEarnedTicket(true);
@@ -106,7 +106,6 @@ export default function Promo() {
       if (isLimitReached) {
         await refetch();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       }
       throw err;
@@ -144,7 +143,7 @@ export default function Promo() {
         <PromoCard
           state={state}
           adsWatched={bonusUnlocked ? totalAds : adsWatched}
-          ticketsToday={ticketsToday}
+          ticketsThisWeek={ticketsThisWeek}
           tickets={tickets}
           maxAds={maxAds}
           bonusProgress={bonusProgress}
