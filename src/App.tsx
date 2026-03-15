@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
 import Promo from "./pages/Promo";
+import WeeklyDraw from "./pages/WeeklyDraw";
 import Invite from "./pages/Invite";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
+              <Route path="/weekly-draw" element={<WeeklyDraw />} />
               <Route path="/invite" element={<Invite />} />
               <Route path="/upload" element={<Navigate to="/" replace />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
