@@ -246,6 +246,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         discount: discountNum,
         expiry: expiry.toISOString(),
         is_red_label: isRedLabelFlag,
+        user_id: userId,
       });
       console.log("[RedLabel] 7. deals insert OK");
 

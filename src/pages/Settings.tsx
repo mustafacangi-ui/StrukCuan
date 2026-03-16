@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { Switch } from "@/components/ui/switch";
@@ -70,6 +70,20 @@ const Settings = () => {
           </div>
         </div>
       </div>
+
+      {/* Cuan Dashboard link */}
+      <button
+        onClick={() => navigate("/cuan")}
+        className="mx-4 mt-4 w-full flex items-center gap-3 rounded-xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-primary/10 p-4"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/30">
+          <Trophy size={20} className="text-amber-600" />
+        </div>
+        <div className="flex-1 text-left">
+          <p className="font-display font-bold text-foreground">Cuan Dashboard</p>
+          <p className="text-[10px] text-muted-foreground">Bilet kavanozu, istatistikler & Hall of Fame</p>
+        </div>
+      </button>
 
       {/* Settings sections */}
       <div className="mx-4 mt-5">

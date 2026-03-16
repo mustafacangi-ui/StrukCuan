@@ -12,10 +12,10 @@ export interface CreateDealInput {
   discount?: number;
   expiry?: string;
   is_red_label?: boolean;
+  user_id?: string;
 }
 
 async function createDeal(input: CreateDealInput) {
-  // Sadece deals tablosundaki kolonlar - user_id YOK, image (image_url değil)
   const priceVal = input.price != null ? Number(input.price) : null;
   const discountVal = input.discount != null ? Number(input.discount) : null;
   const payload: Record<string, unknown> = {
@@ -30,7 +30,7 @@ async function createDeal(input: CreateDealInput) {
     expiry: input.expiry ? String(input.expiry) : null,
     is_red_label: Boolean(input.is_red_label ?? false),
   };
-  console.log("[useCreateDeal] Insert payload (deals columns only, no user_id):", payload);
+  if (input.user_id) payload.user_id = String(input.user_id);
   const { data, error } = await supabase
     .from("deals")
     .insert(payload)
@@ -58,6 +58,7 @@ export function useCreateDeal() {
     mutationFn: createDeal,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["user_deals_count"] });
     },
   });
 }

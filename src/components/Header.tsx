@@ -80,7 +80,10 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
         }}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => isOnboarded && navigate("/cuan")}
+            className="flex items-center gap-2"
+          >
             <div
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
               style={{ background: "#2b2b2b", color: "#ff6b6b" }}
@@ -100,7 +103,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
                 {cuan.toLocaleString()}
               </span>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <div
               className="flex items-center gap-1 rounded-full"
