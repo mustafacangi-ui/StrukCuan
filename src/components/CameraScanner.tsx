@@ -137,7 +137,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
 
     try {
       const file = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
-      const storagePath = `${userId}/${Date.now()}.jpg`;
+      const storagePath = `${String(userId)}/${Date.now()}.jpg`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
@@ -145,6 +145,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
 
       if (uploadError || !uploadData?.path) {
         const msg = uploadError?.message ?? "Upload path missing";
+        console.log("Storage Error Detayı:", uploadError);
         console.error("[CameraScanner] Receipt storage upload failed:", { uploadError, msg });
         throw new Error(`Upload failed: ${msg}`);
       }
@@ -157,7 +158,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
 
       try {
         await createReceipt.mutateAsync({
-          userId,
+          userId: String(userId),
           imageUrl: publicUrl,
           store: null,
           total: null,
@@ -195,22 +196,27 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     setError(null);
 
     try {
+      console.log("[RedLabel] 1. Başlangıç - userId:", userId);
       const file = new File([capturedBlob], `deal-${Date.now()}.jpg`, { type: "image/jpeg" });
 
-      const storagePathDeals = `deals/${userId}/${Date.now()}.jpg`;
+      const storagePathDeals = `deals/${String(userId)}/${Date.now()}.jpg`;
+      console.log("[RedLabel] 2. Storage upload başlıyor - bucket: receipts, path:", storagePathDeals);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
         .upload(storagePathDeals, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
         const msg = uploadError?.message ?? "Upload path missing";
+        console.log("Storage Error Detayı:", uploadError);
         console.error("[CameraScanner] Red Label storage upload failed:", { uploadError, msg });
         throw new Error(`Upload failed: ${msg}`);
       }
+      console.log("[RedLabel] 3. Storage upload OK - path:", uploadData.path);
 
       const { data: { publicUrl } } = supabase.storage
         .from("receipts")
         .getPublicUrl(uploadData.path);
+      console.log("[RedLabel] 4. Public URL alındı:", publicUrl?.slice(0, 60) + "...");
 
       const discountNum = discount ? parseInt(discount, 10) : undefined;
       const priceNum = price ? parseInt(price.replace(/\D/g, ""), 10) : undefined;
@@ -218,9 +224,20 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       expiry.setDate(expiry.getDate() + 7);
       const isRedLabelFlag = (discountNum ?? 0) >= 50;
 
+      const lat = Number(location?.lat);
+      const lng = Number(location?.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        console.error("[CameraScanner] Invalid coordinates:", { lat, lng, location });
+        setError("Konum geçersiz. Lütfen GPS iznini kontrol edin.");
+        setStep("error");
+        return;
+      }
+      console.log("[RedLabel] 5. Koordinatlar OK - lat:", lat, "lng:", lng);
+
+      console.log("[RedLabel] 6. deals tablosuna insert başlıyor");
       await createDeal.mutateAsync({
-        lat: location.lat,
-        lng: location.lng,
+        lat,
+        lng,
         product_name: product_name.trim(),
         price: priceNum,
         store: store.trim(),
@@ -229,8 +246,11 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         expiry: expiry.toISOString(),
         is_red_label: isRedLabelFlag,
       });
+      console.log("[RedLabel] 7. deals insert OK");
 
+      console.log("[RedLabel] 8. grantDealTickets RPC çağrılıyor");
       await grantDealTickets();
+      console.log("[RedLabel] 9. grantDealTickets OK - tamamlandı");
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       toast.success("Tebrikler! 2 bilet kazandınız.");
@@ -241,9 +261,10 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
       setStep("success");
     } catch (e) {
+      console.log("Storage Error Detayı:", e);
       const err = e as Error & { message?: string; code?: string };
       const detail = err?.message ?? err?.code ?? String(e);
-      console.error("[CameraScanner] Red Label upload error:", {
+      console.error("[CameraScanner] Red Label HATA - adım bilgisi için yukarıdaki [RedLabel] loglarına bakın:", {
         message: err?.message,
         code: err?.code,
         detail,

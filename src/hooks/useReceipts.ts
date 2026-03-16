@@ -154,6 +154,7 @@ export interface CreateReceiptInput {
   imageUrl: string;
   store?: string | null;
   total?: number | null;
+  receiptIndexToday?: number | null;
 }
 
 export function useCreateReceipt() {
@@ -161,18 +162,17 @@ export function useCreateReceipt() {
 
   return useMutation({
     mutationFn: async (input: CreateReceiptInput) => {
+      const payload = {
+        user_id: String(input.userId),
+        image_url: String(input.imageUrl),
+        store: input.store != null ? String(input.store) : null,
+        total: input.total != null ? Number(input.total) : null,
+        status: "pending" as const,
+        receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
+      };
       const { data, error } = await supabase
         .from("receipts")
-        .insert([
-          {
-            user_id: input.userId,
-            image_url: input.imageUrl,
-            store: input.store ?? null,
-            total: input.total ?? null,
-            status: "pending",
-            receipt_index_today: input.receiptIndexToday ?? null,
-          },
-        ])
+        .insert([payload])
         .select("*")
         .single();
 

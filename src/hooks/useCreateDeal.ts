@@ -15,20 +15,22 @@ export interface CreateDealInput {
 }
 
 async function createDeal(input: CreateDealInput) {
+  const payload = {
+    lat: Number(input.lat),
+    lng: Number(input.lng),
+    product_name: String(input.product_name ?? ""),
+    price: input.price != null ? Number(input.price) : null,
+    store: String(input.store ?? ""),
+    image: String(input.image_url ?? ""),
+    status: "active" as const,
+    discount: input.discount != null ? Number(input.discount) : null,
+    expiry: input.expiry ? String(input.expiry) : null,
+    is_red_label: Boolean(input.is_red_label ?? false),
+  };
+  console.log("[useCreateDeal] Insert payload:", payload);
   const { data, error } = await supabase
     .from("deals")
-    .insert({
-      lat: input.lat,
-      lng: input.lng,
-      product_name: input.product_name,
-      price: input.price ?? null,
-      store: input.store,
-      image: input.image_url,
-      status: "active",
-      discount: input.discount ?? null,
-      expiry: input.expiry ?? null,
-      is_red_label: input.is_red_label ?? false,
-    })
+    .insert(payload)
     .select("id")
     .single();
 
