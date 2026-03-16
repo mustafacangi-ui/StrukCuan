@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, MessageCircle, Send, Share2, Camera, Instagram, UserPlus } from "lucide-react";
+import { Copy, MessageCircle, Send, Share2, Camera, Instagram, UserPlus } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
 import { useReferralCode, useReferralCount, WHATSAPP_MESSAGE } from "@/hooks/useReferrals";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import { APP_URL } from "@/config/app";
 
@@ -123,14 +124,9 @@ export default function Invite() {
   if (!isOnboarded && !isLoading) return null;
 
   return (
-    <div className="min-h-screen pb-28 max-w-[420px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-white/20">
-        <button onClick={() => navigate("/")} className="rounded-full bg-secondary p-2">
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <h1 className="font-display text-lg font-bold text-foreground">Invite</h1>
-      </div>
+    <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <PageHeader title="Invite" onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-6">
         {/* Title & Subtitle */}

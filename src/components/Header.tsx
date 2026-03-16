@@ -74,9 +74,10 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
       <div
         className="rounded-[18px] p-3 px-4"
         style={{
-          background: "rgba(0,0,0,0.65)",
+          background: "rgba(0,0,0,0.45)",
           backdropFilter: "blur(10px)",
           WebkitBackdropFilter: "blur(10px)",
+          border: "1px solid rgba(255,255,255,0.15)",
         }}
       >
         <div className="flex items-center justify-between gap-2">
@@ -86,17 +87,17 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           >
             <div
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-              style={{ background: "#2b2b2b", color: "#ff6b6b" }}
+              style={{ background: "rgba(0,0,0,0.4)", color: "#facc15" }}
             >
               <Ticket size={14} />
               <span className="font-display text-xs font-semibold">
                 {tiket.toLocaleString()}
               </span>
-              <span className="text-[9px] opacity-90">Ticket</span>
+              <span className="text-[9px] opacity-90">Bilet</span>
             </div>
             <div
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-              style={{ background: "#2b2b2b", color: "#ffd166" }}
+              style={{ background: "rgba(0,0,0,0.4)", color: "#22c55e" }}
             >
               <span className="text-[10px] font-semibold">Cuan</span>
               <span className="font-display text-xs font-semibold">

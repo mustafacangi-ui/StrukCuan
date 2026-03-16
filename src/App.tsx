@@ -26,37 +26,10 @@ import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import { useUser } from "@/contexts/UserContext";
 
-const AdminReceipts = lazy(() => import("./pages/AdminReceipts"));
+const Admin = lazy(() => import("./pages/Admin"));
 const ReceiptHistory = lazy(() => import("./pages/ReceiptHistory"));
 
 const queryClient = new QueryClient();
-
-const AdminRoute = () => {
-  const { user } = useUser();
-  const adminIds = (import.meta.env.VITE_ADMIN_IDS ?? "").split(",").filter(Boolean);
-
-  if (!user || !adminIds.includes(user.id)) {
-    return (
-      <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground">
-          You do not have access to this page.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen max-w-[420px] mx-auto flex items-center justify-center px-4">
-          <p className="text-sm text-muted-foreground">Loading admin page...</p>
-        </div>
-      }
-    >
-      <AdminReceipts />
-    </Suspense>
-  );
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -84,7 +57,20 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/promo-rules" element={<PromoRules />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/admin/receipts" element={<AdminRoute />} />
+              <Route
+                path="/admin"
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="min-h-screen flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+                      </div>
+                    }
+                  >
+                    <Admin />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/receipts"
                 element={

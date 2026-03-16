@@ -41,7 +41,11 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString();
 }
 
-export default function AdminReceipts() {
+interface AdminReceiptsProps {
+  embedded?: boolean;
+}
+
+export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const { user } = useUser();
   const { data: receipts = [], isLoading, error } = usePendingReceipts(user?.id);
   const approve = useApproveReceiptWithRewards();
@@ -88,15 +92,17 @@ export default function AdminReceipts() {
   };
 
   return (
-    <div className="min-h-screen pb-10">
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
-        <h1 className="font-display text-lg font-bold text-foreground">
-          Admin · Pending Receipts
-        </h1>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
-          {receipts.length} pending · Click Review to moderate
-        </p>
-      </div>
+    <div className={embedded ? "" : "min-h-screen pb-10"}>
+      {!embedded && (
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+          <h1 className="font-display text-lg font-bold text-foreground">
+            Admin · Pending Receipts
+          </h1>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {receipts.length} pending · Click Review to moderate
+          </p>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Ticket, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
 import { useTotalTicketsThisWeek, useLastWinner } from "@/hooks/useWeeklyDraw";
 
@@ -69,20 +70,12 @@ export default function WeeklyDraw() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      {/* Cosmic background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0612] via-[#1a0a2e] to-[#0d0518]" />
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-20 left-10 h-2 w-2 rounded-full bg-pink-400 animate-pulse" />
-          <div className="absolute top-40 right-20 h-1 w-1 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: "0.5s" }} />
-          <div className="absolute bottom-40 left-1/4 h-1.5 w-1.5 rounded-full bg-fuchsia-300 animate-pulse" style={{ animationDelay: "1s" }} />
-          <div className="absolute bottom-60 right-1/3 h-1 w-1 rounded-full bg-pink-300 animate-pulse" style={{ animationDelay: "0.3s" }} />
-          <div className="absolute top-1/3 left-1/2 h-2 w-2 rounded-full bg-amber-300/60 animate-pulse" style={{ animationDelay: "0.8s" }} />
-        </div>
-      </div>
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
 
-      {/* Header */}
-      <div className="relative mx-4 mt-4 overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 via-primary/10 to-background p-5">
+      <PageHeader title="Weekly Draw" onBack={() => navigate(-1)} />
+
+      {/* Header card */}
+      <div className="relative mx-4 mt-4 overflow-hidden rounded-xl p-5" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
         <div className="relative z-10">
           <h1 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
             <Trophy className="h-6 w-6 text-primary" />
@@ -102,7 +95,7 @@ export default function WeeklyDraw() {
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prize Pool</p>
               <p className="text-2xl font-display font-bold text-primary">
-                ${PRIZE_POOL}
+                Rp {PRIZE_POOL_TOTAL.toLocaleString("id-ID")}
               </p>
             </div>
 

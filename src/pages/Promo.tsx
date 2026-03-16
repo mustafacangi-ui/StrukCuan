@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import PromoHeader from "@/components/PromoHeader";
+import { PageHeader } from "@/components/PageHeader";
 import PromoCard from "@/components/promo/PromoCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
@@ -124,17 +125,10 @@ export default function Promo() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      {/* Cosmic background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0612] via-[#1a0a2e] to-[#0d0518]" />
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-20 left-10 h-2 w-2 rounded-full bg-pink-400 animate-pulse" />
-          <div className="absolute top-40 right-20 h-1 w-1 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: "0.5s" }} />
-          <div className="absolute bottom-40 left-1/4 h-1.5 w-1.5 rounded-full bg-fuchsia-300 animate-pulse" style={{ animationDelay: "1s" }} />
-          <div className="absolute bottom-60 right-1/3 h-1 w-1 rounded-full bg-pink-300 animate-pulse" style={{ animationDelay: "0.3s" }} />
-          <div className="absolute top-1/3 left-1/2 h-2 w-2 rounded-full bg-amber-300/60 animate-pulse" style={{ animationDelay: "0.8s" }} />
-        </div>
-      </div>
+      {/* Global gradient - matches all pages */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+
+      <PageHeader title="Promo" onBack={() => navigate(-1)} />
 
       <PromoHeader />
 

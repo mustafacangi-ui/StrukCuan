@@ -25,7 +25,7 @@ async function createDeal(input: CreateDealInput) {
     price: priceVal != null && !Number.isNaN(priceVal) ? priceVal : null,
     store: String(input.store ?? ""),
     image: String(input.image_url ?? ""),
-    status: "active",
+    status: "pending",
     discount: discountVal != null && !Number.isNaN(discountVal) ? discountVal : null,
     expiry: input.expiry ? String(input.expiry) : null,
     is_red_label: Boolean(input.is_red_label ?? false),

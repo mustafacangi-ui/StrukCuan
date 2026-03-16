@@ -50,8 +50,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-28 w-full max-w-[420px] mx-auto">
-      {/* Vibrant purple → pink gradient (StrukCuan brand) */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#8e2de2] to-[#ff6ec4]" />
+      {/* Global gradient - fuchsia top → purple bottom */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
 
       <Header
         onUploadReceipt={handleOpenReceiptScanner}

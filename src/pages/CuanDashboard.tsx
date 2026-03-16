@@ -1,21 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Ticket,
-  Receipt,
-  MapPin,
-  Coins,
-  Trophy,
-  Flame,
-  Award,
-} from "lucide-react";
+import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserDealsCount } from "@/hooks/useUserDealsCount";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import BottomNav from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { Progress } from "@/components/ui/progress";
 
 const WEEKLY_MAX = 42;
@@ -67,14 +59,9 @@ export default function CuanDashboard() {
   const winners = lotteryWinners.length >= 5 ? lotteryWinners.slice(0, 5) : MOCK_WINNERS;
 
   return (
-    <div className="min-h-screen max-w-[420px] mx-auto pb-28">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border bg-gradient-to-r from-amber-500/10 to-primary/10">
-        <button onClick={() => navigate(-1)} className="rounded-full bg-secondary p-2">
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <h1 className="font-display text-lg font-bold text-foreground">Cuan Dashboard</h1>
-      </div>
+    <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
       {/* Bilet Kavanozu - Haftalık İlerleme */}
       <div className="mx-4 mt-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/20 to-primary/10 p-5">
@@ -102,7 +89,7 @@ export default function CuanDashboard() {
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
           Kişisel İstatistikler
         </h2>
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <div className="flex items-center gap-3 p-4 border-b border-border">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
               <span className="font-display text-xl font-bold text-primary">

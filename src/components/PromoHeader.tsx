@@ -2,7 +2,7 @@ import { Tag, Receipt, ThumbsUp, Sparkles } from "lucide-react";
 
 const PromoHeader = () => {
   return (
-    <div className="relative mx-4 mt-4 overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 via-primary/10 to-background p-5">
+    <div className="relative mx-4 mt-4 overflow-hidden rounded-xl p-5" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
       {/* Animated decorative elements - shopping receipts, discounts, likes */}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-25">
         <Receipt className="h-8 w-8 text-primary animate-pulse" />

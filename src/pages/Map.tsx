@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
+import { PageHeader } from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import PromoMap from "@/components/PromoMap";
 import CameraScanner from "@/components/CameraScanner";
@@ -11,6 +13,7 @@ import { Radar } from "lucide-react";
  * FAB opens Red Label share flow.
  */
 export default function Map() {
+  const navigate = useNavigate();
   const { isOnboarded, requireLogin } = useUser();
   const [showRedLabelScanner, setShowRedLabelScanner] = useState(false);
 
@@ -24,10 +27,10 @@ export default function Map() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#8e2de2] via-[#c94fd6] to-[#ff6ec4]" />
-      <div className="px-4 pt-6">
-        <h1 className="font-display text-xl font-bold text-white">Map</h1>
-        <p className="mt-2 text-sm text-white/80">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <PageHeader title="Map" onBack={() => navigate(-1)} />
+      <div className="px-4 pt-2">
+        <p className="text-sm text-white/80">
           Nearby deals within 3–5 km. Red pins = Kırmızı Etiket (50%+ or expiring soon).
         </p>
         <div className="mt-4">

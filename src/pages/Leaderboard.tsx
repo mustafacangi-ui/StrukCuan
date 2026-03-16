@@ -4,6 +4,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/hooks/useUserStats";
 import { Trophy, Medal, ArrowLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,21 +30,9 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="min-h-screen pb-28 max-w-[420px] mx-auto">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-full bg-secondary p-2"
-        >
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <div className="flex items-center gap-2">
-          <Trophy size={20} className="text-primary" />
-          <h1 className="font-display text-lg font-bold text-foreground">
-            Leaderboard
-          </h1>
-        </div>
-      </div>
+    <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <PageHeader title="Leaderboard" onBack={() => navigate(-1)} />
 
       <div className="mx-4 mt-4">
         {leaderboardLoading && (

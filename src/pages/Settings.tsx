@@ -1,7 +1,9 @@
 import { useEffect } from "react";
-import { ArrowLeft, Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin, Trophy } from "lucide-react";
+import { Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin, Trophy, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Settings = () => {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const { data: isAdmin } = useIsAdmin(user?.id);
 
   useEffect(() => {
     if (isLoading) return;
@@ -25,17 +28,12 @@ const Settings = () => {
   if (!isOnboarded && !isLoading) return null;
 
   return (
-    <div className="min-h-screen max-w-[420px] mx-auto pb-28">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
-        <button onClick={() => navigate("/")} className="rounded-full bg-secondary p-2">
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <h1 className="font-display text-lg font-bold text-foreground">Pengaturan</h1>
-      </div>
+    <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <PageHeader title="Pengaturan" onBack={() => navigate(-1)} />
 
       {/* Profile card */}
-      <div className="mx-4 mt-4 rounded-xl border border-primary/30 bg-card p-4">
+      <div className="mx-4 mt-4 rounded-xl p-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
         <div className="flex items-center gap-3">
           {isLoading ? (
             <Skeleton className="h-14 w-14 rounded-full shrink-0" />
@@ -71,6 +69,22 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Admin Panel - sadece adminlere görünür */}
+      {isAdmin && (
+        <button
+          onClick={() => navigate("/admin")}
+          className="mx-4 mt-4 w-full flex items-center gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+            <ShieldCheck size={20} className="text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-display font-bold text-foreground">Admin Panel</p>
+            <p className="text-[10px] text-muted-foreground">Fiş ve indirim onaylama</p>
+          </div>
+        </button>
+      )}
+
       {/* Cuan Dashboard link */}
       <button
         onClick={() => navigate("/cuan")}
@@ -88,7 +102,7 @@ const Settings = () => {
       {/* Settings sections */}
       <div className="mx-4 mt-5">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Tampilan</p>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {theme === "dark" ? <Moon size={16} className="text-primary" /> : <Sun size={16} className="text-primary" />}
@@ -104,7 +118,7 @@ const Settings = () => {
 
       <div className="mx-4 mt-4">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Notifikasi</p>
-        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {pushNotifications ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
@@ -131,7 +145,8 @@ const Settings = () => {
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Akun</p>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl border border-destructive/30 bg-card p-4"
+          className="w-full flex items-center gap-3 rounded-xl border border-destructive/30 p-4"
+          style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
         >
           <LogOut size={16} className="text-destructive" />
           <span className="text-sm font-semibold text-destructive">Keluar</span>
