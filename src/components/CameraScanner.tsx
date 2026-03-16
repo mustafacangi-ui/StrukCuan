@@ -39,7 +39,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   const createReceipt = useCreateReceipt();
   const createDeal = useCreateDeal();
   const queryClient = useQueryClient();
-  const { location } = useUserLocation();
+  const { location, error: locationError } = useUserLocation();
   const { data: todayCount = 0 } = useReceiptsToday(user?.id ?? undefined);
 
   const isRedLabel = mode === "red_label";
@@ -144,7 +144,9 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         .upload(storagePath, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        throw new Error("Upload failed");
+        const msg = uploadError?.message ?? "Upload path missing";
+        console.error("[CameraScanner] Receipt storage upload failed:", { uploadError, msg });
+        throw new Error(`Upload failed: ${msg}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -170,7 +172,12 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setCapturedBlob(null);
       setStep("success");
     } catch (e) {
-      console.error("[CameraScanner] Upload error:", e);
+      const err = e as Error & { message?: string; code?: string };
+      console.error("[CameraScanner] Receipt upload error:", {
+        message: err?.message,
+        code: err?.code,
+        full: e,
+      });
       setError(USER_FACING_ERROR);
       setStep("error");
     }
@@ -196,7 +203,9 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         .upload(storagePathDeals, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        throw new Error("Upload failed");
+        const msg = uploadError?.message ?? "Upload path missing";
+        console.error("[CameraScanner] Red Label storage upload failed:", { uploadError, msg });
+        throw new Error(`Upload failed: ${msg}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -232,7 +241,14 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
       setStep("success");
     } catch (e) {
-      console.error("[CameraScanner] Red Label upload error:", e);
+      const err = e as Error & { message?: string; code?: string };
+      const detail = err?.message ?? err?.code ?? String(e);
+      console.error("[CameraScanner] Red Label upload error:", {
+        message: err?.message,
+        code: err?.code,
+        detail,
+        full: e,
+      });
       setError(USER_FACING_ERROR);
       setStep("error");
     }
@@ -315,6 +331,11 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               alt="Product"
               className="w-full max-h-48 object-contain rounded-lg mb-4"
             />
+            {locationError && (
+              <div className="mb-3 rounded-lg border border-amber-500/50 bg-amber-500/20 p-3 text-xs text-amber-200">
+                ⚠ Konum alınamadı. Haritada Jakarta merkez noktası kullanılacak. Devam edebilirsiniz.
+              </div>
+            )}
             <div className="space-y-3">
               <input
                 type="text"

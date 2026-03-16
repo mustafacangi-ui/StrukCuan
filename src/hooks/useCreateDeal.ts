@@ -33,7 +33,13 @@ async function createDeal(input: CreateDealInput) {
     .single();
 
   if (error) {
-    console.error("[useCreateDeal] Insert failed:", error);
+    console.error("[useCreateDeal] Insert failed:", {
+      message: error.message,
+      code: (error as { code?: string }).code,
+      details: (error as { details?: string }).details,
+      hint: (error as { hint?: string }).hint,
+      full: error,
+    });
     throw error;
   }
   return data;
