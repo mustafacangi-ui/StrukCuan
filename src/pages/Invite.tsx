@@ -49,7 +49,7 @@ export default function Invite() {
 
   const handleWhatsAppShare = () => {
     if (!referralUrl) return;
-    const text = encodeURIComponent(WHATSAPP_MESSAGE(referralUrl));
+    const text = encodeURIComponent(WHATSAPP_MESSAGE(referralUrl, effectiveCode ?? undefined));
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
@@ -168,7 +168,7 @@ export default function Invite() {
                 <p className="text-sm text-white leading-relaxed mb-3">
                   Ajak temanmu ke StrukCuan.
                   <br />
-                  Kalian berdua dapat +1 ticket setelah temanmu upload struk pertama.
+                  Kamu +5 bilet, temanmu +2 bilet bonus saat struk pertamanya onaylanır.
                 </p>
                 <input
                   type="text"
@@ -270,7 +270,7 @@ export default function Invite() {
           }}
         >
           <p className="text-xs text-white leading-relaxed">
-            Bagikan link undangan ke teman. Saat teman daftar dan upload struk pertamanya, kamu dan teman masing-masing dapat +1 tiket!
+            Bagikan link undangan ke teman. Saat teman daftar dan struk pertamanya onaylanır, kamu +5 bilet, teman +2 bilet bonus kazanır!
           </p>
         </div>
       </div>

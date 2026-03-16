@@ -1,13 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-export const WHATSAPP_MESSAGE = (referralUrl: string) =>
-  `Aku lagi kumpulin tiket di StrukCuan 🎟️
-Upload struk belanja dan menangkan voucher Rp100.000 setiap minggu.
-
-Daftar pakai link aku dan dapat tiket gratis!
-
-👉 ${referralUrl}`;
+export const WHATSAPP_MESSAGE = (referralUrl: string, code?: string) => {
+  const displayCode = code ?? (referralUrl.includes("?r=") ? new URL(referralUrl).searchParams.get("r") ?? "" : "");
+  return `Selam! StrukCuan ile alışveriş fişlerimi bilete dönüştürüp ödüller kazanıyorum. Sen de katıl, ilk fişinde bonus bilet kazan! Kodum: ${displayCode} Link: ${referralUrl}`;
+};
 
 /** Generate a fallback referral code from user id (6-char uppercase) */
 function generateFallbackCode(userId: string): string {
@@ -21,9 +18,9 @@ export function useReferralCode(userId: string | undefined) {
     queryKey: ["referral_code", userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("user_stats")
         .select("referral_code")
-        .eq("id", userId)
+        .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
       const code = (data?.referral_code as string)?.trim() || null;
@@ -39,24 +36,24 @@ export function useReferralCode(userId: string | undefined) {
       if (!userId) throw new Error("No user");
       const fallback = generateFallbackCode(userId);
       const { data, error } = await supabase
-        .from("profiles")
+        .from("user_stats")
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", userId)
+        .eq("user_id", userId)
         .select("referral_code")
         .single();
       if (!error && data?.referral_code) {
         return data.referral_code as string;
       }
       const { error: updateError } = await supabase
-        .from("profiles")
+        .from("user_stats")
         .update({ referral_code: fallback, updated_at: new Date().toISOString() })
-        .eq("id", userId);
+        .eq("user_id", userId);
       if (!updateError) return fallback;
       const { error: upsertError } = await supabase
-        .from("profiles")
+        .from("user_stats")
         .upsert(
-          { id: userId, referral_code: fallback, updated_at: new Date().toISOString() },
-          { onConflict: "id" }
+          { user_id: userId, referral_code: fallback, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" }
         );
       return upsertError ? fallback : fallback;
     },

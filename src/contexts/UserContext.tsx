@@ -131,16 +131,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const code = localStorage.getItem(REFERRAL_STORAGE_KEY);
       if (!code?.trim()) return;
       const { data: referrer } = await supabase
-        .from("profiles")
-        .select("id")
+        .from("user_stats")
+        .select("user_id")
         .eq("referral_code", code.trim().toUpperCase())
         .single();
-      if (!referrer || referrer.id === userId) {
+      if (!referrer || referrer.user_id === userId) {
         localStorage.removeItem(REFERRAL_STORAGE_KEY);
         return;
       }
       const { error } = await supabase.from("referrals").insert({
-        referrer_user_id: referrer.id,
+        referrer_user_id: referrer.user_id,
         referred_user_id: userId,
         reward_given: false,
       });
@@ -185,6 +185,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
         setSession(session);
         if (session) {
+          processReferral(session.user.id).catch(() => {});
           buildUserFromSession(session).then((userData) => {
             if (mounted) setUser(userData);
           });
