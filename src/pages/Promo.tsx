@@ -2,9 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import PromoHeader from "@/components/PromoHeader";
 import { PageHeader } from "@/components/PageHeader";
-import PromoCard from "@/components/promo/PromoCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
@@ -18,46 +16,24 @@ import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
-import type { PromoState } from "@/components/promo/PromoCard";
-import WatchEarnCard from "@/components/promo/WatchEarnCard";
+import { Play, Check } from "lucide-react";
 
-
-/**
- * Derive promo UI state from ads watched.
- * Clean flow: start (0) → progress (1-14) → final_limit (15)
- */
-function getPromoState(
-  adsWatched: number,
-  _bonusProgress: number,
-  _bonusUnlocked: boolean,
-  viewOverride: "wallet" | "weekly_draw" | null,
-  justEarnedTicket: boolean
-): PromoState {
-  if (viewOverride === "wallet") return "wallet";
-  if (viewOverride === "weekly_draw") return "weekly_draw";
-  if (justEarnedTicket) return "ticket_earned";
-  if (adsWatched >= MAX_ADS_PER_DAY) return "final_limit";
-  if (adsWatched >= 1) return "progress";
-  return "start";
-}
+const TIERS = [
+  { target: 5, reward: 1 },
+  { target: 10, reward: 1 },
+  { target: 17, reward: 1 },
+] as const;
 
 export default function Promo() {
   const queryClient = useQueryClient();
   const { isOnboarded, isLoading, user } = useUser();
   const navigate = useNavigate();
-  const { tickets, adsWatched, maxAds, refetch } = useTodayRewardedTickets();
+  const { adsWatched, refetch } = useTodayRewardedTickets();
   const { data: ticketsThisWeek = 0 } = useUserTickets(user?.id);
 
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const [viewOverride, setViewOverride] = useState<"wallet" | "weekly_draw" | null>(null);
-  const [justEarnedTicket, setJustEarnedTicket] = useState(false);
-  const [bonusUnlocked, setBonusUnlocked] = useState(false);
 
-  const totalAds = adsWatched;
-  const state = getPromoState(adsWatched, 0, bonusUnlocked, viewOverride, justEarnedTicket);
-
-  /** Weekly ticket limit reached - disable Watch Ad buttons */
   const isWeeklyLimitReached = (ticketsThisWeek ?? 0) >= MAX_TICKETS_PER_WEEK;
 
   useEffect(() => {
@@ -67,143 +43,129 @@ export default function Promo() {
     }
   }, [isLoading, isOnboarded, navigate]);
 
-  const handleContinueEarning = useCallback(() => {
+  const handleWatchAd = useCallback(() => {
     if (!user?.id) {
       toast.error("Please log in to earn tickets");
       return;
     }
-    if (adsWatched >= maxAds) {
-      toast.error("Daily limit reached (15 ads). Come back tomorrow.");
+    if (adsWatched >= MAX_ADS_PER_DAY) {
+      toast.error("Daily limit reached (17 videos). Come back tomorrow.");
+      return;
+    }
+    if (isWeeklyLimitReached) {
+      toast.error("Weekly ticket limit reached.");
       return;
     }
     setPopupBlocked(false);
-    const monetagUrl = AD_NETWORKS[0].url;
-    const popup = window.open(monetagUrl, "monetag_ad", "width=600,height=700,scrollbars=yes,resizable=yes");
-    if (!popup || popup.closed) setPopupBlocked(true);
+    window.open(AD_NETWORKS[0].url, "monetag_ad", "width=600,height=700,scrollbars=yes,resizable=yes");
     setShowModal(true);
-  }, [user?.id, adsWatched, maxAds]);
+  }, [user?.id, adsWatched, isWeeklyLimitReached]);
 
   const handleAdComplete = useCallback(async () => {
-    setJustEarnedTicket(false);
-    console.log("[Promo] handleAdComplete - ad finished, granting ticket...");
     try {
-      const result = await grantTicket();
-      console.log("[Promo] grantTicket OK:", result);
+      await grantTicket();
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      console.log("[Promo] Refetched, adsWatched should update");
-      setJustEarnedTicket(true);
-      setTimeout(() => setJustEarnedTicket(false), 3000);
+      toast.success("+1 Video counted!");
     } catch (err: unknown) {
-      console.error("[Promo] handleAdComplete error:", err);
       const msg = err && typeof err === "object" && "message" in err
         ? String((err as { message?: string }).message)
-        : "Failed to grant ticket";
+        : "Failed to grant";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? "Daily limit reached (15 ads). Come back tomorrow." : msg);
-      if (isLimitReached) {
-        await refetch();
-        queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      }
+      toast.error(isLimitReached ? "Daily limit reached (17 videos)." : msg);
+      if (isLimitReached) await refetch();
       throw err;
     }
   }, [refetch, queryClient]);
 
-  const handleUnlockBonus = useCallback(() => {
-    setBonusUnlocked(true);
-  }, []);
-
-  const handleModalClose = useCallback(() => {
-    setShowModal(false);
-  }, []);
-
-  const latestTicket = tickets.length > 0 ? tickets[tickets.length - 1] : null;
-
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      {/* Global gradient - matches all pages */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
 
       <PageHeader title="Promo" onBack={() => navigate(-1)} />
 
-      <PromoHeader />
-
-      {/* SECTION 1 — Reward Guide (Top) */}
-      <div className="mt-6 px-4">
-        <div className="overflow-hidden rounded-xl border border-pink-500/30 bg-black/30 backdrop-blur-sm">
-          <img
-            src="/reward-guide.png"
-            alt="Reward System Guide: 5 ads → 1 ticket, 10 ads → 2 tickets, Super bonus, 17 ads → 3 tickets"
-            className="w-full object-contain"
-          />
+      <div className="px-4 mt-4">
+        {/* Total reward */}
+        <div
+          className="rounded-2xl p-4 mb-4"
+          style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
+        >
+          <p className="text-[10px] uppercase tracking-wider text-white/80 font-semibold">
+            Daily Ads Progress
+          </p>
+          <p className="text-lg font-display font-bold text-white mt-1">
+            Total reward: <span className="text-[#facc15]">3 Tickets</span>
+          </p>
+          <p className="text-xs text-white/70 mt-0.5">
+            Watch 5, 10, 17 videos → earn 1 ticket per tier
+          </p>
         </div>
-      </div>
 
-      {/* SECTION 1b — Watch & Earn Cards */}
-      <div className="mt-4 px-4 space-y-3">
-        <h2 className="text-sm font-bold text-white/90">Watch & Earn</h2>
-        <WatchEarnCard
-          adRange="1-5"
-          reward={1}
-          isCompleted={adsWatched >= 5}
-          disabled={isWeeklyLimitReached}
-          onWatchAd={handleContinueEarning}
-          isWatching={showModal}
-        />
-        <WatchEarnCard
-          adRange="5-10"
-          reward={2}
-          isCompleted={adsWatched >= 10}
-          disabled={isWeeklyLimitReached}
-          onWatchAd={handleContinueEarning}
-          isWatching={showModal}
-        />
-        <WatchEarnCard
-          adRange="13-17"
-          reward={3}
-          isCompleted={adsWatched >= 15}
-          disabled={isWeeklyLimitReached}
-          onWatchAd={handleContinueEarning}
-          isWatching={showModal}
-        />
-      </div>
+        {/* Tier cards */}
+        <div className="space-y-3">
+          {TIERS.map((tier, i) => {
+            const current = Math.min(adsWatched, tier.target);
+            const progress = (current / tier.target) * 100;
+            const isCompleted = adsWatched >= tier.target;
+            const canWatch = !isCompleted && !isWeeklyLimitReached && adsWatched < MAX_ADS_PER_DAY;
 
-      {/* SECTION 2 — Reward Action Panel (Below) */}
-      <div className="mt-6 px-4">
-        <PromoCard
-          state={state}
-          adsWatched={adsWatched}
-          ticketsThisWeek={ticketsThisWeek}
-          tickets={tickets}
-          maxAds={maxAds}
-          bonusUnlocked={bonusUnlocked}
-          latestTicketNumber={latestTicket?.ticket_number}
-          onContinueEarning={handleContinueEarning}
-          onUnlockBonus={undefined}
-          onKeepWatching={handleContinueEarning}
-          onViewWallet={() => setViewOverride("wallet")}
-          onViewWeeklyDraw={() => setViewOverride("weekly_draw")}
-          onBack={() => setViewOverride(null)}
-          isWatching={showModal}
-        />
-      </div>
+            return (
+              <div
+                key={tier.target}
+                className="rounded-2xl p-4"
+                style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-white">
+                    Tier {i + 1}: {current}/{tier.target} videos
+                  </span>
+                  {isCompleted ? (
+                    <span className="flex items-center gap-1 rounded-full bg-[#22c55e]/30 px-2.5 py-1 text-xs font-bold text-[#22c55e]">
+                      <Check size={14} />
+                      Done
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleWatchAd}
+                      disabled={!canWatch || showModal}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: canWatch && !showModal ? "#facc15" : "rgba(255,255,255,0.2)",
+                        color: canWatch && !showModal ? "#000" : "rgba(255,255,255,0.7)",
+                      }}
+                    >
+                      <Play size={12} fill="currentColor" />
+                      {showModal ? "Watching..." : "Watch Ad"}
+                    </button>
+                  )}
+                </div>
+                <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#facc15] transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-      {adsWatched >= MAX_ADS_PER_DAY && !viewOverride && (
-        <p className="mt-4 px-4 text-center text-xs text-white/60">
-          Come back tomorrow for more chances to earn tickets.
-        </p>
-      )}
+        {adsWatched >= MAX_ADS_PER_DAY && (
+          <p className="mt-4 text-center text-xs text-white/70">
+            Daily limit reached. Come back tomorrow.
+          </p>
+        )}
+      </div>
 
       <LegalFooter />
       <BottomNav />
 
       <RewardedAdModal
         open={showModal}
-        onClose={handleModalClose}
+        onClose={() => setShowModal(false)}
         onComplete={handleAdComplete}
         popupBlocked={popupBlocked}
       />

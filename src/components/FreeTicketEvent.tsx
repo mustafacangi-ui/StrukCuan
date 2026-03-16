@@ -12,7 +12,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 /**
  * Free Ticket Event - Monetag rewarded ad (popup).
  * Watch ad → Close → grant_ticket RPC → ticket earned.
- * 5 ads = 1 ticket, 10 = 2, 15 = 3. Max 15 ads / 3 tickets per day.
+ * 5→1, 10→1, 17→1 tickets. Max 17 ads / 3 tickets per day.
  */
 export default function FreeTicketEvent() {
   const queryClient = useQueryClient();
@@ -32,7 +32,7 @@ export default function FreeTicketEvent() {
       return;
     }
     if (limitReached) {
-      toast.error("Daily limit reached (15 ads). Come back tomorrow.");
+      toast.error("Daily limit reached (17 ads). Come back tomorrow.");
       return;
     }
     setErrorMsg(null);
@@ -75,7 +75,7 @@ export default function FreeTicketEvent() {
           ? String((err as { message?: string }).message)
           : "Failed to grant ticket";
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      const displayMsg = isLimitReached ? "Daily limit reached (15 ads). Come back tomorrow." : msg;
+      const displayMsg = isLimitReached ? "Daily limit reached (17 ads). Come back tomorrow." : msg;
       console.warn("Failed to grant ticket:", err);
       setErrorMsg(displayMsg);
       toast.error(displayMsg);
@@ -99,7 +99,7 @@ export default function FreeTicketEvent() {
         Watch a short ad (~20 seconds)
       </p>
       <p className="text-[11px] text-muted-foreground mb-3">
-        5 ads = 1 ticket · 10 ads = 2 tickets · 15 ads = 3 tickets (max/day)
+        5→1 · 10→1 · 17→1 tickets (max 17 ads/day)
       </p>
 
       <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 mb-3">
@@ -117,13 +117,13 @@ export default function FreeTicketEvent() {
           {ticketsThisWeek} ticket{ticketsThisWeek !== 1 ? "s" : ""} this week
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
-          From ads today: {ticketsFromAdsToday} (5→1, 10→2, 15→3)
+          From ads today: {ticketsFromAdsToday} (5→1, 10→1, 17→1)
         </p>
       </div>
 
       {limitReached && (
         <p className="mb-3 text-xs text-muted-foreground">
-          Daily limit reached (15 ads). Come back tomorrow.
+          Daily limit reached (17 ads). Come back tomorrow.
         </p>
       )}
 

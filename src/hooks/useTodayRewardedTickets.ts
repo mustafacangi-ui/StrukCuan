@@ -6,13 +6,13 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Ad reward system: every 5 ads = 1 ticket. 5→1, 10→2, 15→3. Max 15 ads/day. */
+/** Ad reward system: 5→1, 10→1, 17→1. Total 3 tickets. Max 17 ads/day. */
 export const ADS_PER_TICKET = 5;
-export const MAX_ADS_PER_DAY = 15;
+export const MAX_ADS_PER_DAY = 17;
 export const MAX_TICKETS_PER_DAY = 3;
 export const FIRST_TICKET_AT = 5;
 export const SECOND_TICKET_AT = 10;
-export const THIRD_TICKET_AT = 15;
+export const THIRD_TICKET_AT = 17;
 /** Legacy: bonus flow removed in clean reset */
 export const BONUS_UNLOCK_ADS = 0;
 export const BONUS_UNLOCK_AT = 10;
@@ -30,7 +30,7 @@ export function getNextTicketAt(adsWatched: number): number | null {
   const n = Number(adsWatched) || 0;
   if (n < 5) return 5;
   if (n < 10) return 10;
-  if (n < 15) return 15;
+  if (n < 17) return 17;
   return null;
 }
 
@@ -180,7 +180,7 @@ export function useTodayRewardedTickets() {
   return {
     /** Count of ad_ticket_events (event_type='rewarded') today. Each row = 1 ad, NOT 1 ticket. */
     adsWatched: adsWatchedToday,
-    /** Tickets derived from adsWatched thresholds: 5→1, 10→2, 15→3. For display only; actual tickets in user_tickets. */
+    /** Tickets derived from adsWatched thresholds: 5→1, 10→1, 17→1. For display only; actual tickets in user_tickets. */
     ticketsFromAdsToday: ticketsFromAds(adsWatchedToday),
     /** Raw ad events - do NOT treat as tickets. Use for latest event display only. */
     tickets: eventsQuery.data ?? [],
