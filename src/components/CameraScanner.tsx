@@ -4,6 +4,12 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt } from "@/hooks/useReceipts";
 import { useReceiptsToday } from "@/hooks/useReceipts";
+import { useCreateDeal } from "@/hooks/useCreateDeal";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { grantDealTickets } from "@/hooks/useGrantDealTickets";
+import { useQueryClient } from "@tanstack/react-query";
+import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { toast } from "sonner";
 
 const MAX_RECEIPTS_PER_DAY = 3;
 
@@ -14,26 +20,39 @@ const RECEIPT_RULES = `Rules:
 • Receipt must be from today
 • Maximum 3 receipts per day`;
 
+const RED_LABEL_RULES = `Kırmızı Etiket (Red Label):
+• Photo of discounted product
+• Will appear on the map for others`;
+
 const UPLOAD_CONSENT = "By uploading a receipt you allow StrukCuan to review and store it for verification.";
 const FRAUD_WARNING = "Uploading fake or duplicated receipts may result in account suspension.";
 
+export type CameraMode = "receipt" | "red_label";
+
 interface CameraScannerProps {
   onClose: () => void;
+  mode?: CameraMode;
 }
 
-export default function CameraScanner({ onClose }: CameraScannerProps) {
+export default function CameraScanner({ onClose, mode = "receipt" }: CameraScannerProps) {
   const { user } = useUser();
   const createReceipt = useCreateReceipt();
+  const createDeal = useCreateDeal();
+  const queryClient = useQueryClient();
+  const { location } = useUserLocation();
   const { data: todayCount = 0 } = useReceiptsToday(user?.id ?? undefined);
+
+  const isRedLabel = mode === "red_label";
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [step, setStep] = useState<"camera" | "preview" | "processing" | "success" | "error">("camera");
+  const [step, setStep] = useState<"camera" | "preview" | "form" | "processing" | "success" | "error">("camera");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [redLabelForm, setRedLabelForm] = useState({ product_name: "", price: "", store: "", discount: "" });
 
   const userId = user?.id;
 
@@ -80,7 +99,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     const canvas = canvasRef.current;
     if (!video || !canvas || !userId) return;
 
-    if (todayCount >= MAX_RECEIPTS_PER_DAY) {
+    if (!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY) {
       setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day.`);
       setStep("error");
       return;
@@ -98,9 +117,9 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
       setCapturedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       stopCamera();
-      setStep("preview");
+      setStep(isRedLabel ? "form" : "preview");
     }, "image/jpeg", 0.9);
-  }, [userId, todayCount, stopCamera]);
+  }, [userId, todayCount, stopCamera, isRedLabel]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -110,7 +129,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     setStep("camera");
   }, [previewUrl]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
 
     setStep("processing");
@@ -157,6 +176,70 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
     }
   }, [capturedBlob, userId, todayCount, createReceipt, previewUrl]);
 
+  const handleSubmitRedLabel = useCallback(async () => {
+    if (!capturedBlob || !userId) return;
+    const { product_name, store, price, discount } = redLabelForm;
+    if (!product_name.trim() || !store.trim()) {
+      setError("Ürün adı ve market adresi zorunludur.");
+      return;
+    }
+
+    setStep("processing");
+    setError(null);
+
+    try {
+      const file = new File([capturedBlob], `deal-${Date.now()}.jpg`, { type: "image/jpeg" });
+
+      const storagePathDeals = `deals/${userId}/${Date.now()}.jpg`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("receipts")
+        .upload(storagePathDeals, file, { upsert: false, contentType: "image/jpeg" });
+
+      if (uploadError || !uploadData?.path) {
+        throw new Error("Upload failed");
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("receipts")
+        .getPublicUrl(uploadData.path);
+
+      const discountNum = discount ? parseInt(discount, 10) : undefined;
+      const priceNum = price ? parseInt(price.replace(/\D/g, ""), 10) : undefined;
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 7);
+      const isRedLabelFlag = (discountNum ?? 0) >= 50;
+
+      await createDeal.mutateAsync({
+        lat: location.lat,
+        lng: location.lng,
+        product_name: product_name.trim(),
+        price: priceNum,
+        store: store.trim(),
+        image_url: publicUrl,
+        discount: discountNum,
+        expiry: expiry.toISOString(),
+        is_red_label: isRedLabelFlag,
+      });
+
+      await grantDealTickets();
+      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      toast.success("Tebrikler! 2 bilet kazandınız.");
+
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+      setCapturedBlob(null);
+      setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
+      setStep("success");
+    } catch (e) {
+      console.error("[CameraScanner] Red Label upload error:", e);
+      setError(USER_FACING_ERROR);
+      setStep("error");
+    }
+  }, [capturedBlob, userId, redLabelForm, createDeal, location, previewUrl, queryClient]);
+
+  const handleSubmit = isRedLabel ? handleSubmitRedLabel : handleSubmitReceipt;
+
   const handleClose = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     stopCamera();
@@ -193,7 +276,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
           <div className="absolute bottom-0 left-0 right-0 p-6 pb-10">
             <div className="mb-4 space-y-2">
               <pre className="rounded-lg bg-black/60 p-3 text-[10px] text-white/90 whitespace-pre-wrap">
-                {RECEIPT_RULES}
+                {isRedLabel ? RED_LABEL_RULES : RECEIPT_RULES}
               </pre>
               <p className="rounded-lg bg-black/60 p-2.5 text-[10px] text-white/80">
                 {UPLOAD_CONSENT}
@@ -204,7 +287,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
             </div>
             <button
               onClick={handleCapture}
-              disabled={todayCount >= MAX_RECEIPTS_PER_DAY}
+              disabled={!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY}
               className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-white disabled:opacity-50"
             >
               <Camera size={32} className="text-black" />
@@ -213,8 +296,75 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
         </>
       )}
 
-      {/* Preview */}
-      {step === "preview" && previewUrl && (
+      {/* Red Label form (after capture) */}
+      {step === "form" && previewUrl && isRedLabel && (
+        <div className="absolute inset-0 flex flex-col bg-black overflow-y-auto">
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <span className="text-sm font-medium text-white">İndirim Bilgileri</span>
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-black/50 p-2 text-white"
+              aria-label="Kapat"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="flex-1 p-4">
+            <img
+              src={previewUrl}
+              alt="Product"
+              className="w-full max-h-48 object-contain rounded-lg mb-4"
+            />
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Ürün adı *"
+                value={redLabelForm.product_name}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, product_name: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="Market adresi *"
+                value={redLabelForm.store}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, store: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="Fiyat (Rp)"
+                value={redLabelForm.price}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, price: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="İndirim (%)"
+                value={redLabelForm.discount}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, discount: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+            </div>
+          </div>
+          <div className="p-4 flex gap-3 border-t border-white/10">
+            <button
+              onClick={handleRetake}
+              className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
+            >
+              Yeniden Çek
+            </button>
+            <button
+              onClick={handleSubmitRedLabel}
+              className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white"
+            >
+              Haritaya Ekle (+2 Bilet)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview (receipt mode) */}
+      {step === "preview" && previewUrl && !isRedLabel && (
         <>
           <div className="absolute inset-0 flex items-center justify-center bg-black p-4">
             <img
@@ -277,7 +427,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
 
       {/* Success with celebration */}
       {step === "success" && (
-        <SuccessCelebration onClose={handleClose} />
+        <SuccessCelebration onClose={handleClose} isRedLabel={isRedLabel} />
       )}
 
       {/* Error */}
@@ -304,7 +454,7 @@ export default function CameraScanner({ onClose }: CameraScannerProps) {
   );
 }
 
-function SuccessCelebration({ onClose }: { onClose: () => void }) {
+function SuccessCelebration({ onClose, isRedLabel }: { onClose: () => void; isRedLabel?: boolean }) {
   useEffect(() => {
     const id = setTimeout(onClose, 2500);
     return () => clearTimeout(id);
@@ -312,7 +462,6 @@ function SuccessCelebration({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 p-6 overflow-hidden">
-      {/* Falling sparkles */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <div
@@ -328,10 +477,14 @@ function SuccessCelebration({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="relative z-10 text-center max-w-sm">
-        <p className="text-2xl mb-2">✨</p>
-        <p className="text-lg font-bold text-white mb-2">Receipt received!</p>
+        <p className="text-2xl mb-2">{isRedLabel ? "🏷️" : "✨"}</p>
+        <p className="text-lg font-bold text-white mb-2">
+          {isRedLabel ? "Kırmızı Etiket paylaşıldı!" : "Receipt received!"}
+        </p>
         <p className="text-sm text-white/90">
-          It is being reviewed. Your ticket and cuan will be added soon.
+          {isRedLabel
+            ? "Haritada görünecek. +2 bilet kazandınız!"
+            : "It is being reviewed. Your ticket and cuan will be added soon."}
         </p>
       </div>
     </div>

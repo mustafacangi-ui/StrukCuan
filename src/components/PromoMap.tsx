@@ -8,9 +8,10 @@ import { haversineDistance } from "@/hooks/useUserLocation";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
-const RADIUS_OPTIONS = [1, 2, 5, 10];
+const RADIUS_OPTIONS = [3, 5, 10];
 
 const RED_PIN = { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" };
+const GREEN_PIN = { bg: "#22C55E", glow: "rgba(34,197,94,0.6)" };
 
 function createCircleGeoJSON(lat: number, lng: number, radiusKm: number) {
   const points: [number, number][] = [];
@@ -59,6 +60,7 @@ function PromoMarker({
   onClick: () => void;
 }) {
   const priceLabel = formatPrice(deal.price);
+  const pin = deal.isRedLabel ? RED_PIN : GREEN_PIN;
   return (
     <Marker
       latitude={deal.lat}
@@ -77,15 +79,15 @@ function PromoMarker({
         <div
           className="rounded-md border-2 border-white px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap shadow-lg"
           style={{
-            backgroundColor: RED_PIN.bg,
-            boxShadow: `0 0 10px ${RED_PIN.glow}`,
+            backgroundColor: pin.bg,
+            boxShadow: `0 0 10px ${pin.glow}`,
           }}
         >
           {priceLabel}
         </div>
         <div
           className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] -mt-0.5"
-          style={{ borderTopColor: RED_PIN.bg }}
+          style={{ borderTopColor: pin.bg }}
         />
       </button>
     </Marker>
@@ -108,31 +110,52 @@ function PromoCardPopup({
   const discountStr = discount ? `-${discount}%` : "Promo";
 
   return (
-    <div className="absolute bottom-4 left-4 right-4 z-50 rounded-xl border border-border bg-card p-4 shadow-xl">
+    <div className="absolute bottom-4 left-4 right-4 z-50 rounded-xl border border-border bg-card overflow-hidden shadow-xl">
       <button
         onClick={onClose}
-        className="absolute top-2 right-2 text-muted-foreground text-lg leading-none"
+        className="absolute top-2 right-2 z-10 rounded-full bg-black/30 p-1 text-white text-lg leading-none hover:bg-black/50"
       >
         ×
       </button>
-      <p className="font-display font-bold text-foreground pr-6">
-        {deal.store ?? "Toko"}
-      </p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">
-        Distance: {formatDistance(deal.distanceKm)}
-      </p>
-      <p className="text-sm text-foreground mt-1">
-        {deal.product_name ?? "Promo available"}
-      </p>
-      <div className="flex items-center gap-2 mt-2">
-        <span className="rounded bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
-          {discountStr}
-        </span>
-        <span className="text-sm font-bold text-primary">{priceStr}</span>
+      <div className="flex gap-3 p-4">
+        {deal.image ? (
+          <img
+            src={deal.image}
+            alt={deal.product_name ?? "Product"}
+            className="w-16 h-16 rounded-lg object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center text-muted-foreground text-xs">
+            No img
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-bold text-foreground text-sm">
+            {deal.product_name ?? "Promo available"}
+          </p>
+          <p className="text-sm font-bold text-primary mt-0.5">{priceStr}</p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {deal.store ?? "Toko"}
+          </p>
+          <p className="text-[9px] text-muted-foreground">
+            {formatDistance(deal.distanceKm)} away
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span
+              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                deal.isRedLabel
+                  ? "bg-red-500/20 text-red-600"
+                  : "bg-primary/20 text-primary"
+              }`}
+            >
+              {discountStr}
+            </span>
+          </div>
+        </div>
       </div>
       <button
         onClick={onViewPromo}
-        className="mt-3 w-full rounded-lg bg-primary py-2.5 font-display font-bold text-sm text-primary-foreground"
+        className="w-full rounded-b-xl bg-primary py-2.5 font-display font-bold text-sm text-primary-foreground hover:bg-primary/90"
       >
         View Promo
       </button>
@@ -140,7 +163,12 @@ function PromoCardPopup({
   );
 }
 
-export default function PromoMap() {
+interface PromoMapProps {
+  /** Map height in px when used as full page (default 260) */
+  height?: number;
+}
+
+export default function PromoMap({ height = 260 }: PromoMapProps) {
   const { radius, setRadius } = useRadar();
   const { deals, isLoading, userLocation } = useDealsWithRadius(radius);
   const [selectedDeal, setSelectedDeal] = useState<DealWithDistance | null>(
@@ -239,7 +267,7 @@ export default function PromoMap() {
         </div>
       </div>
 
-      <div className="relative" style={{ height: "260px" }}>
+      <div className="relative" style={{ height: `${height}px` }}>
         <Map
           ref={(ref) => {
             if (ref) mapRef.current = ref.getMap();

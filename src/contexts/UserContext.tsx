@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
-import { APP_URL } from "@/config/app";
+import { APP_URL, getAuthRedirectUrl, IS_LOCALHOST } from "@/config/app";
 
 export interface UserData {
   id: string;
@@ -241,18 +241,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       email,
       options: {
         data: { display_name: displayName, nickname: displayName },
-        emailRedirectTo: APP_URL,
+        emailRedirectTo: getAuthRedirectUrl(),
       },
     });
     if (error) throw error;
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
+    // On localhost: NEVER redirect to production - always use current origin
+    const redirectTo = getAuthRedirectUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: APP_URL,
-      },
+      options: { redirectTo },
     });
     if (error) throw error;
   }, []);
@@ -269,10 +269,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     setUser((prev) => (prev ? { ...prev, nickname } : null));
   }, [session?.user]);
 
-  const requireLogin = useCallback((action: PendingAction) => {
+  const requireLogin = useCallback(async (action: PendingAction) => {
     setPendingAction(action);
+    // Localhost: zorunlu anonim giriş - hiçbir yere yönlendirmeden arka planda signInAnonymously
+    if (IS_LOCALHOST) {
+      try {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (!error && data.session) {
+          setSession(data.session);
+          const userData = await buildUserFromSession(data.session);
+          setUser(userData);
+          // PostLoginRedirect will open camera - no external redirect
+          return;
+        }
+      } catch (e) {
+        console.warn("[UserContext] Localhost anonymous sign-in failed:", e);
+      }
+    }
     setShowLoginSheet(true);
-  }, []);
+  }, [buildUserFromSession]);
 
   const dismissLogin = useCallback(() => {
     setShowLoginSheet(false);

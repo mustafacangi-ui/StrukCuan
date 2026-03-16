@@ -123,6 +123,10 @@ export default {
           "0%": { width: "0%" },
           "100%": { width: "var(--fill-width, 100%)" },
         },
+        "ripple": {
+          "0%": { transform: "scale(0)", opacity: "0.4" },
+          "100%": { transform: "scale(2.5)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -136,6 +140,7 @@ export default {
         "fall": "fall 2s linear forwards",
         "ticket-pop": "ticket-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "progress-fill": "progress-fill 0.6s ease-out forwards",
+        "ripple": "ripple 0.35s ease-out forwards",
       },
     },
   },

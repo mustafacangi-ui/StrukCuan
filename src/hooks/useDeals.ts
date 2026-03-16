@@ -16,6 +16,8 @@ export interface Deal {
   created_at?: string;
   discount?: number;
   expiry?: string;
+  /** Kırmızı Etiket from DB - 50%+ discount or expiring soon */
+  is_red_label?: boolean;
 }
 
 async function fetchDeals(): Promise<Deal[]> {

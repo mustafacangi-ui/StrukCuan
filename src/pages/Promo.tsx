@@ -16,7 +16,9 @@ import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
+import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import type { PromoState } from "@/components/promo/PromoCard";
+import WatchEarnCard from "@/components/promo/WatchEarnCard";
 
 
 /**
@@ -53,6 +55,9 @@ export default function Promo() {
 
   const totalAds = adsWatched;
   const state = getPromoState(adsWatched, 0, bonusUnlocked, viewOverride, justEarnedTicket);
+
+  /** Weekly ticket limit reached - disable Watch Ad buttons */
+  const isWeeklyLimitReached = (ticketsThisWeek ?? 0) >= MAX_TICKETS_PER_WEEK;
 
   useEffect(() => {
     if (isLoading) return;
@@ -142,6 +147,35 @@ export default function Promo() {
             className="w-full object-contain"
           />
         </div>
+      </div>
+
+      {/* SECTION 1b — Watch & Earn Cards */}
+      <div className="mt-4 px-4 space-y-3">
+        <h2 className="text-sm font-bold text-white/90">Watch & Earn</h2>
+        <WatchEarnCard
+          adRange="1-5"
+          reward={1}
+          isCompleted={adsWatched >= 5}
+          disabled={isWeeklyLimitReached}
+          onWatchAd={handleContinueEarning}
+          isWatching={showModal}
+        />
+        <WatchEarnCard
+          adRange="5-10"
+          reward={2}
+          isCompleted={adsWatched >= 10}
+          disabled={isWeeklyLimitReached}
+          onWatchAd={handleContinueEarning}
+          isWatching={showModal}
+        />
+        <WatchEarnCard
+          adRange="13-17"
+          reward={3}
+          isCompleted={adsWatched >= 15}
+          disabled={isWeeklyLimitReached}
+          onWatchAd={handleContinueEarning}
+          isWatching={showModal}
+        />
       </div>
 
       {/* SECTION 2 — Reward Action Panel (Below) */}

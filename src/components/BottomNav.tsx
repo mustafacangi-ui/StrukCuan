@@ -1,26 +1,20 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Tag, UserPlus, Trophy, User } from "lucide-react";
-import { useUser } from "@/contexts/UserContext";
+import { Home, Ticket, Radar, Trophy, UserPlus } from "lucide-react";
 
 const navItems = [
-  { path: "/", icon: Home, label: "HOME" },
-  { path: "/promo", icon: Tag, label: "PROMO" },
-  { path: "/invite", icon: UserPlus, label: "INVITE" },
-  { path: "/leaderboard", icon: Trophy, label: "RANK" },
-  { path: "/settings", icon: User, label: "PROFILE", requiresAuth: true },
+  { path: "/", icon: Home, label: "Home" },
+  { path: "/promo", icon: Ticket, label: "Promo" },
+  { path: "/map", icon: Radar, label: "Map", isCenter: true },
+  { path: "/leaderboard", icon: Trophy, label: "Rank" },
+  { path: "/invite", icon: UserPlus, label: "Invite" },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isOnboarded, requireLogin } = useUser();
 
-  const handleNavClick = (item: (typeof navItems)[number]) => {
-    if (item.requiresAuth && !isOnboarded) {
-      requireLogin("profile");
-      return;
-    }
-    navigate(item.path);
+  const handleNavClick = (path: string) => {
+    navigate(path);
   };
 
   return (
@@ -28,16 +22,31 @@ const BottomNav = () => {
       <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const isCenter = "isCenter" in item && item.isCenter;
           return (
             <button
               key={item.path}
-              onClick={() => handleNavClick(item)}
-              className="flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px]"
+              onClick={() => handleNavClick(item.path)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px] ${
+                isCenter ? "relative -mt-1" : ""
+              }`}
             >
-              <item.icon
-                size={20}
-                className={isActive ? "text-primary" : "text-muted-foreground"}
-              />
+              <span
+                className={`flex items-center justify-center rounded-full transition-colors ${
+                  isCenter
+                    ? `p-2 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-muted/50 text-muted-foreground"
+                      }`
+                    : ""
+                }`}
+              >
+                <item.icon
+                  size={isCenter ? 24 : 20}
+                  className={!isCenter && (isActive ? "text-primary" : "text-muted-foreground")}
+                />
+              </span>
               <span
                 className={`text-[10px] font-medium ${
                   isActive ? "text-primary" : "text-muted-foreground"

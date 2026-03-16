@@ -1,12 +1,18 @@
-import { Bell, Settings, Shield, Ticket, User } from "lucide-react";
+import { Bell, Camera, Receipt, MapPin, Settings, Shield, Ticket, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
 
-const Header = () => {
+interface HeaderProps {
+  onUploadReceipt?: () => void;
+  onShareDiscount?: () => void;
+}
+
+const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
   const navigate = useNavigate();
   const { user, session, isOnboarded, isLoading, requireLogin } = useUser();
 
@@ -16,6 +22,8 @@ const Header = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
   const markRead = useMarkNotificationsRead(user?.id);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showCameraMenu, setShowCameraMenu] = useState(false);
+  const [rippleKey, setRippleKey] = useState(0);
 
   /** Ticket count from user_tickets only - never fall back to user_stats (avoids stale data after weekly draw reset) */
   const tiket = weeklyTickets ?? 0;
@@ -34,6 +42,16 @@ const Header = () => {
     } else {
       navigate("/settings");
     }
+  };
+
+  const handleUploadReceipt = () => {
+    setShowCameraMenu(false);
+    onUploadReceipt?.();
+  };
+
+  const handleShareDiscount = () => {
+    setShowCameraMenu(false);
+    onShareDiscount?.();
   };
 
   // Dynamic online user count
@@ -148,12 +166,12 @@ const Header = () => {
           </div>
         </div>
       </div>
-      {/* User row */}
-      <div className="flex items-center justify-between mt-3">
-        <div className="flex items-center gap-3">
+      {/* User row: Welcome + name on left, camera button on right */}
+      <div className="flex items-center justify-between gap-3 mt-3">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={handleProfileClick}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border-2 border-primary glow-green"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary glow-green"
           >
             {isOnboarded ? (
               <span className="font-display text-lg font-bold text-primary">
@@ -168,12 +186,12 @@ const Header = () => {
               </div>
             )}
           </button>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm text-white/85">
-              {isOnboarded ? "Hello," : "Welcome!"}
+              {isOnboarded ? "Hello," : "Welcome"}
             </p>
-            <h1 className="font-display text-lg font-bold text-white">{nickname}</h1>
-            {isOnboarded ? (
+            <h1 className="font-display text-lg font-bold text-white truncate">{nickname}</h1>
+            {isOnboarded && (
               <button
                 onClick={handleProfileClick}
                 className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 glow-green"
@@ -183,17 +201,57 @@ const Header = () => {
                   Level {level} · Receipt Hunter
                 </span>
               </button>
-            ) : (
-              <button
-                onClick={() => requireLogin("camera")}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 glow-green shadow-[0_0_20px_hsl(147_100%_60%/0.4)] animate-pulse-glow"
-              >
-                <Ticket size={12} className="text-primary-foreground" />
-                <span className="text-[10px] font-bold text-primary-foreground tracking-wide">UPLOAD RECEIPT → GET TICKET</span>
-              </button>
             )}
           </div>
         </div>
+        <Popover
+          open={showCameraMenu}
+          onOpenChange={(open) => {
+            if (open && !isOnboarded) {
+              // Localhost: requireLogin → signInAnonymously arka planda, kamerayı aç; ASLA dış linke yönlendirme
+              requireLogin("camera");
+              setShowCameraMenu(false);
+              return;
+            }
+            setShowCameraMenu(open);
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              onClick={() => setRippleKey((k) => k + 1)}
+              className="relative shrink-0 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-green-500 shadow-lg transition-all duration-200 ease-in-out hover:scale-105 hover:bg-green-600 active:scale-95"
+              aria-label="Kamera menüsü"
+            >
+              <span
+                key={rippleKey}
+                className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 animate-ripple"
+              />
+              <Camera size={24} className="relative z-10 text-white flex-shrink-0" strokeWidth={2} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="bottom" className="w-56 p-2">
+            <button
+              onClick={handleUploadReceipt}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
+            >
+              <Receipt size={18} className="text-green-500" />
+              <div>
+                <p className="font-semibold text-foreground">Fiş Yükle</p>
+                <p className="text-[10px] text-muted-foreground">+1 Bilet</p>
+              </div>
+            </button>
+            <button
+              onClick={handleShareDiscount}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
+            >
+              <MapPin size={18} className="text-red-500" />
+              <div>
+                <p className="font-semibold text-foreground">İndirim Paylaş</p>
+                <p className="text-[10px] text-muted-foreground">+2 Bilet · Haritada görünür</p>
+              </div>
+            </button>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

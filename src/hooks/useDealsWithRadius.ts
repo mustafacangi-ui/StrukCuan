@@ -7,6 +7,17 @@ export type PromoType = "big_discount" | "bonus_cuan" | "normal";
 export interface DealWithDistance extends Deal {
   distanceKm: number;
   promoType: PromoType;
+  /** Kırmızı Etiket: discount >= 50% OR expiry within 48h OR is_red_label from DB */
+  isRedLabel: boolean;
+}
+
+/** Expiry within 48 hours = Red Label (urgent) */
+function isExpirySoon(expiry?: string | null): boolean {
+  if (!expiry) return false;
+  const exp = new Date(expiry);
+  const now = new Date();
+  const hoursLeft = (exp.getTime() - now.getTime()) / (1000 * 60 * 60);
+  return hoursLeft <= 48 && hoursLeft >= 0;
 }
 
 function getPromoType(deal: Deal): PromoType {
@@ -23,16 +34,23 @@ export function useDealsWithRadius(radiusKm: number) {
 
   const filteredDeals = useMemo(() => {
     return deals
-      .map((d) => ({
-        ...d,
-        distanceKm: haversineDistance(
-          location.lat,
-          location.lng,
-          d.lat,
-          d.lng
-        ),
-        promoType: getPromoType(d),
-      }))
+      .map((d) => {
+        const discount = (d as Deal & { discount?: number }).discount ?? 0;
+        const isRedLabelDb = d.is_red_label ?? false;
+        const isRedLabel =
+          isRedLabelDb || discount >= 50 || isExpirySoon(d.expiry);
+        return {
+          ...d,
+          distanceKm: haversineDistance(
+            location.lat,
+            location.lng,
+            d.lat,
+            d.lng
+          ),
+          promoType: getPromoType(d),
+          isRedLabel,
+        };
+      })
       .filter((d) => d.distanceKm <= radiusKm)
       .sort((a, b) => a.distanceKm - b.distanceKm) as DealWithDistance[];
   }, [deals, location, radiusKm]);
