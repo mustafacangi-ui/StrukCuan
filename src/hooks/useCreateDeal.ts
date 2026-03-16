@@ -15,19 +15,22 @@ export interface CreateDealInput {
 }
 
 async function createDeal(input: CreateDealInput) {
-  const payload = {
+  // Sadece deals tablosundaki kolonlar - user_id YOK, image (image_url değil)
+  const priceVal = input.price != null ? Number(input.price) : null;
+  const discountVal = input.discount != null ? Number(input.discount) : null;
+  const payload: Record<string, unknown> = {
     lat: Number(input.lat),
     lng: Number(input.lng),
     product_name: String(input.product_name ?? ""),
-    price: input.price != null ? Number(input.price) : null,
+    price: priceVal != null && !Number.isNaN(priceVal) ? priceVal : null,
     store: String(input.store ?? ""),
     image: String(input.image_url ?? ""),
-    status: "active" as const,
-    discount: input.discount != null ? Number(input.discount) : null,
+    status: "active",
+    discount: discountVal != null && !Number.isNaN(discountVal) ? discountVal : null,
     expiry: input.expiry ? String(input.expiry) : null,
     is_red_label: Boolean(input.is_red_label ?? false),
   };
-  console.log("[useCreateDeal] Insert payload:", payload);
+  console.log("[useCreateDeal] Insert payload (deals columns only, no user_id):", payload);
   const { data, error } = await supabase
     .from("deals")
     .insert(payload)
@@ -35,12 +38,13 @@ async function createDeal(input: CreateDealInput) {
     .single();
 
   if (error) {
-    console.error("[useCreateDeal] Insert failed:", {
-      message: error.message,
-      code: (error as { code?: string }).code,
-      details: (error as { details?: string }).details,
-      hint: (error as { hint?: string }).hint,
-      full: error,
+    const err = error as { message?: string; code?: string; details?: string; hint?: string };
+    console.error("[useCreateDeal] Insert failed - 400 sebebi genelde yanlış kolon veya tip:", {
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint,
+      payload_keys: Object.keys(payload),
     });
     throw error;
   }

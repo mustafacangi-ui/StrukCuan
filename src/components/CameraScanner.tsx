@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import confetti from "canvas-confetti";
 import { X, Camera, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
@@ -498,9 +499,34 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
 
 function SuccessCelebration({ onClose, isRedLabel }: { onClose: () => void; isRedLabel?: boolean }) {
   useEffect(() => {
+    if (isRedLabel) {
+      const colors = ["#FF3B3B", "#FF6B6B", "#FFD166", "#FFE066", "#FFFFFF"];
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors,
+      });
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors,
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors,
+        });
+      }, 200);
+    }
     const id = setTimeout(onClose, 2500);
     return () => clearTimeout(id);
-  }, [onClose]);
+  }, [onClose, isRedLabel]);
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 p-6 overflow-hidden">

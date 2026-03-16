@@ -10,6 +10,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
 const RADIUS_OPTIONS = [3, 5, 10];
 
+const RED_LABEL_PIN = { bg: "#FF0000", glow: "rgba(255,0,0,0.9)" };
 const RED_PIN = { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" };
 const GREEN_PIN = { bg: "#22C55E", glow: "rgba(34,197,94,0.6)" };
 
@@ -60,7 +61,8 @@ function PromoMarker({
   onClick: () => void;
 }) {
   const priceLabel = formatPrice(deal.price);
-  const pin = deal.isRedLabel ? RED_PIN : GREEN_PIN;
+  const isRedLabel = deal.isRedLabel;
+  const pin = isRedLabel ? RED_LABEL_PIN : GREEN_PIN;
   return (
     <Marker
       latitude={deal.lat}
@@ -73,16 +75,19 @@ function PromoMarker({
     >
       <button
         type="button"
-        className="flex flex-col items-center cursor-pointer"
+        className="flex flex-col items-center cursor-pointer group"
         aria-label={`Promo: ${deal.store ?? "Store"} - ${priceLabel}`}
       >
         <div
-          className="rounded-md border-2 border-white px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap shadow-lg"
+          className={`rounded-md border-2 border-white px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap shadow-lg flex items-center gap-0.5 ${
+            isRedLabel ? "animate-pulse" : ""
+          }`}
           style={{
             backgroundColor: pin.bg,
-            boxShadow: `0 0 10px ${pin.glow}`,
+            boxShadow: `0 0 ${isRedLabel ? 14 : 10}px ${pin.glow}`,
           }}
         >
+          {isRedLabel && <span className="text-[10px]">🔥</span>}
           {priceLabel}
         </div>
         <div
