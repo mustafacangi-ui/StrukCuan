@@ -35,6 +35,12 @@
     "huntPromoTitle": "Hunt Promos Near You",
     "mustLogin": "You must log in."
   },
+  "rewards": {
+    "title": "Rewards",
+    "buy": "Buy",
+    "codeTitle": "Your Digital Code",
+    "codeDesc": "Copy the code below and use it on the relevant site."
+  },
   "common": {
     "loading": "Loading...",
     "back": "Back",

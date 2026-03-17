@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award } from "lucide-react";
+import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award, Gift } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { formatCurrency } from "@/config/locale";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserDealsCount } from "@/hooks/useUserDealsCount";
@@ -37,10 +38,11 @@ const MOCK_WINNERS = [
 export default function CuanDashboard() {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
+  const countryCode = user?.countryCode ?? "ID";
   const { data: stats } = useUserStats(user?.id);
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
   const { data: dealsCount = 0 } = useUserDealsCount(user?.id);
-  const { data: lotteryWinners = [] } = useLotteryWinners(5);
+  const { data: lotteryWinners = [] } = useLotteryWinners(5, countryCode);
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
@@ -62,6 +64,18 @@ export default function CuanDashboard() {
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
+
+      {/* Ödüller sayfasına hızlı link */}
+      <div className="mx-4 mt-2">
+        <button
+          type="button"
+          onClick={() => navigate("/rewards")}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30 transition-colors"
+        >
+          <Gift size={18} />
+          Ödülleri Görüntüle
+        </button>
+      </div>
 
       {/* Bilet Kavanozu - Haftalık İlerleme */}
       <div className="mx-4 mt-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/20 to-primary/10 p-5">
@@ -115,7 +129,7 @@ export default function CuanDashboard() {
             <div className="p-4 text-center">
               <Coins size={20} className="mx-auto mb-1 text-amber-500" />
               <p className="font-display text-lg font-bold text-foreground">
-                Rp {cuan.toLocaleString("id-ID")}
+                {formatCurrency(cuan, countryCode)}
               </p>
               <p className="text-[10px] text-muted-foreground">Toplam Ödül</p>
             </div>
@@ -132,7 +146,7 @@ export default function CuanDashboard() {
         <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-500/10 to-transparent overflow-hidden">
           <div className="p-3 border-b border-amber-500/20 bg-amber-500/10">
             <p className="text-[10px] text-muted-foreground text-center">
-              100.000 IDR kazanan şanslı avcılar
+              {countryCode === "DE" ? "10€ kazanan şanslı avcılar" : "100.000 Rp kazanan şanslı avcılar"}
             </p>
           </div>
           <ul className="divide-y divide-border">

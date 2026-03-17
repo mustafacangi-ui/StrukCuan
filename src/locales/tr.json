@@ -35,6 +35,12 @@
     "huntPromoTitle": "Çevrendeki Promosyonları Avla",
     "mustLogin": "Giriş yapmalısınız."
   },
+  "rewards": {
+    "title": "Ödüller",
+    "buy": "Satın Al",
+    "codeTitle": "Dijital Kodunuz",
+    "codeDesc": "Aşağıdaki kodu kopyalayıp ilgili sitede kullanın."
+  },
   "common": {
     "loading": "Yükleniyor...",
     "back": "Geri",

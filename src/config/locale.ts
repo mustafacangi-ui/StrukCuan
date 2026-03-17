@@ -37,6 +37,14 @@ const LOCALE_MAP: Record<string, LocaleConfig> = {
     language: "tr",
     timezone: "Europe/Istanbul",
   },
+  DE: {
+    countryCode: "DE",
+    currency: "EUR",
+    currencySymbol: "€",
+    numberLocale: "de-DE",
+    language: "de",
+    timezone: "Europe/Berlin",
+  },
 };
 
 const DEFAULT_COUNTRY: CountryCode = "ID";

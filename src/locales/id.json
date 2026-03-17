@@ -35,6 +35,12 @@
     "huntPromoTitle": "Berburu Promo di Sekitarmu",
     "mustLogin": "Anda harus masuk."
   },
+  "rewards": {
+    "title": "Hadiah",
+    "buy": "Beli",
+    "codeTitle": "Kode Digital Anda",
+    "codeDesc": "Salin kode di bawah dan gunakan di situs terkait."
+  },
   "common": {
     "loading": "Memuat...",
     "back": "Kembali",

@@ -35,6 +35,12 @@
     "huntPromoTitle": "Promos in deiner Nähe jagen",
     "mustLogin": "Sie müssen sich anmelden."
   },
+  "rewards": {
+    "title": "Belohnungen",
+    "buy": "Kaufen",
+    "codeTitle": "Ihr digitaler Code",
+    "codeDesc": "Kopieren Sie den Code unten und verwenden Sie ihn auf der relevanten Website."
+  },
   "common": {
     "loading": "Laden...",
     "back": "Zurück",

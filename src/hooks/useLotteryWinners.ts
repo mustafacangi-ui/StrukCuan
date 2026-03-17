@@ -10,12 +10,17 @@ export interface LotteryWinnerRow {
   nickname?: string;
 }
 
-async function fetchRecentWinners(limit = 10): Promise<LotteryWinnerRow[]> {
-  const { data: lotteryData, error } = await supabase
+async function fetchRecentWinners(limit = 10, countryCode?: string | null): Promise<LotteryWinnerRow[]> {
+  let q = supabase
     .from("weekly_lottery")
     .select("id, draw_date, winner_user_id, tickets_used, reward_amount")
     .order("draw_date", { ascending: false })
-    .limit(limit * 2); // fetch extra to join with user_stats
+    .limit(limit * 2);
+
+  const code = (countryCode ?? "ID").toUpperCase().slice(0, 2);
+  q = q.eq("country_code", code);
+
+  const { data: lotteryData, error } = await q;
 
   if (error) {
     console.error("Failed to fetch lottery winners", error);
@@ -43,9 +48,10 @@ async function fetchRecentWinners(limit = 10): Promise<LotteryWinnerRow[]> {
   }));
 }
 
-export function useLotteryWinners(limit = 10) {
+export function useLotteryWinners(limit = 10, countryCode?: string | null) {
+  const code = (countryCode ?? "ID").toUpperCase().slice(0, 2);
   return useQuery({
-    queryKey: ["lottery_winners", limit],
-    queryFn: () => fetchRecentWinners(limit),
+    queryKey: ["lottery_winners", limit, code],
+    queryFn: () => fetchRecentWinners(limit, code),
   });
 }
