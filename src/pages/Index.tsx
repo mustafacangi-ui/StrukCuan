@@ -26,6 +26,7 @@ type ScannerMode = "receipt" | "red_label" | null;
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { isOnboarded, requireLogin } = useUser();
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
