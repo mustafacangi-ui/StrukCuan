@@ -19,7 +19,7 @@ const FloatingActionButton = ({ onOpenScanner }: FloatingActionButtonProps) => {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 shadow-lg transition-colors hover:bg-green-600 active:scale-95"
+      className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg transition-colors hover:bg-primary/90 active:scale-95"
       aria-label="Scan receipt"
     >
       <Camera size={24} className="text-white" strokeWidth={2} />

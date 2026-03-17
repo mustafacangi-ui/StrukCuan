@@ -81,16 +81,16 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             className="flex items-center gap-3"
           >
             <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
-              <Ticket size={16} className="text-[#00FF88]" />
+              <Ticket size={16} className="text-primary" />
               <div className="text-left">
                 <p className="font-display text-sm font-bold text-white">{tiket.toLocaleString()}</p>
                 <p className="text-[9px] text-white/60">Bilet</p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
-              <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               <div className="text-left">
-                <p className="font-display text-sm font-bold text-[#00FF88]">{cuan.toLocaleString()}</p>
+                <p className="font-display text-sm font-bold text-primary">{cuan.toLocaleString()}</p>
                 <p className="text-[9px] text-white/60">Cuan</p>
               </div>
             </div>
@@ -181,7 +181,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             {isOnboarded && (
               <button
                 onClick={handleProfileClick}
-                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-[#00FF88]/30 bg-[#00FF88]/10 px-2 py-0.5"
+                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5"
               >
                 <Shield size={10} className="text-primary" />
                 <span className="text-[10px] font-bold text-primary glow-green-text">
@@ -205,7 +205,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           <PopoverTrigger asChild>
             <button
               onClick={() => setRippleKey((k) => k + 1)}
-              className="relative shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#00FF88] to-[#00cc6a] shadow-[0_0_24px_rgba(0,255,136,0.4)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_0_32px_rgba(0,255,136,0.5)] active:scale-95"
+              className="relative shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-pink-500 shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_0_32px_rgba(236,72,153,0.4)] active:scale-95"
               aria-label="Kamera menüsü"
             >
               <span className="absolute inset-0 rounded-full border-2 border-[#00FF88]/40 animate-radar-sweep" />
@@ -214,7 +214,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
                 key={rippleKey}
                 className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 animate-ripple"
               />
-              <Camera size={26} className="relative z-10 text-[#0a0e14] flex-shrink-0" strokeWidth={2.5} />
+              <Camera size={26} className="relative z-10 text-white flex-shrink-0" strokeWidth={2.5} />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" className="w-56 p-2">
@@ -222,7 +222,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
               onClick={handleUploadReceipt}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
             >
-              <Receipt size={18} className="text-green-500" />
+              <Receipt size={18} className="text-primary" />
               <div>
                 <p className="font-semibold text-foreground">Fiş Yükle</p>
                 <p className="text-[10px] text-muted-foreground">+1 Bilet</p>

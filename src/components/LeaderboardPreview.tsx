@@ -13,7 +13,7 @@ export default function LeaderboardPreview() {
   return (
     <button
       onClick={() => navigate("/leaderboard")}
-      className="mx-4 w-[calc(100%-2rem)] card-radar rounded-2xl p-4 text-left transition-all hover:border-[#00FF88]/20"
+      className="mx-4 w-[calc(100%-2rem)] card-radar rounded-2xl p-4 text-left transition-all hover:border-primary/20"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">

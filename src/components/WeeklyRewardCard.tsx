@@ -144,7 +144,7 @@ export default function WeeklyRewardCard() {
 
         <button
           onClick={() => setShowWinners(true)}
-          className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00FF88] to-[#00cc6a] py-3.5 min-h-[48px] font-display font-bold text-sm text-[#0a0e14] transition-all hover:shadow-[0_0_20px_rgba(0,255,136,0.3)]"
+          className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3.5 min-h-[48px] font-display font-bold text-sm text-white transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]"
         >
           <Award size={16} />
           View Winners

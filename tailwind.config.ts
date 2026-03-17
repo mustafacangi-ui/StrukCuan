@@ -52,7 +52,6 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         neon: {
-          green: "hsl(var(--neon-green))",
           red: "hsl(var(--neon-red))",
         },
         sidebar: {
@@ -81,8 +80,8 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 12px hsl(150 100% 50% / 0.2)" },
-          "50%": { boxShadow: "0 0 18px hsl(150 100% 50% / 0.35)" },
+          "0%, 100%": { boxShadow: "0 0 12px hsl(270 70% 60% / 0.2)" },
+          "50%": { boxShadow: "0 0 18px hsl(270 70% 60% / 0.35)" },
         },
         "pulse-red": {
           "0%, 100%": { boxShadow: "0 0 10px hsl(0 100% 61% / 0.2)" },

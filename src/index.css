@@ -4,56 +4,56 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Radar theme: deep navy, neon green accents, electric blue */
+/* Premium theme: Lila/Pembe gradient, Apple/Revolut style */
 @layer base {
   :root,
   .dark {
-    /* Primary: #00FF88 neon green (radar), Secondary: #00D4FF electric blue */
-    --background: 220 25% 5%;
+    /* Primary: Purple (#8b5cf6) to Pink (#ec4899) gradient */
+    --background: 260 20% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 220 22% 8%;
+    --card: 260 18% 10%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 22% 8%;
+    --popover: 260 18% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 150 100% 50%;
-    --primary-foreground: 220 25% 5%;
+    --primary: 270 70% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 25% 12%;
+    --secondary: 260 20% 14%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 220 20% 14%;
+    --muted: 260 18% 16%;
     --muted-foreground: 0 0% 85%;
 
-    --accent: 195 100% 50%;
+    --accent: 320 70% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 100% 61%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 18%;
-    --ring: 150 100% 50%;
+    --border: 260 18% 20%;
+    --input: 260 18% 20%;
+    --ring: 270 70% 60%;
 
     --radius: 0.75rem;
 
-    --neon-green: 150 100% 50%;
-    --neon-blue: 195 100% 50%;
+    --violet: 270 70% 60%;
+    --pink: 320 70% 60%;
     --neon-red: 0 100% 61%;
-    --neon-green-glow: 0 0 20px hsl(150 100% 50% / 0.25);
-    --neon-blue-glow: 0 0 20px hsl(195 100% 50% / 0.25);
+    --violet-glow: 0 0 20px hsl(270 70% 60% / 0.25);
+    --pink-glow: 0 0 20px hsl(320 70% 60% / 0.25);
     --neon-red-glow: 0 0 12px hsl(0 100% 61% / 0.25);
 
-    --sidebar-background: 220 25% 5%;
+    --sidebar-background: 260 20% 8%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 150 100% 50%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 220 20% 12%;
+    --sidebar-primary: 270 70% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 18% 14%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 150 100% 50%;
+    --sidebar-border: 260 18% 20%;
+    --sidebar-ring: 270 70% 60%;
   }
 
   .light {
@@ -66,7 +66,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    --primary: 147 80% 40%;
+    --primary: 270 65% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 92%;
@@ -83,9 +83,9 @@
 
     --border: 0 0% 85%;
     --input: 0 0% 85%;
-    --ring: 147 80% 40%;
+    --ring: 270 65% 55%;
 
-    --neon-green: 147 80% 40%;
+    --violet: 270 65% 55%;
     --neon-red: 0 85% 55%;
   }
 }
@@ -96,7 +96,7 @@
   }
 
   body {
-    background: linear-gradient(180deg, #0a0e14 0%, #0d1321 40%, #0d1321 100%);
+    background: linear-gradient(180deg, #0f0d14 0%, #15121c 35%, #12101a 100%);
     min-height: 100vh;
     @apply text-foreground font-body antialiased;
   }
@@ -108,48 +108,48 @@
     min-height: 100vh;
   }
 
-  /* Premium radar cards - Revolut/Apple Card style */
+  /* Premium cards - Lila/Pembe accents, Revolut/Apple style */
   .card-radar {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(20, 18, 28, 0.95) 0%, rgba(18, 16, 24, 0.9) 100%);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 255, 136, 0.12);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 255, 136, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(139, 92, 246, 0.1);
   }
 
   .card-radar-subtle {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.75) 100%);
+    background: linear-gradient(145deg, rgba(20, 18, 28, 0.9) 0%, rgba(18, 16, 24, 0.8) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   }
 
   .bg-card,
   [class*="bg-card"] {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    background: linear-gradient(145deg, rgba(20, 18, 28, 0.95) 0%, rgba(18, 16, 24, 0.9) 100%) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 255, 136, 0.1) !important;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(139, 92, 246, 0.1) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
   }
 }
 
 @layer utilities {
   .glow-green {
-    box-shadow: 0 0 16px hsl(150 100% 50% / 0.25);
+    box-shadow: 0 0 16px hsl(270 70% 60% / 0.25);
   }
   .glow-red {
     box-shadow: 0 0 12px hsl(0 100% 61% / 0.2);
   }
   .glow-green-text {
-    text-shadow: 0 0 8px hsl(150 100% 50% / 0.3);
+    text-shadow: 0 0 8px hsl(270 70% 60% / 0.3);
   }
   .glow-red-text {
     text-shadow: 0 0 8px hsl(0 100% 61% / 0.3);
   }
   .shadow-primary {
-    box-shadow: 0 0 12px hsl(150 100% 50% / 0.25);
+    box-shadow: 0 0 12px hsl(270 70% 60% / 0.25);
   }
   @keyframes pulse-marker {
     0%, 100% { transform: scale(1); opacity: 1; }

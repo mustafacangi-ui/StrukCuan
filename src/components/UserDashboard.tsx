@@ -21,7 +21,7 @@ export default function UserDashboard() {
         <p className="text-[10px] text-white/50 mb-1">Your Level</p>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-bold text-white">Level {level}</span>
-          <span className="text-xs font-bold text-[#00FF88]">
+          <span className="text-xs font-bold text-primary">
             {levelProgress.progress.toFixed(0)}%
           </span>
         </div>
@@ -36,7 +36,7 @@ export default function UserDashboard() {
       {/* History */}
       <button
         onClick={() => navigate("/receipts")}
-        className="w-full card-radar rounded-2xl py-3.5 min-h-[48px] text-sm font-semibold text-white transition-all hover:border-[#00FF88]/30 hover:shadow-[0_0_20px_rgba(0,255,136,0.1)]"
+        className="w-full card-radar rounded-2xl py-3.5 min-h-[48px] text-sm font-semibold text-white transition-all hover:border-primary/30 hover:shadow-[0_0_20px_rgba(139,92,246,0.1)]"
       >
         View History
       </button>

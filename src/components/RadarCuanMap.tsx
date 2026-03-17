@@ -231,7 +231,7 @@ export default function RadarCuanMap() {
               id="radius-fill"
               type="fill"
               paint={{
-                "fill-color": "#00FF88",
+                "fill-color": "rgb(139, 92, 246)",
                 "fill-opacity": 0.08,
               }}
             />
@@ -239,7 +239,7 @@ export default function RadarCuanMap() {
               id="radius-line"
               type="line"
               paint={{
-                "line-color": "#00FF88",
+                "line-color": "rgb(139, 92, 246)",
                 "line-width": 2,
                 "line-opacity": 0.4,
               }}

@@ -38,9 +38,9 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
       <div className="card-radar rounded-2xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${missionCompleted ? "bg-[#00FF88]/20 border border-[#00FF88]/30" : "bg-white/5 border border-white/10"}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${missionCompleted ? "bg-primary/20 border border-primary/30" : "bg-white/5 border border-white/10"}`}>
               {missionCompleted ? (
-                <Check size={18} className="text-[#00FF88]" />
+                <Check size={18} className="text-primary" />
               ) : (
                 <Target size={18} className="text-white/70" />
               )}
@@ -51,16 +51,16 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
                 {missionCompleted ? "Done!" : "Upload 1 receipt today"}
               </p>
               {!missionCompleted && (
-                <p className="text-[10px] text-[#00FF88] font-medium mt-0.5">Reward: +1 ticket</p>
+                <p className="text-[10px] text-primary font-medium mt-0.5">Reward: +1 ticket</p>
               )}
             </div>
           </div>
           {!missionCompleted && (
             <button
               onClick={handleUpload}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00FF88] to-[#00cc6a] px-4 py-2.5 min-h-[44px] text-xs font-bold text-[#0a0e14] transition-all hover:shadow-[0_0_16px_rgba(0,255,136,0.3)]"
+              className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2.5 min-h-[44px] text-xs font-bold text-white transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.3)]"
             >
-              <span className="absolute inset-0 rounded-xl border-2 border-[#00FF88]/50 animate-radar-sweep pointer-events-none" />
+              <span className="absolute inset-0 rounded-xl border-2 border-primary/50 animate-radar-sweep pointer-events-none" />
               <span className="relative z-10">Upload</span>
             </button>
           )}

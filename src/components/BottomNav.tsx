@@ -1,13 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Ticket, Radar, Trophy, Gift, UserPlus } from "lucide-react";
+import { Radar, Gift, Scan, Trophy, User } from "lucide-react";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home" },
-  { path: "/promo", icon: Ticket, label: "Promo" },
-  { path: "/map", icon: Radar, label: "Map", isCenter: true },
-  { path: "/rewards", icon: Gift, label: "Ödüller" },
-  { path: "/leaderboard", icon: Trophy, label: "Rank" },
-  { path: "/invite", icon: UserPlus, label: "Invite" },
+  { path: "/map", icon: Radar, label: "Radar" },
+  { path: "/promo", icon: Gift, label: "Kampanyalar" },
+  { path: "/", icon: Scan, label: "Tara", isCenter: true },
+  { path: "/rewards", icon: Trophy, label: "Ödüller" },
+  { path: "/settings", icon: User, label: "Profil" },
 ];
 
 const BottomNav = () => {
@@ -19,7 +18,7 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0d1321]/95 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0f0d14]/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -37,7 +36,7 @@ const BottomNav = () => {
                   isCenter
                     ? `p-2 ${
                         isActive
-                          ? "bg-[#00FF88] text-[#0a0e14] shadow-[0_0_16px_rgba(0,255,136,0.4)]"
+                          ? "bg-primary text-primary-foreground shadow-[0_0_16px_hsl(270_70%_60%_/_0.4)]"
                           : "bg-white/10 text-white/60"
                       }`
                     : ""
@@ -50,7 +49,7 @@ const BottomNav = () => {
               </span>
               <span
                 className={`text-[10px] font-medium ${
-                  isActive ? "text-[#00FF88]" : "text-white/60"
+                  isActive ? "text-primary" : "text-white/60"
                 }`}
               >
                 {item.label}

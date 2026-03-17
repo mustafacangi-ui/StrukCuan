@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 /** Radar theme: deep navy background */
-const APP_GRADIENT = "bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]";
+const APP_GRADIENT = "bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]";
 
 interface PageLayoutProps {
   children: ReactNode;

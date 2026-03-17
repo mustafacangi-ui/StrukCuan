@@ -4,9 +4,9 @@ import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 
-/** Radar theme: neon green accents */
-const TICKET_COLOR = "#00FF88";
-const CUAN_COLOR = "#00FF88";
+/** Premium theme: violet/pink accents */
+const TICKET_COLOR = "hsl(270 70% 60%)";
+const CUAN_COLOR = "hsl(270 70% 60%)";
 
 interface StatsBarProps {
   compact?: boolean;
