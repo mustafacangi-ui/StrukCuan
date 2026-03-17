@@ -63,7 +63,7 @@ export default function CuanDashboard() {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
       {/* Ödüller + Anket */}

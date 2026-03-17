@@ -14,10 +14,17 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Space Grotesk"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        display: ['"Syne"', '"Space Grotesk"', 'sans-serif'],
+        body: ['"DM Sans"', 'Inter', 'sans-serif'],
       },
       colors: {
+        theme: {
+          pink: "#ff4ecd",
+          purple: "#9b5cff",
+          deep: "#2a1a6e",
+          green: "#00E676",
+          gold: "#FFD600",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

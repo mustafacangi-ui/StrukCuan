@@ -62,7 +62,7 @@ const Index = () => {
   return (
     <div className="min-h-screen pb-28 w-full max-w-[420px] mx-auto">
       {/* Radar theme: deep navy background */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
 
       <Header
         onUploadReceipt={handleOpenReceiptScanner}

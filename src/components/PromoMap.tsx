@@ -12,7 +12,7 @@ const RADIUS_OPTIONS = [3, 5, 10];
 
 const RED_LABEL_PIN = { bg: "#FF0000", glow: "rgba(255,0,0,0.9)" };
 const RED_PIN = { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" };
-const GREEN_PIN = { bg: "#22C55E", glow: "rgba(34,197,94,0.6)" };
+const GREEN_PIN = { bg: "#00E676", glow: "rgba(0,230,118,0.6)" };
 
 function createCircleGeoJSON(lat: number, lng: number, radiusKm: number) {
   const points: [number, number][] = [];
@@ -150,7 +150,7 @@ function PromoCardPopup({
               className={`rounded px-2 py-0.5 text-[10px] font-bold ${
                 deal.isRedLabel
                   ? "bg-red-500/20 text-red-600"
-                  : "bg-primary/20 text-primary"
+                  : "bg-theme-green/20 text-theme-green"
               }`}
             >
               {discountStr}
@@ -160,7 +160,7 @@ function PromoCardPopup({
       </div>
       <button
         onClick={onViewPromo}
-        className="w-full rounded-b-xl bg-primary py-2.5 font-display font-bold text-sm text-primary-foreground hover:bg-primary/90"
+        className="w-full rounded-b-xl bg-theme-green py-2.5 font-display font-bold text-sm text-[#001a09] hover:bg-theme-green/90"
       >
         View Promo
       </button>
@@ -242,16 +242,16 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-card/95 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-red opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-red" />
+    <div className="rounded-xl border border-white/20 overflow-hidden">
+      {/* Header - HTML glass style */}
+      <div className="flex items-center justify-between px-3 py-2.5 bg-[rgba(180,40,140,0.22)] backdrop-blur-md border-b border-white/12">
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-[7px] w-[7px]">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#ff4444] opacity-75 animate-pulse" style={{ boxShadow: "0 0 8px #ff4444" }} />
+            <span className="relative inline-flex h-full w-full rounded-full bg-[#ff4444]" style={{ boxShadow: "0 0 8px #ff4444" }} />
           </span>
-          <span className="text-sm font-bold text-foreground">
-            Active Promos Nearby - LIVE
+          <span className="text-[11px] font-bold text-white font-display">
+            Active Promos Nearby – LIVE
           </span>
         </div>
         {/* Radius filters */}
@@ -260,10 +260,10 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
             <button
               key={r}
               onClick={() => setRadius(r)}
-              className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all border ${
                 radius === r
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                  ? "bg-white/22 text-white border-white/35"
+                  : "bg-white/8 text-white/65 border-white/18 hover:bg-white/12"
               }`}
             >
               {r}km
@@ -295,7 +295,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
               id="radius-fill"
               type="fill"
               paint={{
-                "fill-color": "rgb(139, 92, 246)",
+                "fill-color": "rgba(0,230,118,0.12)",
                 "fill-opacity": 0.08,
               }}
             />
@@ -303,7 +303,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
               id="radius-line"
               type="line"
               paint={{
-                "line-color": "#00FF88",
+                "line-color": "#00E676",
                 "line-width": 2,
                 "line-opacity": 0.4,
               }}
@@ -319,7 +319,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
             <div
               className="w-5 h-5 rounded-full bg-primary border-2 border-primary-foreground"
               style={{
-                boxShadow: "0 0 16px hsl(270 70% 60% / 0.5)",
+                boxShadow: "0 0 18px rgba(0,230,118,0.55)",
               }}
             />
           </Marker>
@@ -340,7 +340,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
                   style={{
                     width: 32 + Math.min(cluster.length, 5) * 6,
                     height: 32 + Math.min(cluster.length, 5) * 6,
-                    backgroundColor: "rgba(139, 92, 246, 0.12)",
+                    backgroundColor: "rgba(0,230,118,0.12)",
                   }}
                 />
               </Marker>
@@ -357,14 +357,17 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
           ))}
         </Map>
 
+        {/* Dark overlay - makes user pin and store names stand out */}
+        <div className="absolute inset-0 bg-black/25 pointer-events-none z-[5] rounded-b-xl" aria-hidden />
+
         {isLoading && (
-          <div className="absolute top-2 left-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-white">
+          <div className="absolute top-2 left-2 z-20 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-white">
             Loading...
           </div>
         )}
 
         {!isLoading && deals.length === 0 && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/70 px-4 py-2 text-[10px] text-white text-center max-w-[200px]">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-lg bg-black/70 px-4 py-2 text-[10px] text-white text-center max-w-[200px]">
             No promos within {radius} km
           </div>
         )}

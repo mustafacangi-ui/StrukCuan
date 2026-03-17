@@ -11,7 +11,7 @@ if (typeof window !== "undefined" && !IS_LOCALHOST && REDIRECT_HOSTS.includes(wi
   window.location.replace(`${APP_URL}${window.location.pathname}${window.location.search}${window.location.hash}`);
 } else {
   createRoot(document.getElementById("root")!).render(
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#db2777] to-[#7c3aed]"><p className="text-white">Loading...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#ff4ecd] to-[#1a0f3c]"><p className="text-white">Loading...</p></div>}>
       <App />
     </Suspense>
   );

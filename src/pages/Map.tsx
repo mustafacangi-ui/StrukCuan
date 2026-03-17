@@ -1,18 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
-import { Flame, MapPin } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { Flame, MapPin, ArrowLeft, Settings, Ticket, Coins } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import PromoMap from "@/components/PromoMap";
 import CameraScanner from "@/components/CameraScanner";
 import { Radar } from "lucide-react";
+import { useUserStats } from "@/hooks/useUserStats";
+import { useUserTickets } from "@/hooks/useUserTickets";
 
-const FILTERS = ["All", "Markets", "Cafes", "Electronics"] as const;
+const FILTERS = ["All", "Markets", "Cafes", "Electronics", "Fashion"] as const;
 
 const FLASH_DEALS = [
-  { id: 1, title: "Milk", subtitle: "50% Off", store: "Fresh Mart" },
-  { id: 2, title: "Bread", subtitle: "2x Bonus", store: "Bakery Corner" },
+  { id: 1, title: "Milk", discount: "40% Off", discountColor: "green" as const, store: "Fresh Mart" },
+  { id: 2, title: "Bread", discount: "5x Bonus", discountColor: "gold" as const, store: "Bakery Corner" },
+  { id: 3, title: "Coffee", discount: "Buy 1 Get 1", discountColor: "green" as const, store: "Cafe Latte" },
+  { id: 4, title: "Cable", discount: "25% Off", discountColor: "gold" as const, store: "Tech Store" },
 ];
 
 const NEARBY_OPPORTUNITIES = [
@@ -23,14 +26,18 @@ const NEARBY_OPPORTUNITIES = [
 ];
 
 /**
- * Radar page - Map top 50%, scrollable panel bottom 50%.
- * Filters, Flash Deals, Nearby Opportunities in Lila/Pink glassmorphism style.
+ * Radar page - HTML design: topbar, map, filters, flash deals, nearby.
+ * Theme: #ff4ecd → #9b5cff → #1a0f3c, glass, #00E676 green.
  */
 export default function Map() {
   const navigate = useNavigate();
-  const { isOnboarded, requireLogin } = useUser();
+  const { user, isOnboarded, requireLogin } = useUser();
+  const { data: stats } = useUserStats(user?.id);
+  const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
   const [showRedLabelScanner, setShowRedLabelScanner] = useState(false);
   const [activeFilter, setActiveFilter] = useState(FILTERS[0]);
+
+  const cuan = stats?.cuan ?? 0;
 
   const handleFabClick = () => {
     if (!isOnboarded) {
@@ -41,30 +48,54 @@ export default function Map() {
   };
 
   return (
-    <div className="min-h-screen max-w-[420px] mx-auto relative flex flex-col">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
-      <PageHeader title="Radar" onBack={() => navigate(-1)} />
+    <div className="min-h-screen max-w-[430px] mx-auto relative flex flex-col pb-20">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
 
-      {/* Map - Top 50% fixed */}
-      <div className="flex-shrink-0 px-4 pt-2">
-        <div className="rounded-xl overflow-hidden border border-violet-500/20 max-h-[50vh]">
-          <PromoMap height={typeof window !== "undefined" ? Math.max(200, Math.floor(window.innerHeight * 0.5) - 48) : 240} />
+      {/* Topbar - HTML style */}
+      <div className="sticky top-0 z-50 bg-[rgba(180,40,140,0.28)] backdrop-blur-xl border-b border-white/10 px-4 py-3.5 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <h1 className="font-display text-xl font-bold text-white flex-1 tracking-tight">Radar</h1>
+        <div className="flex items-center gap-2">
+          <div className="rounded-full px-3 py-1.5 bg-red-500/20 border border-red-500/30 flex items-center gap-1">
+            <Ticket size={12} className="text-red-300" />
+            <span className="text-[11px] font-semibold text-red-200">{weeklyTickets}</span>
+          </div>
+          <div className="rounded-full px-3 py-1.5 bg-theme-gold/20 border border-theme-gold/30 flex items-center gap-1">
+            <Coins size={12} className="text-theme-gold" />
+            <span className="text-[11px] font-semibold text-theme-gold">Cuan {cuan}</span>
+          </div>
         </div>
+        <button
+          onClick={() => navigate("/settings")}
+          className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/70 shrink-0"
+        >
+          <Settings size={18} />
+        </button>
       </div>
 
-      {/* Scrollable Panel - Bottom 50% */}
-      <div className="flex-1 overflow-y-auto px-4 pb-28 pt-4">
-        {/* Layer 1: Filters */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      {/* Map */}
+      <div className="mx-3.5 mt-3.5 rounded-[20px] overflow-hidden border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.25)] max-h-[50vh]">
+        <PromoMap height={typeof window !== "undefined" ? Math.max(200, Math.floor(window.innerHeight * 0.45) - 48) : 240} />
+      </div>
+
+      {/* Content - scrollable */}
+      <div className="flex-1 overflow-y-auto px-3.5 pt-4 pb-4">
+        {/* Filter chips */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {FILTERS.map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setActiveFilter(f)}
-              className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all backdrop-blur-sm ${
+              className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all border ${
                 activeFilter === f
-                  ? "bg-emerald-500/50 text-white border border-emerald-400/60 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
-                  : "bg-white/30 text-slate-800 border border-white/40 hover:bg-white/40"
+                  ? "bg-white text-[#1a1a1a] shadow-lg border-white/30"
+                  : "glass border-white/20 text-[#FFFFFF] hover:bg-white/15"
               }`}
             >
               {f}
@@ -72,62 +103,64 @@ export default function Map() {
           ))}
         </div>
 
-        {/* Layer 2: Flash Deals */}
+        {/* Flash Deals - 2x2 grid */}
         <section className="mb-6">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-white/95 mb-3">
-            <Flame size={16} className="text-orange-400" />
+          <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#FFFFFF] mb-2.5">
+            <span className="text-base">🔥</span>
             Flash Deals
           </h3>
-          <div className="flex gap-3 overflow-x-auto pb-1">
+          <div className="grid grid-cols-2 gap-2.5">
             {FLASH_DEALS.map((deal) => (
               <div
                 key={deal.id}
-                className="flex-shrink-0 w-[160px] rounded-2xl border border-violet-400/25 bg-violet-500/10 bg-gradient-to-br from-violet-500/20 via-violet-500/5 to-pink-500/15 p-4 backdrop-blur-xl"
+                className="glass rounded-2xl p-3.5 border border-white/20 hover:-translate-y-0.5 transition-transform cursor-pointer"
               >
-                <p className="font-display font-bold text-slate-800">{deal.title}</p>
-                <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">{deal.subtitle}</p>
-                <p className="text-[10px] text-slate-600 mt-1">{deal.store}</p>
+                <p className="font-display font-bold text-[#FFFFFF] text-[15px]">{deal.title}</p>
+                <p className={`text-[11px] font-bold mt-1 ${
+                  deal.discountColor === "green" ? "text-theme-green" : "text-theme-gold"
+                }`}>
+                  {deal.discount}
+                </p>
+                <p className="text-[10px] text-white/60 mt-0.5">{deal.store}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Layer 3: Nearby Opportunities */}
+        {/* Nearby Opportunities */}
         <section>
-          <h3 className="flex items-center gap-2 text-sm font-bold text-white/95 mb-3">
-            <MapPin size={16} className="text-pink-400" />
+          <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#FFFFFF] mb-2.5">
+            <span className="text-[15px]">📍</span>
             Nearby Opportunities
           </h3>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             {NEARBY_OPPORTUNITIES.map((opp) => (
               <div
                 key={opp.id}
-                className="rounded-2xl border border-pink-400/20 bg-pink-500/20 bg-gradient-to-br from-pink-500/15 via-pink-500/5 to-violet-500/10 p-4 backdrop-blur-xl"
+                className="glass rounded-[14px] p-3.5 border border-white/20 flex items-center justify-between hover:translate-x-1 hover:bg-white/15 transition-all cursor-pointer"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-display font-bold text-slate-800">{opp.store}</p>
-                    <p className="text-[10px] text-slate-600">
-                      {opp.distance} · {opp.category}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                    {opp.distance}
-                  </span>
+                <div>
+                  <p className="font-display font-bold text-[#FFFFFF] text-sm">{opp.store}</p>
+                  <p className="text-[11px] text-white/60">
+                    {opp.distance} · {opp.category}
+                  </p>
                 </div>
+                <span className="rounded-[10px] px-2.5 py-1 bg-theme-green/15 border border-theme-green/30 text-[11px] font-bold text-theme-green shrink-0">
+                  {opp.distance}
+                </span>
               </div>
             ))}
           </div>
         </section>
       </div>
 
-      {/* FAB - Red Label share */}
+      {/* FAB - Share discount */}
       <button
         onClick={handleFabClick}
-        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/40 transition-all hover:scale-105 hover:shadow-emerald-500/50 active:scale-95"
+        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-theme-green text-[#001a09] shadow-[0_0_18px_rgba(0,230,118,0.55)] transition-all hover:scale-105 active:scale-95"
         aria-label="Share discount"
       >
-        <Radar size={24} className="text-white" />
+        <Radar size={24} className="text-[#001a09]" />
       </button>
 
       <BottomNav />
