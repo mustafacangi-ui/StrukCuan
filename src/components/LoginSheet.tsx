@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useUser } from "@/contexts/UserContext";
 import { X, Phone, Mail } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,6 +9,7 @@ import { GoogleIcon } from "@/components/SocialIcons";
 type AuthMethod = "phone" | "email";
 
 const LoginSheet = () => {
+  const { t } = useTranslation();
   const {
     showLoginSheet,
     dismissLogin,
@@ -34,11 +36,11 @@ const LoginSheet = () => {
     setError("");
     setSuccessMsg("");
     if (!confirmAge) {
-      setError("Please confirm you are at least 18 years old");
+      setError(t("auth.errorConfirmAge"));
       return;
     }
     if (!agreeTerms) {
-      setError("Please agree to Terms of Service and Privacy Policy");
+      setError(t("auth.errorAgreeTerms"));
       return;
     }
     setLoading(true);
@@ -46,7 +48,7 @@ const LoginSheet = () => {
       await loginWithGoogle();
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? "Gagal login. Coba lagi.");
+      setError(err?.message ?? t("auth.errorLoginFailed"));
     } finally {
       setLoading(false);
     }
@@ -56,16 +58,16 @@ const LoginSheet = () => {
     setError("");
     setSuccessMsg("");
     if (!agreeTerms) {
-      setError("Centang persetujuan Terms & Privacy Policy");
+      setError(t("auth.errorAgreeTerms"));
       return;
     }
     const cleaned = phone.replace(/\D/g, "");
     if (cleaned.length < 10) {
-      setError("Masukkan nomor HP yang valid");
+      setError(t("auth.errorValidPhone"));
       return;
     }
     if (displayName.trim().length < 2) {
-      setError("Nama tampilan minimal 2 karakter");
+      setError(t("auth.errorDisplayNameMin"));
       return;
     }
     setLoading(true);
@@ -75,7 +77,7 @@ const LoginSheet = () => {
       setError("");
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? "Gagal mengirim OTP. Coba lagi.");
+      setError(err?.message ?? t("auth.errorOtpFailed"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ const LoginSheet = () => {
       setOtp("");
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? "Kode OTP salah. Coba lagi.");
+      setError(err?.message ?? t("auth.errorOtpWrong"));
     } finally {
       setLoading(false);
     }
@@ -124,10 +126,10 @@ const LoginSheet = () => {
     try {
       await loginWithEmail(email, displayName.trim());
       setError("");
-      setSuccessMsg("Cek email untuk link login. Setelah login, kamu bisa upload struk.");
+      setSuccessMsg(t("auth.successEmailLink"));
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? "Gagal mengirim link. Coba lagi.");
+      setError(err?.message ?? t("auth.errorEmailLinkFailed"));
     } finally {
       setLoading(false);
     }
@@ -155,10 +157,10 @@ const LoginSheet = () => {
         </button>
 
         <h2 className="font-display text-xl font-bold text-foreground mb-1">
-          Berburu Promo di Sekitarmu
+          {t("auth.huntPromoTitle")}
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Login untuk upload struk dan kumpulkan cuan
+          {t("auth.loginToUpload")}
         </p>
 
         {/* Social login */}
@@ -169,7 +171,7 @@ const LoginSheet = () => {
             className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-white text-gray-900 py-3.5 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             <GoogleIcon className="w-5 h-5" />
-            <span>Continue with Google</span>
+            <span>{t("auth.continueWithGoogle")}</span>
           </button>
         </div>
 
@@ -179,7 +181,7 @@ const LoginSheet = () => {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative bg-card px-3">
-            <span className="text-xs text-muted-foreground">atau</span>
+            <span className="text-xs text-muted-foreground">{t("auth.or")}</span>
           </div>
         </div>
 
@@ -193,7 +195,7 @@ const LoginSheet = () => {
             }`}
           >
             <Phone size={16} />
-            Nomor HP
+            {t("auth.phoneNumber")}
           </button>
           <button
             type="button"
@@ -203,7 +205,7 @@ const LoginSheet = () => {
             }`}
           >
             <Mail size={16} />
-            Email
+            {t("auth.email")}
           </button>
         </div>
 
@@ -211,31 +213,31 @@ const LoginSheet = () => {
         {authMethod === "phone" && (
           <div className="space-y-3 mb-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nomor HP</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.phoneNumber")}</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => { setError(""); setPhone(e.target.value); }}
-                placeholder="08123456789"
+                placeholder={t("auth.phonePlaceholder")}
                 disabled={otpSent}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
               />
             </div>
             {!otpSent && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama tampilan</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.displayName")}</label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => { setError(""); setDisplayName(e.target.value.slice(0, 30)); }}
-                  placeholder="Contoh: Siti"
+                  placeholder={t("auth.displayNamePlaceholder")}
                   className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
             )}
             {otpSent && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kode OTP</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.otpCode")}</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -250,7 +252,7 @@ const LoginSheet = () => {
                   onClick={() => { setOtpSent(false); setOtp(""); }}
                   className="mt-2 text-xs text-primary hover:underline"
                 >
-                  Kirim ulang OTP
+                  {t("auth.resendOtp")}
                 </button>
               </div>
             )}
@@ -261,22 +263,22 @@ const LoginSheet = () => {
         {authMethod === "email" && (
           <div className="space-y-3 mb-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.email")}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setError(""); setEmail(e.target.value); }}
-                placeholder="nama@email.com"
+                placeholder={t("auth.emailPlaceholder")}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama tampilan</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.displayName")}</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => { setError(""); setDisplayName(e.target.value.slice(0, 30)); }}
-                placeholder="Contoh: Siti"
+                placeholder={t("auth.displayNamePlaceholder")}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -291,7 +293,7 @@ const LoginSheet = () => {
             className="mt-0.5 shrink-0"
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            I confirm that I am at least 18 years old.
+            {t("auth.confirmAge")}
           </span>
         </label>
 
@@ -303,13 +305,13 @@ const LoginSheet = () => {
             className="mt-0.5 shrink-0"
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
-            I agree to{" "}
+            {t("auth.agreeTerms")}{" "}
             <Link to="/terms" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-              Terms of Service
+              {t("auth.termsOfService")}
             </Link>
-            {" "}and{" "}
+            {" "}{t("auth.and")}{" "}
             <Link to="/privacy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-              Privacy Policy
+              {t("auth.privacyPolicy")}
             </Link>
           </span>
         </label>
@@ -322,7 +324,7 @@ const LoginSheet = () => {
           disabled={loading}
           className="w-full rounded-xl bg-primary py-3.5 font-display font-bold text-primary-foreground text-base disabled:opacity-60"
         >
-          {loading ? "Memproses..." : "Mulai Berburu Cuan 🚀"}
+          {loading ? t("auth.processing") : t("auth.submit")}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import "./i18n";
 import App from "./App.tsx";
 import "./index.css";
 import { APP_URL, IS_LOCALHOST, REDIRECT_HOSTS } from "./config/app";

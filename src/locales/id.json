@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "welcome": "Selamat Datang",
+    "hello": "Halo,",
+    "login": "Masuk",
+    "loginToUpload": "Login untuk upload struk dan kumpulkan cuan",
+    "continueWithGoogle": "Lanjutkan dengan Google",
+    "or": "atau",
+    "phoneNumber": "Nomor HP",
+    "email": "Email",
+    "displayName": "Nama tampilan",
+    "displayNamePlaceholder": "Contoh: Siti",
+    "phonePlaceholder": "08123456789",
+    "emailPlaceholder": "nama@email.com",
+    "otpCode": "Kode OTP",
+    "resendOtp": "Kirim ulang OTP",
+    "submit": "Mulai Berburu Cuan 🚀",
+    "processing": "Memproses...",
+    "agreeTerms": "Saya setuju dengan",
+    "termsOfService": "Ketentuan Layanan",
+    "and": "dan",
+    "privacyPolicy": "Kebijakan Privasi",
+    "confirmAge": "Saya mengonfirmasi bahwa saya berusia minimal 18 tahun.",
+    "errorConfirmAge": "Harap konfirmasi Anda berusia minimal 18 tahun",
+    "errorAgreeTerms": "Harap setuju dengan Ketentuan Layanan dan Kebijakan Privasi",
+    "errorValidEmail": "Masukkan email yang valid",
+    "errorDisplayNameMin": "Nama tampilan minimal 2 karakter",
+    "errorValidPhone": "Masukkan nomor HP yang valid",
+    "errorOtp6Digits": "Masukkan kode OTP 6 digit",
+    "errorLoginFailed": "Gagal login. Coba lagi.",
+    "errorOtpFailed": "Gagal mengirim OTP. Coba lagi.",
+    "errorOtpWrong": "Kode OTP salah. Coba lagi.",
+    "errorEmailLinkFailed": "Gagal mengirim link. Coba lagi.",
+    "successEmailLink": "Cek email untuk link login. Setelah login, kamu bisa upload struk.",
+    "huntPromoTitle": "Berburu Promo di Sekitarmu",
+    "mustLogin": "Anda harus masuk."
+  },
+  "common": {
+    "loading": "Memuat...",
+    "back": "Kembali",
+    "close": "Tutup"
+  }
+}

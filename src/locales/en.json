@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "welcome": "Welcome",
+    "hello": "Hello,",
+    "login": "Login",
+    "loginToUpload": "Login to upload receipts and earn cuan",
+    "continueWithGoogle": "Continue with Google",
+    "or": "or",
+    "phoneNumber": "Phone number",
+    "email": "Email",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "e.g. John",
+    "phonePlaceholder": "08123456789",
+    "emailPlaceholder": "name@email.com",
+    "otpCode": "OTP code",
+    "resendOtp": "Resend OTP",
+    "submit": "Start Hunting Cuan 🚀",
+    "processing": "Processing...",
+    "agreeTerms": "I agree to",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "confirmAge": "I confirm that I am at least 18 years old.",
+    "errorConfirmAge": "Please confirm you are at least 18 years old",
+    "errorAgreeTerms": "Please agree to Terms of Service and Privacy Policy",
+    "errorValidEmail": "Enter a valid email address",
+    "errorDisplayNameMin": "Display name must be at least 2 characters",
+    "errorValidPhone": "Enter a valid phone number",
+    "errorOtp6Digits": "Enter 6-digit OTP code",
+    "errorLoginFailed": "Login failed. Please try again.",
+    "errorOtpFailed": "Failed to send OTP. Please try again.",
+    "errorOtpWrong": "Wrong OTP code. Please try again.",
+    "errorEmailLinkFailed": "Failed to send link. Please try again.",
+    "successEmailLink": "Check your email for the login link. After login, you can upload receipts.",
+    "huntPromoTitle": "Hunt Promos Near You",
+    "mustLogin": "You must log in."
+  },
+  "common": {
+    "loading": "Loading...",
+    "back": "Back",
+    "close": "Close"
+  }
+}

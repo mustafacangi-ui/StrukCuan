@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "welcome": "Willkommen",
+    "hello": "Hallo,",
+    "login": "Anmelden",
+    "loginToUpload": "Melden Sie sich an, um Belege hochzuladen und Cuan zu sammeln",
+    "continueWithGoogle": "Mit Google fortfahren",
+    "or": "oder",
+    "phoneNumber": "Telefonnummer",
+    "email": "E-Mail",
+    "displayName": "Anzeigename",
+    "displayNamePlaceholder": "z.B. Max",
+    "phonePlaceholder": "0123456789",
+    "emailPlaceholder": "name@email.com",
+    "otpCode": "OTP-Code",
+    "resendOtp": "OTP erneut senden",
+    "submit": "Cuan jagen starten 🚀",
+    "processing": "Wird verarbeitet...",
+    "agreeTerms": "Ich stimme den",
+    "termsOfService": "Nutzungsbedingungen",
+    "and": "und",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "confirmAge": "Ich bestätige, dass ich mindestens 18 Jahre alt bin.",
+    "errorConfirmAge": "Bitte bestätigen Sie, dass Sie mindestens 18 Jahre alt sind",
+    "errorAgreeTerms": "Bitte stimmen Sie den Nutzungsbedingungen und der Datenschutzrichtlinie zu",
+    "errorValidEmail": "Geben Sie eine gültige E-Mail-Adresse ein",
+    "errorDisplayNameMin": "Anzeigename muss mindestens 2 Zeichen haben",
+    "errorValidPhone": "Geben Sie eine gültige Telefonnummer ein",
+    "errorOtp6Digits": "Geben Sie den 6-stelligen OTP-Code ein",
+    "errorLoginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "errorOtpFailed": "OTP konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    "errorOtpWrong": "Falscher OTP-Code. Bitte versuchen Sie es erneut.",
+    "errorEmailLinkFailed": "Link konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    "successEmailLink": "Überprüfen Sie Ihre E-Mail für den Anmeldelink. Nach der Anmeldung können Sie Belege hochladen.",
+    "huntPromoTitle": "Promos in deiner Nähe jagen",
+    "mustLogin": "Sie müssen sich anmelden."
+  },
+  "common": {
+    "loading": "Laden...",
+    "back": "Zurück",
+    "close": "Schließen"
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Receipt, MapPin, LayoutDashboard } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUser } from "@/contexts/UserContext";
@@ -9,6 +10,7 @@ import AdminDeals from "./AdminDeals";
 type Tab = "dashboard" | "receipts" | "deals";
 
 export default function Admin() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
   const { data: isAdmin, isLoading } = useIsAdmin(user?.id);
@@ -17,7 +19,7 @@ export default function Admin() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Giriş yapmalısınız.</p>
+        <p className="text-muted-foreground">{t("auth.mustLogin")}</p>
       </div>
     );
   }
@@ -90,7 +92,7 @@ export default function Admin() {
         {tab === "dashboard" && (
           <div className="p-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="font-display font-bold text-foreground mb-2">Hoş geldiniz</h2>
+              <h2 className="font-display font-bold text-foreground mb-2">{t("auth.welcome")}</h2>
               <p className="text-sm text-muted-foreground">
                 Sol menüden <strong>Fiş Onayı</strong> veya <strong>İndirim Onayı</strong> sekmesine geçerek
                 bekleyen onayları yönetebilirsiniz.

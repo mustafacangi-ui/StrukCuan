@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "welcome": "Hoş Geldiniz",
+    "hello": "Merhaba,",
+    "login": "Giriş Yap",
+    "loginToUpload": "Fiş yükleyip cuan kazanmak için giriş yapın",
+    "continueWithGoogle": "Google ile devam et",
+    "or": "veya",
+    "phoneNumber": "Telefon numarası",
+    "email": "E-posta",
+    "displayName": "Görünen ad",
+    "displayNamePlaceholder": "Örn: Ayşe",
+    "phonePlaceholder": "05321234567",
+    "emailPlaceholder": "ad@email.com",
+    "otpCode": "OTP kodu",
+    "resendOtp": "OTP tekrar gönder",
+    "submit": "Cuan Avına Başla 🚀",
+    "processing": "İşleniyor...",
+    "agreeTerms": "Kabul ediyorum",
+    "termsOfService": "Hizmet Şartları",
+    "and": "ve",
+    "privacyPolicy": "Gizlilik Politikası",
+    "confirmAge": "18 yaşından büyük olduğumu onaylıyorum.",
+    "errorConfirmAge": "Lütfen 18 yaşından büyük olduğunuzu onaylayın",
+    "errorAgreeTerms": "Lütfen Hizmet Şartları ve Gizlilik Politikası'nı kabul edin",
+    "errorValidEmail": "Geçerli bir e-posta adresi girin",
+    "errorDisplayNameMin": "Görünen ad en az 2 karakter olmalı",
+    "errorValidPhone": "Geçerli bir telefon numarası girin",
+    "errorOtp6Digits": "6 haneli OTP kodunu girin",
+    "errorLoginFailed": "Giriş başarısız. Lütfen tekrar deneyin.",
+    "errorOtpFailed": "OTP gönderilemedi. Lütfen tekrar deneyin.",
+    "errorOtpWrong": "OTP kodu yanlış. Lütfen tekrar deneyin.",
+    "errorEmailLinkFailed": "Link gönderilemedi. Lütfen tekrar deneyin.",
+    "successEmailLink": "Giriş linki için e-postanızı kontrol edin. Giriş yaptıktan sonra fiş yükleyebilirsiniz.",
+    "huntPromoTitle": "Çevrendeki Promosyonları Avla",
+    "mustLogin": "Giriş yapmalısınız."
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "back": "Geri",
+    "close": "Kapat"
+  }
+}
