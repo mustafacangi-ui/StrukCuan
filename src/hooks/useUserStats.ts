@@ -10,12 +10,13 @@ export interface UserStatsRow {
   level: number;
   current_streak: number;
   last_upload_date: string | null;
+  country_code?: string;
 }
 
 async function fetchUserStats(userId: string): Promise<UserStatsRow | null> {
   const { data, error } = await supabase
     .from("user_stats")
-    .select("user_id, cuan, tiket, nickname, total_receipts, level, current_streak, last_upload_date")
+    .select("user_id, cuan, tiket, nickname, total_receipts, level, current_streak, last_upload_date, country_code")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -52,7 +53,7 @@ export interface LeaderboardRow {
 async function fetchLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
   const { data, error } = await supabase
     .from("user_stats")
-    .select("user_id, nickname, total_receipts, tiket, level")
+    .select("user_id, nickname, total_receipts, tiket, level, country_code")
     .order("total_receipts", { ascending: false })
     .limit(limit);
 

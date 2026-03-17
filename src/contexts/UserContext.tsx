@@ -13,6 +13,8 @@ export interface UserData {
   tiket: number;
   level: number;
   isNewUser: boolean;
+  /** ISO 3166-1 alpha-2 (e.g. ID, TR) */
+  countryCode?: string;
 }
 
 type PendingAction = "camera" | "profile" | null;
@@ -108,7 +110,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: stats } = await supabase
       .from("user_stats")
-      .select("tiket, nickname, level, total_receipts")
+      .select("tiket, nickname, level, total_receipts, country_code")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -121,6 +123,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       tiket: stats?.tiket ?? 0,
       level: stats?.level ?? 1,
       isNewUser: !profile?.nickname,
+      countryCode: (stats as { country_code?: string })?.country_code ?? "ID",
     };
   }, []);
 
