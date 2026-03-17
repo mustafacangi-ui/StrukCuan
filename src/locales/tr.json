@@ -1,4 +1,6 @@
 {
+  "greeting": "Merhaba",
+  "greetingShort": "Selam",
   "auth": {
     "welcome": "Hoş Geldiniz",
     "hello": "Merhaba,",
@@ -40,6 +42,10 @@
     "buy": "Satın Al",
     "codeTitle": "Dijital Kodunuz",
     "codeDesc": "Aşağıdaki kodu kopyalayıp ilgili sitede kullanın."
+  },
+  "empty": {
+    "comingSoon": "Yakında buradayız!",
+    "radarScanning": "Radar bu bölgede yeni fırsatlar arıyor."
   },
   "common": {
     "loading": "Yükleniyor...",

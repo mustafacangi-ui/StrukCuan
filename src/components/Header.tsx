@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTranslation } from "react-i18next";
 import { useUser } from "@/contexts/UserContext";
+import { getHelloForCountry, getWelcomeForCountry } from "@/lib/greeting";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
@@ -174,7 +175,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           </button>
           <div className="min-w-0">
             <p className="text-sm text-white/85">
-              {isOnboarded ? t("auth.hello") : t("auth.welcome")}
+              {isOnboarded ? getHelloForCountry(user?.countryCode) : getWelcomeForCountry(user?.countryCode)}
             </p>
             <h1 className="font-display text-lg font-bold text-white truncate">{nickname}</h1>
             {isOnboarded && (

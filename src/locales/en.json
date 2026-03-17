@@ -1,4 +1,6 @@
 {
+  "greeting": "Hello",
+  "greetingShort": "Hi",
   "auth": {
     "welcome": "Welcome",
     "hello": "Hello,",
@@ -40,6 +42,10 @@
     "buy": "Buy",
     "codeTitle": "Your Digital Code",
     "codeDesc": "Copy the code below and use it on the relevant site."
+  },
+  "empty": {
+    "comingSoon": "Coming soon!",
+    "radarScanning": "Radar is scanning for new opportunities in this region."
   },
   "common": {
     "loading": "Loading...",

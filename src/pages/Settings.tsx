@@ -3,14 +3,18 @@ import { Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin, Trophy, 
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUpdateCountry } from "@/hooks/useUpdateCountry";
 import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
+import { CountrySelector } from "@/components/CountrySelector";
 import BottomNav from "@/components/BottomNav";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, isOnboarded, isLoading, logout, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const { user, isOnboarded, isLoading, logout, refreshUser, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const updateCountry = useUpdateCountry();
   const { data: isAdmin } = useIsAdmin(user?.id);
 
   useEffect(() => {
@@ -67,6 +71,23 @@ const Settings = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Ülke Seçici - Test için */}
+      <div className="mx-4 mt-4">
+        <CountrySelector
+          value={user?.countryCode ?? "ID"}
+          onChange={async (code) => {
+            try {
+              await updateCountry.mutateAsync(code);
+              await refreshUser();
+              toast.success("Ülke güncellendi");
+            } catch {
+              toast.error("Güncellenemedi");
+            }
+          }}
+          disabled={updateCountry.isPending}
+        />
       </div>
 
       {/* Admin Panel - sadece adminlere görünür */}

@@ -30,6 +30,7 @@ interface UserContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (nickname: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
   theme: "dark" | "light";
   toggleTheme: () => void;
   pushNotifications: boolean;
@@ -130,6 +131,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    const applyPendingCountry = async (userId: string) => {
+      const pending = localStorage.getItem("struk_country_pending");
+      if (!pending || !["ID", "DE", "TR"].includes(pending)) return;
+      try {
+        await supabase.rpc("update_user_country", { p_country_code: pending });
+        localStorage.removeItem("struk_country_pending");
+      } catch (e) {
+        console.warn("Failed to apply pending country:", e);
+      }
+    };
+
     const processReferral = async (userId: string) => {
       const code = localStorage.getItem(REFERRAL_STORAGE_KEY);
       if (!code?.trim()) return;
@@ -159,6 +171,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (displayName || u.email) {
           await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
         }
+        await applyPendingCountry(u.id);
         processReferral(u.id).catch(() => {});
         const userData = await buildUserFromSession(session);
         if (mounted) setUser(userData);
@@ -188,10 +201,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
         setSession(session);
         if (session) {
-          processReferral(session.user.id).catch(() => {});
-          buildUserFromSession(session).then((userData) => {
-            if (mounted) setUser(userData);
-          });
+          applyPendingCountry(session.user.id)
+            .catch(() => {})
+            .then(() => {
+              processReferral(session.user.id).catch(() => {});
+              return buildUserFromSession(session);
+            })
+            .then((userData) => {
+              if (mounted) setUser(userData);
+            });
         } else {
           setUser(null);
         }
@@ -273,6 +291,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     setUser((prev) => (prev ? { ...prev, nickname } : null));
   }, [session?.user]);
 
+  const refreshUser = useCallback(async () => {
+    if (session) {
+      const userData = await buildUserFromSession(session);
+      setUser(userData);
+    }
+  }, [session, buildUserFromSession]);
+
   const requireLogin = useCallback(async (action: PendingAction) => {
     setPendingAction(action);
     // Localhost: zorunlu anonim giriş - hiçbir yere yönlendirmeden arka planda signInAnonymously
@@ -320,6 +345,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         loginWithGoogle,
         logout,
         updateProfile,
+        refreshUser,
         theme,
         toggleTheme,
         pushNotifications,

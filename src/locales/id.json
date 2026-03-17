@@ -1,4 +1,6 @@
 {
+  "greeting": "Selamat Pagi",
+  "greetingShort": "Halo",
   "auth": {
     "welcome": "Selamat Datang",
     "hello": "Halo,",
@@ -40,6 +42,10 @@
     "buy": "Beli",
     "codeTitle": "Kode Digital Anda",
     "codeDesc": "Salin kode di bawah dan gunakan di situs terkait."
+  },
+  "empty": {
+    "comingSoon": "Segera hadir!",
+    "radarScanning": "Radar sedang mencari peluang baru di wilayah ini."
   },
   "common": {
     "loading": "Memuat...",

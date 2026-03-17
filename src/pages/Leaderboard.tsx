@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/hooks/useUserStats";
-import { Trophy, Medal, ArrowLeft } from "lucide-react";
+import { Trophy, Medal } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -50,8 +51,12 @@ export default function Leaderboard() {
         )}
 
         {!leaderboardLoading && !error && leaderboard.length === 0 && (
-          <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            Belum ada data. Upload struk untuk mulai!
+          <div className="card-radar rounded-2xl overflow-hidden">
+            <EmptyState
+              titleKey="empty.comingSoon"
+              subtitleKey="empty.radarScanning"
+              icon="radar"
+            />
           </div>
         )}
 

@@ -124,8 +124,9 @@ export default function Promo() {
                       type="button"
                       onClick={handleWatchAd}
                       disabled={!canWatch || showModal}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      className={canWatch && !showModal ? "bg-[#facc15] text-[#0a0e14]" : "bg-white/10 text-white/70"}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        canWatch && !showModal ? "bg-[#facc15] text-[#0a0e14]" : "bg-white/10 text-white/70"
+                      }`}
                     >
                       <Play size={12} fill="currentColor" />
                       {showModal ? "Watching..." : "Watch Ad"}

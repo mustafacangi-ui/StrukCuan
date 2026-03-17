@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award, Gift } from "lucide-react";
+import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award, Gift, ClipboardList } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { formatCurrency } from "@/config/locale";
+import { startSurvey } from "@/lib/survey";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserDealsCount } from "@/hooks/useUserDealsCount";
@@ -65,15 +66,23 @@ export default function CuanDashboard() {
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]" />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
-      {/* Ödüller sayfasına hızlı link */}
-      <div className="mx-4 mt-2">
+      {/* Ödüller + Anket */}
+      <div className="mx-4 mt-2 flex gap-2">
         <button
           type="button"
           onClick={() => navigate("/rewards")}
-          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30 transition-colors"
         >
           <Gift size={18} />
-          Ödülleri Görüntüle
+          Ödüller
+        </button>
+        <button
+          type="button"
+          onClick={() => startSurvey(countryCode, user?.id)}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-[#00FF88]/20 border border-[#00FF88]/40 text-[#00FF88] hover:bg-[#00FF88]/30 transition-colors"
+        >
+          <ClipboardList size={18} />
+          Anket Çöz
         </button>
       </div>
 

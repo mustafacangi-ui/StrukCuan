@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 
 export default function Rewards() {
@@ -106,9 +107,13 @@ export default function Rewards() {
         {isLoading ? (
           <p className="text-sm text-white/70 py-8 text-center">Yükleniyor...</p>
         ) : rewards.length === 0 ? (
-          <p className="text-sm text-white/70 py-8 text-center">
-            Bu ülke için henüz ödül yok.
-          </p>
+          <div className="card-radar rounded-2xl overflow-hidden">
+            <EmptyState
+              titleKey="empty.comingSoon"
+              subtitleKey="empty.radarScanning"
+              icon="radar"
+            />
+          </div>
         ) : (
           <div className="space-y-3">
             {rewards.map((reward) => {

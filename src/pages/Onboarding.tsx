@@ -5,11 +5,26 @@ import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleIcon } from "@/components/SocialIcons";
+import { CountrySelector } from "@/components/CountrySelector";
+
+const PENDING_COUNTRY_KEY = "struk_country_pending";
+
+const persistCountry = (code: string) => {
+  localStorage.setItem(PENDING_COUNTRY_KEY, code);
+};
 
 const Onboarding = () => {
   const { loginWithGoogle, loginWithEmail, isOnboarded } = useUser();
   const navigate = useNavigate();
   const [step, setStep] = useState<"splash" | "signup">("splash");
+  const [pendingCountry, setPendingCountry] = useState(
+    () => localStorage.getItem(PENDING_COUNTRY_KEY) ?? "ID"
+  );
+
+  const handleCountryChange = (code: string) => {
+    setPendingCountry(code);
+    persistCountry(code);
+  };
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -121,9 +136,17 @@ const Onboarding = () => {
         <h1 className="font-display text-2xl font-bold text-foreground mb-1">
           Daftar Akun
         </h1>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-muted-foreground mb-4">
           Pilih cara login yang paling mudah
         </p>
+
+        {/* Ülke Seçici - Test için */}
+        <div className="mb-6">
+          <CountrySelector
+            value={pendingCountry}
+            onChange={handleCountryChange}
+          />
+        </div>
 
         {/* Social login */}
         <div className="mb-6">
