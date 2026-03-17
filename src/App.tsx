@@ -25,7 +25,6 @@ import PromoRules from "./pages/PromoRules";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
-import { useUser } from "@/contexts/UserContext";
 
 const Admin = lazy(() => import("./pages/Admin"));
 const ReceiptHistory = lazy(() => import("./pages/ReceiptHistory"));

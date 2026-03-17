@@ -25,7 +25,7 @@ export default function UserDashboard() {
             {levelProgress.progress.toFixed(0)}%
           </span>
         </div>
-        <Progress value={levelProgress.progress} className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[#00FF88] [&>div]:to-[#00cc6a]" />
+        <Progress value={levelProgress.progress} className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-green-500" />
         <p className="mt-2 text-xs text-white/60">
           {level >= 5
             ? "Max level!"

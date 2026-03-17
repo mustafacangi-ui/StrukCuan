@@ -82,7 +82,7 @@ export default function Promo() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
 
       <PageHeader title="Promo" onBack={() => navigate(-1)} />
 
@@ -135,7 +135,7 @@ export default function Promo() {
                 </div>
                 <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#00FF88] to-[#00cc6a] transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

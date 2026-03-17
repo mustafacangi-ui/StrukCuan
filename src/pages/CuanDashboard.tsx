@@ -63,7 +63,7 @@ export default function CuanDashboard() {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
       {/* Ödüller + Anket */}
@@ -79,7 +79,7 @@ export default function CuanDashboard() {
         <button
           type="button"
           onClick={() => startSurvey(countryCode, user?.id)}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-white/40 border border-white/50 text-emerald-700 hover:bg-white/50 transition-colors backdrop-blur-xl"
         >
           <ClipboardList size={18} />
           Anket Çöz

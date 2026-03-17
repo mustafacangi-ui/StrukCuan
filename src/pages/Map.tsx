@@ -42,7 +42,7 @@ export default function Map() {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto relative flex flex-col">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
       <PageHeader title="Radar" onBack={() => navigate(-1)} />
 
       {/* Map - Top 50% fixed */}
@@ -63,8 +63,8 @@ export default function Map() {
               onClick={() => setActiveFilter(f)}
               className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all backdrop-blur-sm ${
                 activeFilter === f
-                  ? "bg-violet-500/40 text-white border border-violet-400/50 shadow-[0_0_12px_rgba(139,92,246,0.3)]"
-                  : "bg-violet-500/10 text-white/80 border border-violet-400/20 hover:bg-violet-500/20"
+                  ? "bg-emerald-500/50 text-white border border-emerald-400/60 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                  : "bg-white/30 text-slate-800 border border-white/40 hover:bg-white/40"
               }`}
             >
               {f}
@@ -74,7 +74,7 @@ export default function Map() {
 
         {/* Layer 2: Flash Deals */}
         <section className="mb-6">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-white mb-3">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-white/95 mb-3">
             <Flame size={16} className="text-orange-400" />
             Flash Deals
           </h3>
@@ -84,9 +84,9 @@ export default function Map() {
                 key={deal.id}
                 className="flex-shrink-0 w-[160px] rounded-2xl border border-violet-400/25 bg-violet-500/10 bg-gradient-to-br from-violet-500/20 via-violet-500/5 to-pink-500/15 p-4 backdrop-blur-xl"
               >
-                <p className="font-display font-bold text-white">{deal.title}</p>
-                <p className="text-[11px] text-violet-300 font-semibold mt-0.5">{deal.subtitle}</p>
-                <p className="text-[10px] text-white/60 mt-1">{deal.store}</p>
+                <p className="font-display font-bold text-slate-800">{deal.title}</p>
+                <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">{deal.subtitle}</p>
+                <p className="text-[10px] text-slate-600 mt-1">{deal.store}</p>
               </div>
             ))}
           </div>
@@ -94,7 +94,7 @@ export default function Map() {
 
         {/* Layer 3: Nearby Opportunities */}
         <section>
-          <h3 className="flex items-center gap-2 text-sm font-bold text-white mb-3">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-white/95 mb-3">
             <MapPin size={16} className="text-pink-400" />
             Nearby Opportunities
           </h3>
@@ -106,12 +106,12 @@ export default function Map() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-display font-bold text-white">{opp.store}</p>
-                    <p className="text-[10px] text-pink-300">
+                    <p className="font-display font-bold text-slate-800">{opp.store}</p>
+                    <p className="text-[10px] text-slate-600">
                       {opp.distance} · {opp.category}
                     </p>
                   </div>
-                  <span className="rounded-full bg-pink-500/30 px-2 py-0.5 text-[10px] font-semibold text-pink-200">
+                  <span className="rounded-full bg-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                     {opp.distance}
                   </span>
                 </div>
@@ -124,7 +124,7 @@ export default function Map() {
       {/* FAB - Red Label share */}
       <button
         onClick={handleFabClick}
-        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
+        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/40 transition-all hover:scale-105 hover:shadow-emerald-500/50 active:scale-95"
         aria-label="Share discount"
       >
         <Radar size={24} className="text-white" />

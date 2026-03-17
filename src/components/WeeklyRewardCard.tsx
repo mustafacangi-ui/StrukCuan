@@ -118,7 +118,7 @@ export default function WeeklyRewardCard() {
           </p>
           <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#00FF88] to-[#00cc6a] transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

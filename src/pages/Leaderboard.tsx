@@ -32,7 +32,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
       <PageHeader title="Leaderboard" onBack={() => navigate(-1)} />
 
       <div className="mx-4 mt-4">

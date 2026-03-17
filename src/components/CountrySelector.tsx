@@ -32,8 +32,8 @@ export function CountrySelector({
   return (
     <div className={className}>
       <div className="flex items-center gap-2 mb-2">
-        <Globe size={16} className="text-primary" />
-        <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+        <Globe size={16} className="text-emerald-600" />
+        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
           Test Region
         </span>
       </div>
@@ -49,7 +49,7 @@ export function CountrySelector({
             </span>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="bg-[#15121c] border-white/10">
+        <SelectContent className="bg-white/95 backdrop-blur-xl border-white/40">
           {COUNTRIES.map((c) => (
             <SelectItem
               key={c.code}

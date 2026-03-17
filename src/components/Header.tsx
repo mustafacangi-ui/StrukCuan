@@ -74,24 +74,24 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
 
   return (
     <div className="px-4 pt-3 pb-2">
-      <div className="card-radar rounded-2xl p-4">
+      <div className="rounded-2xl p-4 bg-white/25 backdrop-blur-xl border border-white/35 shadow-lg">
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => isOnboarded && navigate("/cuan")}
             className="flex items-center gap-3"
           >
-            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
-              <Ticket size={16} className="text-primary" />
+            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/30 border border-white/40 min-w-[88px]">
+              <Ticket size={16} className="text-emerald-600" />
               <div className="text-left">
-                <p className="font-display text-sm font-bold text-white">{tiket.toLocaleString()}</p>
-                <p className="text-[9px] text-white/60">Bilet</p>
+                <p className="font-display text-sm font-bold text-slate-800">{tiket.toLocaleString()}</p>
+                <p className="text-[9px] text-slate-600">Bilet</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/30 border border-white/40 min-w-[88px]">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <div className="text-left">
-                <p className="font-display text-sm font-bold text-primary">{cuan.toLocaleString()}</p>
-                <p className="text-[9px] text-white/60">Cuan</p>
+                <p className="font-display text-sm font-bold text-emerald-700">{cuan.toLocaleString()}</p>
+                <p className="text-[9px] text-slate-600">Cuan</p>
               </div>
             </div>
           </button>
@@ -99,19 +99,19 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-red-500/10 border border-red-500/20">
               <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
               <span className="text-[9px] font-bold tracking-wider text-red-400">LIVE</span>
-              <span className="text-[9px] font-mono font-semibold text-white">
+              <span className="text-[9px] font-mono font-semibold text-slate-800">
                 {onlineCount.toLocaleString()}
               </span>
             </div>
             <div className="relative">
             <button
-              className="relative rounded-xl bg-white/5 border border-white/10 p-2"
+              className="relative rounded-xl bg-white/30 border border-white/40 p-2"
                 onClick={() => {
                   setShowNotifications((v) => !v);
                   if (unreadCount > 0) markRead.mutate();
                 }}
               >
-                <Bell size={18} className="text-white" />
+                <Bell size={18} className="text-slate-800" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#ff4d4f] px-0.5">
                     <span className="text-[8px] font-bold text-white">
@@ -146,9 +146,9 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             </div>
             <button
               onClick={handleProfileClick}
-              className="rounded-xl bg-white/5 border border-white/10 p-2"
+              className="rounded-xl bg-white/30 border border-white/40 p-2"
             >
-              <Settings size={18} className="text-white" />
+              <Settings size={18} className="text-slate-800" />
             </button>
           </div>
         </div>
@@ -158,33 +158,33 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={handleProfileClick}
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#00FF88]/50 bg-white/5 shadow-[0_0_12px_rgba(0,255,136,0.2)]"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/60 bg-white/30 shadow-[0_0_12px_rgba(34,197,94,0.3)]"
           >
             {isOnboarded ? (
-              <span className="font-display text-lg font-bold text-primary">
+              <span className="font-display text-lg font-bold text-emerald-700">
                 {nickname[0]?.toUpperCase()}
               </span>
             ) : (
-              <User size={20} className="text-primary" />
+              <User size={20} className="text-emerald-600" />
             )}
             {isOnboarded && (
-              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                <span className="text-[8px] font-bold text-primary-foreground">{level}</span>
+              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                <span className="text-[8px] font-bold text-white">{level}</span>
               </div>
             )}
           </button>
           <div className="min-w-0">
-            <p className="text-sm text-white/85">
+            <p className="text-sm text-slate-700">
               {isOnboarded ? getHelloForCountry(user?.countryCode) : getWelcomeForCountry(user?.countryCode)}
             </p>
-            <h1 className="font-display text-lg font-bold text-white truncate">{nickname}</h1>
+            <h1 className="font-display text-lg font-bold text-slate-800 truncate">{nickname}</h1>
             {isOnboarded && (
               <button
                 onClick={handleProfileClick}
-                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5"
+                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5"
               >
-                <Shield size={10} className="text-primary" />
-                <span className="text-[10px] font-bold text-primary glow-green-text">
+                <Shield size={10} className="text-emerald-600" />
+                <span className="text-[10px] font-bold text-emerald-700 glow-green-text">
                   Level {level} · Receipt Hunter
                 </span>
               </button>
@@ -205,11 +205,11 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           <PopoverTrigger asChild>
             <button
               onClick={() => setRippleKey((k) => k + 1)}
-              className="relative shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-pink-500 shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_0_32px_rgba(236,72,153,0.4)] active:scale-95"
+              className="relative shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 to-green-500 shadow-[0_0_24px_rgba(34,197,94,0.5)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_0_32px_rgba(34,197,94,0.6)] active:scale-95"
               aria-label="Kamera menüsü"
             >
-              <span className="absolute inset-0 rounded-full border-2 border-[#00FF88]/40 animate-radar-sweep" />
-              <span className="absolute inset-0 rounded-full border-2 border-[#00FF88]/30 animate-radar-sweep-delayed" />
+              <span className="absolute inset-0 rounded-full border-2 border-white/50 animate-radar-sweep" />
+              <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-radar-sweep-delayed" />
               <span
                 key={rippleKey}
                 className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 animate-ripple"
@@ -222,7 +222,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
               onClick={handleUploadReceipt}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
             >
-              <Receipt size={18} className="text-primary" />
+              <Receipt size={18} className="text-emerald-600" />
               <div>
                 <p className="font-semibold text-foreground">Fiş Yükle</p>
                 <p className="text-[10px] text-muted-foreground">+1 Bilet</p>

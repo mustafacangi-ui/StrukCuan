@@ -80,23 +80,23 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
       <PageHeader title={t("rewards.title", "Ödüller")} onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-4">
-        {/* Cuan bakiyesi */}
-        <div className="card-radar rounded-2xl p-4 mb-4 flex items-center justify-between">
+        {/* Cuan bakiyesi - premium white glass */}
+        <div className="rounded-2xl p-4 mb-4 flex items-center justify-between bg-white/90 backdrop-blur-xl border border-white/40 shadow-lg">
           <div className="flex items-center gap-2">
-            <Coins size={24} className="text-amber-500" />
-            <span className="text-sm text-white/80">Bakiye</span>
+            <Coins size={24} className="text-emerald-600" />
+            <span className="text-sm font-medium text-slate-700">Bakiye</span>
           </div>
-          <span className="font-display font-bold text-amber-400">
+          <span className="font-display font-bold text-slate-900">
             {formatCurrency(cuan, countryCode)}
           </span>
         </div>
 
         {/* Ödül kartları */}
-        <h2 className="text-xs font-bold uppercase tracking-wider text-white/70 mb-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-white/90 mb-3">
           {countryCode === "DE"
             ? "Amazon.de & Lidl Hediye Çekleri"
             : countryCode === "ID"
@@ -107,7 +107,7 @@ export default function Rewards() {
         {isLoading ? (
           <p className="text-sm text-white/70 py-8 text-center">Yükleniyor...</p>
         ) : rewards.length === 0 ? (
-          <div className="card-radar rounded-2xl overflow-hidden">
+          <div className="rounded-2xl overflow-hidden bg-white/90 backdrop-blur-xl border border-white/40 shadow-lg">
             <EmptyState
               titleKey="empty.comingSoon"
               subtitleKey="empty.radarScanning"
@@ -119,18 +119,18 @@ export default function Rewards() {
             {rewards.map((reward) => {
               const canAfford = cuan >= reward.cuan_cost;
               return (
-                <div key={reward.id} className="card-radar rounded-2xl p-4">
+                <div key={reward.id} className="rounded-2xl p-4 bg-white/90 backdrop-blur-xl border border-white/40 shadow-lg">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/20">
-                      <Gift size={24} className="text-primary" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20">
+                      <Gift size={24} className="text-emerald-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-display font-bold text-white">{reward.name}</p>
-                      <p className="text-xs text-white/70 mt-0.5">{reward.provider}</p>
-                      <p className="text-sm font-bold text-amber-400 mt-2">
+                      <p className="font-display font-bold text-slate-900">{reward.name}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{reward.provider}</p>
+                      <p className="text-sm font-bold text-emerald-600 mt-2">
                         {formatCurrency(reward.voucher_amount, countryCode)}
                       </p>
-                      <p className="text-[10px] text-white/60 mt-1">
+                      <p className="text-[10px] text-slate-500 mt-1">
                         {reward.cuan_cost} Cuan
                       </p>
                     </div>
@@ -138,11 +138,11 @@ export default function Rewards() {
                       type="button"
                       onClick={() => handleBuy(reward)}
                       disabled={!canAfford || redeem.isPending}
-                      className="shrink-0 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        background: canAfford ? "#facc15" : "rgba(255,255,255,0.2)",
-                        color: canAfford ? "#000" : "rgba(255,255,255,0.6)",
-                      }}
+                      className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                        canAfford
+                          ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40"
+                          : "bg-white/50 text-slate-500 border border-white/60"
+                      }`}
                     >
                       {redeem.isPending ? "..." : t("rewards.buy", "Satın Al")}
                     </button>
@@ -159,20 +159,16 @@ export default function Rewards() {
       {/* Kod gösterim modal */}
       <Dialog open={showCodeModal} onOpenChange={(open) => !open && closeModal()}>
         <DialogContent
-          className="max-w-[340px] rounded-2xl"
-          style={{
-            background: "rgba(0,0,0,0.9)",
-            border: "1px solid rgba(255,255,255,0.2)",
-          }}
+          className="max-w-[340px] rounded-2xl bg-white/95 backdrop-blur-xl border border-white/40 shadow-xl"
         >
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <Gift size={20} className="text-primary" />
+            <DialogTitle className="text-slate-800 flex items-center gap-2">
+              <Gift size={20} className="text-emerald-600" />
               {t("rewards.codeTitle", "Dijital Kodunuz")}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-4">
-            <p className="text-sm text-white/80">
+            <p className="text-sm text-slate-600">
               {t("rewards.codeDesc", "Aşağıdaki kodu kopyalayıp ilgili sitede kullanın.")}
             </p>
             <div
@@ -183,7 +179,7 @@ export default function Rewards() {
             <button
               type="button"
               onClick={handleCopyCode}
-              className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-bold bg-primary text-primary-foreground"
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30"
             >
               {copied ? (
                 <>

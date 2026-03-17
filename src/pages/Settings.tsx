@@ -33,7 +33,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0f0d14] via-[#15121c] to-[#0f0d14]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#db2777] via-[#c026d3] to-[#7c3aed]" />
       <PageHeader title="Pengaturan" onBack={() => navigate(-1)} />
 
       {/* Profile card */}
