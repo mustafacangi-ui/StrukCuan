@@ -16,12 +16,23 @@ import CameraScanner from "@/components/CameraScanner";
 
 type ScannerMode = "receipt" | "red_label" | null;
 
+const BITLABS_TOKEN = import.meta.env.VITE_BITLABS_TOKEN ?? "757953d0";
+const BITLABS_URL = `https://web.bitlabs.ai?token=${BITLABS_TOKEN}`;
+
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const { isOnboarded, requireLogin } = useUser();
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
+
+  const openBitLabs = () => {
+    if (!isOnboarded) {
+      requireLogin("profile");
+      return;
+    }
+    window.open(BITLABS_URL, "_blank", "noopener,noreferrer");
+  };
 
   useEffect(() => {
     const state = location.state as { requireLogin?: "camera" | "profile"; openCamera?: boolean } | null;
@@ -68,7 +79,7 @@ const Index = () => {
         {/* Daily Mission & Streak */}
         <DailyMissionStreak onOpenScanner={handleOpenReceiptScanner} />
 
-        {/* Surveys — Glassmorphism cards */}
+        {/* Surveys — Quick & Pro cards (yan yana) + Partner Tasks */}
         <section className="mx-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-white/90 mb-3 flex items-center gap-2">
             <ClipboardList size={14} />
@@ -86,7 +97,7 @@ const Index = () => {
               </div>
               <div className="relative">
                 <p className="font-display font-bold text-slate-800">Quick Survey</p>
-                <p className="mt-1 text-[10px] text-slate-600">1-3 dakika</p>
+                <p className="mt-1 text-[10px] text-slate-600">1-3 menit</p>
                 <p className="mt-2 inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-[11px] font-bold text-emerald-700 backdrop-blur-sm">
                   +10 Cuan
                 </p>
@@ -94,7 +105,7 @@ const Index = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/surveys")}
+              onClick={openBitLabs}
               className="group relative overflow-hidden rounded-2xl border border-pink-400/25 bg-pink-500/10 bg-gradient-to-br from-pink-500/15 via-pink-500/5 to-violet-500/10 p-4 text-left backdrop-blur-xl transition-all hover:border-pink-400/50 hover:shadow-[0_0_24px_rgba(236,72,153,0.25)] active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
@@ -103,12 +114,31 @@ const Index = () => {
               </div>
               <div className="relative">
                 <p className="font-display font-bold text-slate-800">Pro Survey</p>
-                <p className="mt-1 text-[10px] text-slate-600">10-15 dakika</p>
+                <p className="mt-1 text-[10px] text-slate-600">10-15 menit</p>
                 <p className="mt-2 inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-[11px] font-bold text-emerald-700 backdrop-blur-sm">
                   +150 Cuan
                 </p>
               </div>
             </button>
+          </div>
+
+          {/* Partner Tasks — Receipt Hog style: icon left, title middle, Mulai right */}
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="glass rounded-xl p-3 border border-white/20 flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-theme-purple/30 border border-white/20 flex items-center justify-center">
+                <ClipboardList size={18} className="text-theme-green" />
+              </div>
+              <span className="flex-1 font-display font-semibold text-[#FFFFFF] text-sm">
+                BitLabs Survey
+              </span>
+              <button
+                type="button"
+                onClick={openBitLabs}
+                className="shrink-0 px-4 py-2 rounded-full font-display font-bold text-xs bg-theme-green text-[#001a09] shadow-[0_0_12px_rgba(0,230,118,0.5)] hover:scale-105 active:scale-95 transition-transform"
+              >
+                Mulai
+              </button>
+            </div>
           </div>
         </section>
 
@@ -129,25 +159,6 @@ const Index = () => {
           onClose={() => setScannerMode(null)}
         />
       )}
-
-      {/* Coming Soon — Premium glassmorphism modal */}
-      <Dialog open={comingSoonOpen} onOpenChange={setComingSoonOpen}>
-        <DialogContent className="max-w-[340px] overflow-hidden rounded-2xl border border-white/40 bg-white/95 backdrop-blur-2xl p-0 shadow-xl">
-          <div className="relative p-6 pb-8">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/20 backdrop-blur-sm">
-              <Sparkles size={28} className="text-emerald-600" />
-            </div>
-            <DialogHeader>
-              <DialogTitle className="text-center font-display text-xl font-bold text-slate-800">
-                Çok Yakında
-              </DialogTitle>
-              <DialogDescription className="text-center text-sm text-slate-600">
-                Anketler şu anda hazırlanıyor. Kısa süre içinde Cuan kazanmaya başlayabilirsiniz.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
