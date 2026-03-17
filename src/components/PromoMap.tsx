@@ -295,7 +295,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
               id="radius-fill"
               type="fill"
               paint={{
-                "fill-color": "#00FF88",
+                "fill-color": "rgb(139, 92, 246)",
                 "fill-opacity": 0.08,
               }}
             />
@@ -319,7 +319,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
             <div
               className="w-5 h-5 rounded-full bg-primary border-2 border-primary-foreground"
               style={{
-                boxShadow: "0 0 16px hsl(150 100% 50% / 0.5)",
+                boxShadow: "0 0 16px hsl(270 70% 60% / 0.5)",
               }}
             />
           </Marker>
@@ -340,7 +340,7 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
                   style={{
                     width: 32 + Math.min(cluster.length, 5) * 6,
                     height: 32 + Math.min(cluster.length, 5) * 6,
-                    backgroundColor: "rgba(0,255,136,0.12)",
+                    backgroundColor: "rgba(139, 92, 246, 0.12)",
                   }}
                 />
               </Marker>

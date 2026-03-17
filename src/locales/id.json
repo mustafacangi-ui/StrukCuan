@@ -1,4 +1,11 @@
 {
+  "nav": {
+    "home": "Beranda",
+    "radar": "Radar",
+    "campaigns": "Kampanye",
+    "rewards": "Hadiah",
+    "profile": "Profil"
+  },
   "greeting": "Selamat Pagi",
   "greetingShort": "Halo",
   "auth": {
@@ -43,6 +50,7 @@
     "codeTitle": "Kode Digital Anda",
     "codeDesc": "Salin kode di bawah dan gunakan di situs terkait."
   },
+  "surveys": "Survei",
   "empty": {
     "comingSoon": "Segera hadir!",
     "radarScanning": "Radar sedang mencari peluang baru di wilayah ini."

@@ -1,4 +1,11 @@
 {
+  "nav": {
+    "home": "Ana Sayfa",
+    "radar": "Radar",
+    "campaigns": "Kampanyalar",
+    "rewards": "Ödüller",
+    "profile": "Profil"
+  },
   "greeting": "Merhaba",
   "greetingShort": "Selam",
   "auth": {
@@ -43,6 +50,7 @@
     "codeTitle": "Dijital Kodunuz",
     "codeDesc": "Aşağıdaki kodu kopyalayıp ilgili sitede kullanın."
   },
+  "surveys": "Anketler",
   "empty": {
     "comingSoon": "Yakında buradayız!",
     "radarScanning": "Radar bu bölgede yeni fırsatlar arıyor."

@@ -1,17 +1,19 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Radar, Gift, Home, Trophy, User } from "lucide-react";
 
 const navItems = [
-  { path: "/map", icon: Radar, label: "Radar" },
-  { path: "/promo", icon: Gift, label: "Kampanyalar" },
-  { path: "/", icon: Home, label: "Ana Sayfa", isCenter: true },
-  { path: "/rewards", icon: Trophy, label: "Ödüller" },
-  { path: "/settings", icon: User, label: "Profil" },
+  { path: "/map", icon: Radar, labelKey: "nav.radar" },
+  { path: "/promo", icon: Gift, labelKey: "nav.campaigns" },
+  { path: "/", icon: Home, labelKey: "nav.home", isCenter: true },
+  { path: "/rewards", icon: Trophy, labelKey: "nav.rewards" },
+  { path: "/settings", icon: User, labelKey: "nav.profile" },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const handleNavClick = (path: string) => {
     navigate(path);
@@ -52,7 +54,7 @@ const BottomNav = () => {
                   isActive ? "text-primary" : "text-white/60"
                 }`}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </button>
           );

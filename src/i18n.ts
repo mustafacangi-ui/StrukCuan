@@ -33,7 +33,7 @@ i18n.use(initReactI18next).init({
     de: { translation: de },
     tr: { translation: tr },
   },
-  lng: getDeviceLanguage(),
+  lng: "en",
   fallbackLng: "en",
   interpolation: {
     escapeValue: false,

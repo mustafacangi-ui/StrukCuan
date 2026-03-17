@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ClipboardList, Zap, Star, Sparkles } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
@@ -78,7 +79,7 @@ const Index = () => {
         <section className="mx-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
             <ClipboardList size={14} />
-            Anketler
+            {t("surveys")}
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <button

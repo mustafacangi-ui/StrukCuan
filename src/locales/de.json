@@ -1,4 +1,11 @@
 {
+  "nav": {
+    "home": "Startseite",
+    "radar": "Radar",
+    "campaigns": "Kampagnen",
+    "rewards": "Belohnungen",
+    "profile": "Profil"
+  },
   "greeting": "Guten Tag",
   "greetingShort": "Hallo",
   "auth": {
@@ -43,6 +50,7 @@
     "codeTitle": "Ihr digitaler Code",
     "codeDesc": "Kopieren Sie den Code unten und verwenden Sie ihn auf der relevanten Website."
   },
+  "surveys": "Umfragen",
   "empty": {
     "comingSoon": "Demnächst!",
     "radarScanning": "Radar sucht in dieser Region nach neuen Angeboten."
