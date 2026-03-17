@@ -3,6 +3,7 @@
     "home": "Ana Sayfa",
     "radar": "Radar",
     "campaigns": "Kampanyalar",
+    "surveys": "Anketler",
     "rewards": "Ödüller",
     "profile": "Profil"
   },
@@ -51,6 +52,19 @@
     "codeDesc": "Aşağıdaki kodu kopyalayıp ilgili sitede kullanın."
   },
   "surveys": "Anketler",
+  "surveys.title": "Anket Merkezi",
+  "surveys.totalPoin": "Toplam Puan",
+  "surveys.tugasCount": "Görev mevcut",
+  "surveys.tugasLokal": "Yerel Görevler",
+  "surveys.cta": "Anketlere katılın ve ekstra ödüller kazanın",
+  "surveys.earn": "Kazan",
+  "surveys.minutes": "dk",
+  "surveys.ctaButton": "Başla",
+  "surveys.ctaButtonAmbil": "Al",
+  "surveys.premiumPartner": "Premium Partner",
+  "surveys.showHistory": "Anket geçmişini göster",
+  "surveys.verifyingAccount": "Hesabınız doğrulanıyor",
+  "surveys.tryAgainLater": "Lütfen daha sonra tekrar deneyin.",
   "empty": {
     "comingSoon": "Yakında buradayız!",
     "radarScanning": "Radar bu bölgede yeni fırsatlar arıyor."

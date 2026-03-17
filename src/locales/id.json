@@ -3,6 +3,7 @@
     "home": "Beranda",
     "radar": "Radar",
     "campaigns": "Kampanye",
+    "surveys": "Survei",
     "rewards": "Hadiah",
     "profile": "Profil"
   },
@@ -51,6 +52,19 @@
     "codeDesc": "Salin kode di bawah dan gunakan di situs terkait."
   },
   "surveys": "Survei",
+  "surveys.title": "Pusat Survei",
+  "surveys.totalPoin": "Total Poin",
+  "surveys.tugasCount": "Tugas tersedia",
+  "surveys.tugasLokal": "Tugas Lokal",
+  "surveys.cta": "Ikuti survei dan dapatkan hadiah tambahan",
+  "surveys.earn": "Dapatkan",
+  "surveys.minutes": "menit",
+  "surveys.ctaButton": "Mulai",
+  "surveys.ctaButtonAmbil": "Ambil",
+  "surveys.premiumPartner": "Premium Partner",
+  "surveys.showHistory": "Tampilkan histori survei",
+  "surveys.verifyingAccount": "Akun Anda sedang diverifikasi",
+  "surveys.tryAgainLater": "Silakan coba lagi nanti.",
   "empty": {
     "comingSoon": "Segera hadir!",
     "radarScanning": "Radar sedang mencari peluang baru di wilayah ini."

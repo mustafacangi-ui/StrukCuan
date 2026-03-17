@@ -19,6 +19,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import CuanDashboard from "./pages/CuanDashboard";
 import Rewards from "./pages/Rewards";
+import Surveys from "./pages/Surveys";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import PromoRules from "./pages/PromoRules";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/cuan" element={<CuanDashboard />} />
               <Route path="/rewards" element={<Rewards />} />
+              <Route path="/surveys" element={<Surveys />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/promo-rules" element={<PromoRules />} />

@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ClipboardList, Zap, Star, Sparkles } from "lucide-react";
+import { ClipboardList, Zap, Star } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
 import Header from "@/components/Header";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import WeeklyRewardCard from "@/components/WeeklyRewardCard";
 import DailyMissionStreak from "@/components/DailyMissionStreak";
 import UserDashboard from "@/components/UserDashboard";
@@ -29,7 +22,6 @@ const Index = () => {
   const { t } = useTranslation();
   const { isOnboarded, requireLogin } = useUser();
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   useEffect(() => {
     const state = location.state as { requireLogin?: "camera" | "profile"; openCamera?: boolean } | null;
@@ -85,7 +77,7 @@ const Index = () => {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setComingSoonOpen(true)}
+              onClick={() => navigate("/surveys")}
               className="group relative overflow-hidden rounded-2xl border border-white/40 bg-white/30 bg-gradient-to-br from-white/40 to-white/20 p-4 text-left backdrop-blur-xl transition-all hover:border-white/60 hover:shadow-lg active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
@@ -102,7 +94,7 @@ const Index = () => {
             </button>
             <button
               type="button"
-              onClick={() => setComingSoonOpen(true)}
+              onClick={() => navigate("/surveys")}
               className="group relative overflow-hidden rounded-2xl border border-pink-400/25 bg-pink-500/10 bg-gradient-to-br from-pink-500/15 via-pink-500/5 to-violet-500/10 p-4 text-left backdrop-blur-xl transition-all hover:border-pink-400/50 hover:shadow-[0_0_24px_rgba(236,72,153,0.25)] active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />

@@ -3,6 +3,7 @@
     "home": "Home",
     "radar": "Radar",
     "campaigns": "Campaigns",
+    "surveys": "Surveys",
     "rewards": "Rewards",
     "profile": "Profile"
   },
@@ -51,6 +52,19 @@
     "codeDesc": "Copy the code below and use it on the relevant site."
   },
   "surveys": "Surveys",
+  "surveys.title": "Survey Center",
+  "surveys.totalPoin": "Total Points",
+  "surveys.tugasCount": "Available tasks",
+  "surveys.tugasLokal": "Local Tasks",
+  "surveys.cta": "Take surveys and earn extra rewards",
+  "surveys.earn": "Earn",
+  "surveys.minutes": "min",
+  "surveys.ctaButton": "Start",
+  "surveys.ctaButtonAmbil": "Get",
+  "surveys.premiumPartner": "Premium Partner",
+  "surveys.showHistory": "Show survey history",
+  "surveys.verifyingAccount": "Your account is being verified",
+  "surveys.tryAgainLater": "Please try again later.",
   "empty": {
     "comingSoon": "Coming soon!",
     "radarScanning": "Radar is scanning for new opportunities in this region."

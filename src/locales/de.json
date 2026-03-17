@@ -3,6 +3,7 @@
     "home": "Startseite",
     "radar": "Radar",
     "campaigns": "Kampagnen",
+    "surveys": "Umfragen",
     "rewards": "Belohnungen",
     "profile": "Profil"
   },
@@ -51,6 +52,19 @@
     "codeDesc": "Kopieren Sie den Code unten und verwenden Sie ihn auf der relevanten Website."
   },
   "surveys": "Umfragen",
+  "surveys.title": "Umfragezentrum",
+  "surveys.totalPoin": "Gesamtpunkte",
+  "surveys.tugasCount": "Aufgaben verfügbar",
+  "surveys.tugasLokal": "Lokale Aufgaben",
+  "surveys.cta": "Nehmen Sie an Umfragen teil und verdienen Sie zusätzliche Belohnungen",
+  "surveys.earn": "Verdienen",
+  "surveys.minutes": "Min",
+  "surveys.ctaButton": "Los",
+  "surveys.ctaButtonAmbil": "Holen",
+  "surveys.premiumPartner": "Premium Partner",
+  "surveys.showHistory": "Umfragehistorie anzeigen",
+  "surveys.verifyingAccount": "Ihr Konto wird überprüft",
+  "surveys.tryAgainLater": "Bitte versuchen Sie es später erneut.",
   "empty": {
     "comingSoon": "Demnächst!",
     "radarScanning": "Radar sucht in dieser Region nach neuen Angeboten."

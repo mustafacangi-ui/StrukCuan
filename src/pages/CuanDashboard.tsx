@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award, Gift, ClipboardList } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { formatCurrency } from "@/config/locale";
-import { startSurvey } from "@/lib/survey";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserDealsCount } from "@/hooks/useUserDealsCount";
@@ -78,11 +77,11 @@ export default function CuanDashboard() {
         </button>
         <button
           type="button"
-          onClick={() => startSurvey(countryCode, user?.id)}
+          onClick={() => navigate("/surveys")}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-white/40 border border-white/50 text-emerald-700 hover:bg-white/50 transition-colors backdrop-blur-xl"
         >
           <ClipboardList size={18} />
-          Anket Çöz
+          Survei
         </button>
       </div>
 
