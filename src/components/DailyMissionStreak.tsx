@@ -35,53 +35,52 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
   return (
     <div className="mx-4 space-y-4">
       {/* Daily Mission */}
-      <div className="rounded-xl border border-white/20 bg-white/95 backdrop-blur-sm p-4 shadow-md">
+      <div className="card-radar rounded-2xl p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${missionCompleted ? "bg-green-100" : "bg-gray-100"}`}>
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${missionCompleted ? "bg-[#00FF88]/20 border border-[#00FF88]/30" : "bg-white/5 border border-white/10"}`}>
               {missionCompleted ? (
-                <Check size={16} className="text-green-500" />
+                <Check size={18} className="text-[#00FF88]" />
               ) : (
-                <Target size={16} className="text-gray-500" />
+                <Target size={18} className="text-white/70" />
               )}
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">
-                Daily Mission
-              </p>
-              <p className="text-[10px] text-gray-700">
+              <p className="text-sm font-semibold text-white">Daily Mission</p>
+              <p className="text-xs text-white/60">
                 {missionCompleted ? "Done!" : "Upload 1 receipt today"}
               </p>
               {!missionCompleted && (
-                <p className="text-[9px] text-green-600 font-medium">Reward: +1 ticket</p>
+                <p className="text-[10px] text-[#00FF88] font-medium mt-0.5">Reward: +1 ticket</p>
               )}
             </div>
           </div>
           {!missionCompleted && (
             <button
               onClick={handleUpload}
-              className="rounded-lg bg-green-500 hover:bg-green-600 px-4 py-2 min-h-[48px] text-[10px] font-bold text-white transition-colors"
+              className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00FF88] to-[#00cc6a] px-4 py-2.5 min-h-[44px] text-xs font-bold text-[#0a0e14] transition-all hover:shadow-[0_0_16px_rgba(0,255,136,0.3)]"
             >
-              Upload
+              <span className="absolute inset-0 rounded-xl border-2 border-[#00FF88]/50 animate-radar-sweep pointer-events-none" />
+              <span className="relative z-10">Upload</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Streak Counter */}
-      <div className="rounded-xl border border-white/20 bg-white/95 backdrop-blur-sm p-4 shadow-md">
+      <div className="card-radar rounded-2xl p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
-              <Flame size={16} className="text-orange-500" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30">
+              <Flame size={18} className="text-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">Streak</p>
-              <p className="text-[10px] text-gray-700">{streak} days</p>
+              <p className="text-sm font-semibold text-white">Streak</p>
+              <p className="text-xs text-white/60">{streak} days</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-gray-500">
+            <p className="text-[10px] text-white/50">
               {nextMilestone
                 ? `${nextMilestone.days - streak} more days → +${nextMilestone.reward} ticket`
                 : "Max!"}

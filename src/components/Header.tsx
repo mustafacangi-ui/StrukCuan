@@ -73,58 +73,38 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
 
   return (
     <div className="px-4 pt-3 pb-2">
-      <div
-        className="rounded-[18px] p-3 px-4"
-        style={{
-          background: "rgba(0,0,0,0.45)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          border: "1px solid rgba(255,255,255,0.15)",
-        }}
-      >
+      <div className="card-radar rounded-2xl p-4">
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => isOnboarded && navigate("/cuan")}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3"
           >
-            <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-              style={{ background: "rgba(0,0,0,0.4)", color: "#facc15" }}
-            >
-              <Ticket size={14} />
-              <span className="font-display text-xs font-semibold">
-                {tiket.toLocaleString()}
-              </span>
-              <span className="text-[9px] opacity-90">Bilet</span>
+            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
+              <Ticket size={16} className="text-[#00FF88]" />
+              <div className="text-left">
+                <p className="font-display text-sm font-bold text-white">{tiket.toLocaleString()}</p>
+                <p className="text-[9px] text-white/60">Bilet</p>
+              </div>
             </div>
-            <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-              style={{ background: "rgba(0,0,0,0.4)", color: "#22c55e" }}
-            >
-              <span className="text-[10px] font-semibold">Cuan</span>
-              <span className="font-display text-xs font-semibold">
-                {cuan.toLocaleString()}
-              </span>
+            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/5 border border-white/10 min-w-[88px]">
+              <div className="h-2 w-2 rounded-full bg-[#00FF88] animate-pulse" />
+              <div className="text-left">
+                <p className="font-display text-sm font-bold text-[#00FF88]">{cuan.toLocaleString()}</p>
+                <p className="text-[9px] text-white/60">Cuan</p>
+              </div>
             </div>
           </button>
           <div className="flex items-center gap-2">
-            <div
-              className="flex items-center gap-1 rounded-full"
-              style={{
-                background: "#111",
-                color: "#ff4d4f",
-                padding: "4px 10px",
-              }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#ff4d4f] animate-pulse" />
-              <span className="text-[9px] font-bold tracking-wider">LIVE</span>
+            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-red-500/10 border border-red-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[9px] font-bold tracking-wider text-red-400">LIVE</span>
               <span className="text-[9px] font-mono font-semibold text-white">
                 {onlineCount.toLocaleString()}
               </span>
             </div>
             <div className="relative">
-              <button
-                className="relative rounded-full bg-[#2b2b2b] p-2"
+            <button
+              className="relative rounded-xl bg-white/5 border border-white/10 p-2"
                 onClick={() => {
                   setShowNotifications((v) => !v);
                   if (unreadCount > 0) markRead.mutate();
@@ -165,7 +145,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             </div>
             <button
               onClick={handleProfileClick}
-              className="rounded-full bg-[#2b2b2b] p-2"
+              className="rounded-xl bg-white/5 border border-white/10 p-2"
             >
               <Settings size={18} className="text-white" />
             </button>
@@ -177,7 +157,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={handleProfileClick}
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary glow-green"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#00FF88]/50 bg-white/5 shadow-[0_0_12px_rgba(0,255,136,0.2)]"
           >
             {isOnboarded ? (
               <span className="font-display text-lg font-bold text-primary">
@@ -200,7 +180,7 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             {isOnboarded && (
               <button
                 onClick={handleProfileClick}
-                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 glow-green"
+                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-[#00FF88]/30 bg-[#00FF88]/10 px-2 py-0.5"
               >
                 <Shield size={10} className="text-primary" />
                 <span className="text-[10px] font-bold text-primary glow-green-text">
@@ -214,7 +194,6 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           open={showCameraMenu}
           onOpenChange={(open) => {
             if (open && !isOnboarded) {
-              // Localhost: requireLogin → signInAnonymously arka planda, kamerayı aç; ASLA dış linke yönlendirme
               requireLogin("camera");
               setShowCameraMenu(false);
               return;
@@ -225,14 +204,16 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
           <PopoverTrigger asChild>
             <button
               onClick={() => setRippleKey((k) => k + 1)}
-              className="relative shrink-0 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-green-500 shadow-lg transition-all duration-200 ease-in-out hover:scale-105 hover:bg-green-600 active:scale-95"
+              className="relative shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#00FF88] to-[#00cc6a] shadow-[0_0_24px_rgba(0,255,136,0.4)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_0_32px_rgba(0,255,136,0.5)] active:scale-95"
               aria-label="Kamera menüsü"
             >
+              <span className="absolute inset-0 rounded-full border-2 border-[#00FF88]/40 animate-radar-sweep" />
+              <span className="absolute inset-0 rounded-full border-2 border-[#00FF88]/30 animate-radar-sweep-delayed" />
               <span
                 key={rippleKey}
                 className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 animate-ripple"
               />
-              <Camera size={24} className="relative z-10 text-white flex-shrink-0" strokeWidth={2} />
+              <Camera size={26} className="relative z-10 text-[#0a0e14] flex-shrink-0" strokeWidth={2.5} />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" className="w-56 p-2">

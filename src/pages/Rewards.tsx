@@ -79,15 +79,12 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]" />
       <PageHeader title={t("rewards.title", "Ödüller")} onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-4">
         {/* Cuan bakiyesi */}
-        <div
-          className="rounded-2xl p-4 mb-4 flex items-center justify-between"
-          style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
-        >
+        <div className="card-radar rounded-2xl p-4 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Coins size={24} className="text-amber-500" />
             <span className="text-sm text-white/80">Bakiye</span>
@@ -117,14 +114,7 @@ export default function Rewards() {
             {rewards.map((reward) => {
               const canAfford = cuan >= reward.cuan_cost;
               return (
-                <div
-                  key={reward.id}
-                  className="rounded-2xl p-4"
-                  style={{
-                    background: "rgba(0,0,0,0.45)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                  }}
-                >
+                <div key={reward.id} className="card-radar rounded-2xl p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/20">
                       <Gift size={24} className="text-primary" />

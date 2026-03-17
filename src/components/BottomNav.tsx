@@ -19,7 +19,7 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0d1321]/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -37,8 +37,8 @@ const BottomNav = () => {
                   isCenter
                     ? `p-2 ${
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-lg"
-                          : "bg-muted/50 text-muted-foreground"
+                          ? "bg-[#00FF88] text-[#0a0e14] shadow-[0_0_16px_rgba(0,255,136,0.4)]"
+                          : "bg-white/10 text-white/60"
                       }`
                     : ""
                 }`}
@@ -50,7 +50,7 @@ const BottomNav = () => {
               </span>
               <span
                 className={`text-[10px] font-medium ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-[#00FF88]" : "text-white/60"
                 }`}
               >
                 {item.label}

@@ -62,7 +62,7 @@ export default function CuanDashboard() {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]" />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
       {/* Ödüller sayfasına hızlı link */}
@@ -78,7 +78,7 @@ export default function CuanDashboard() {
       </div>
 
       {/* Bilet Kavanozu - Haftalık İlerleme */}
-      <div className="mx-4 mt-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/20 to-primary/10 p-5">
+      <div className="mx-4 mt-4 card-radar rounded-2xl p-5 border-amber-500/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Ticket size={20} className="text-amber-500" />
@@ -103,7 +103,7 @@ export default function CuanDashboard() {
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
           Kişisel İstatistikler
         </h2>
-        <div className="rounded-xl overflow-hidden" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
+        <div className="card-radar rounded-2xl overflow-hidden">
           <div className="flex items-center gap-3 p-4 border-b border-border">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
               <span className="font-display text-xl font-bold text-primary">
@@ -143,7 +143,7 @@ export default function CuanDashboard() {
           <Trophy size={14} className="text-amber-500" />
           Geçen Haftanın Şanslıları
         </h2>
-        <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-500/10 to-transparent overflow-hidden">
+        <div className="card-radar rounded-2xl overflow-hidden border-amber-500/20">
           <div className="p-3 border-b border-amber-500/20 bg-amber-500/10">
             <p className="text-[10px] text-muted-foreground text-center">
               {countryCode === "DE" ? "10€ kazanan şanslı avcılar" : "100.000 Rp kazanan şanslı avcılar"}

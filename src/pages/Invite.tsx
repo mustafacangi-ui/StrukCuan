@@ -125,7 +125,7 @@ export default function Invite() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]" />
       <PageHeader title="Invite" onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-6">

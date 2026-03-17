@@ -17,16 +17,16 @@ export default function UserDashboard() {
   return (
     <div className="mx-4 space-y-4">
       {/* Level Progress */}
-      <div className="rounded-xl border border-white/20 bg-white/95 backdrop-blur-sm p-4 shadow-md">
-        <p className="text-[9px] text-gray-500 mb-1">Your Level</p>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm font-bold text-gray-900">Level {level}</span>
-          <span className="text-[10px] font-bold text-green-600">
+      <div className="card-radar rounded-2xl p-4">
+        <p className="text-[10px] text-white/50 mb-1">Your Level</p>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-bold text-white">Level {level}</span>
+          <span className="text-xs font-bold text-[#00FF88]">
             {levelProgress.progress.toFixed(0)}%
           </span>
         </div>
-        <Progress value={levelProgress.progress} className="h-2 bg-gray-200 [&>div]:bg-green-500" />
-        <p className="mt-1 text-[10px] text-gray-700">
+        <Progress value={levelProgress.progress} className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[#00FF88] [&>div]:to-[#00cc6a]" />
+        <p className="mt-2 text-xs text-white/60">
           {level >= 5
             ? "Max level!"
             : `${levelProgress.receiptsToNext} receipts to Level ${levelProgress.next}`}
@@ -36,7 +36,7 @@ export default function UserDashboard() {
       {/* History */}
       <button
         onClick={() => navigate("/receipts")}
-        className="w-full rounded-xl border border-white/20 bg-white/95 backdrop-blur-sm py-3 min-h-[48px] text-sm font-semibold text-gray-900 shadow-md hover:bg-white transition-colors"
+        className="w-full card-radar rounded-2xl py-3.5 min-h-[48px] text-sm font-semibold text-white transition-all hover:border-[#00FF88]/30 hover:shadow-[0_0_20px_rgba(0,255,136,0.1)]"
       >
         View History
       </button>

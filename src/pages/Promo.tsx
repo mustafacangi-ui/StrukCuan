@@ -82,16 +82,13 @@ export default function Promo() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]" />
 
       <PageHeader title="Promo" onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-4">
         {/* Total reward */}
-        <div
-          className="rounded-2xl p-4 mb-4"
-          style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
-        >
+        <div className="card-radar rounded-2xl p-4 mb-4">
           <p className="text-[10px] uppercase tracking-wider text-white/80 font-semibold">
             Daily Ads Progress
           </p>
@@ -112,17 +109,13 @@ export default function Promo() {
             const canWatch = !isCompleted && !isWeeklyLimitReached && adsWatched < MAX_ADS_PER_DAY;
 
             return (
-              <div
-                key={tier.target}
-                className="rounded-2xl p-4"
-                style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
-              >
+              <div key={tier.target} className="card-radar rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-bold text-white">
                     Tier {i + 1}: {current}/{tier.target} videos
                   </span>
                   {isCompleted ? (
-                    <span className="flex items-center gap-1 rounded-full bg-[#22c55e]/30 px-2.5 py-1 text-xs font-bold text-[#22c55e]">
+                    <span className="flex items-center gap-1 rounded-full bg-[#00FF88]/20 border border-[#00FF88]/30 px-2.5 py-1 text-xs font-bold text-[#00FF88]">
                       <Check size={14} />
                       Done
                     </span>
@@ -132,19 +125,16 @@ export default function Promo() {
                       onClick={handleWatchAd}
                       disabled={!canWatch || showModal}
                       className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        background: canWatch && !showModal ? "#facc15" : "rgba(255,255,255,0.2)",
-                        color: canWatch && !showModal ? "#000" : "rgba(255,255,255,0.7)",
-                      }}
+                      className={canWatch && !showModal ? "bg-[#facc15] text-[#0a0e14]" : "bg-white/10 text-white/70"}
                     >
                       <Play size={12} fill="currentColor" />
                       {showModal ? "Watching..." : "Watch Ad"}
                     </button>
                   )}
                 </div>
-                <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#facc15] transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-[#00FF88] to-[#00cc6a] transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

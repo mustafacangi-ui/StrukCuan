@@ -59,34 +59,34 @@ export default function WeeklyRewardCard() {
     <>
       {showWinners && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md animate-fade-in">
-          <div className="relative mx-4 w-full max-w-sm rounded-2xl border border-white/20 bg-white/95 backdrop-blur-sm p-5 shadow-md">
-            <button onClick={() => setShowWinners(false)} className="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+          <div className="relative mx-4 w-full max-w-sm card-radar rounded-2xl p-5">
+            <button onClick={() => setShowWinners(false)} className="absolute top-3 right-3 text-white/60 hover:text-white">
               <X size={16} />
             </button>
             <div className="flex items-center gap-2 mb-1">
-              <Award size={16} className="text-green-500" />
-              <h3 className="font-display text-base font-bold text-gray-900">Prize Winners</h3>
+              <Award size={16} className="text-[#00FF88]" />
+              <h3 className="font-display text-base font-bold text-white">Prize Winners</h3>
             </div>
-            <p className="text-[10px] text-gray-500 mb-4">Rp100,000 Shopping Voucher</p>
+            <p className="text-xs text-white/60 mb-4">Rp100,000 Shopping Voucher</p>
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {winners.length === 0 ? (
-                <p className="text-xs text-gray-500">No winners yet</p>
+                <p className="text-xs text-white/60">No winners yet</p>
               ) : (
                 winners.map((w, i) => (
                   <div
                     key={w.id}
-                    className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5"
+                    className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-100">
-                        <span className="text-[10px] font-bold text-green-600">#{i + 1}</span>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00FF88]/20">
+                        <span className="text-[10px] font-bold text-[#00FF88]">#{i + 1}</span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-gray-900">{w.nickname}</p>
-                        <p className="text-[10px] text-gray-500">{formatDate(w.draw_date)}</p>
+                        <p className="text-xs font-semibold text-white">{w.nickname}</p>
+                        <p className="text-[10px] text-white/50">{formatDate(w.draw_date)}</p>
                       </div>
                     </div>
-                    <span className="font-display text-[11px] font-bold text-green-600">Rp100,000</span>
+                    <span className="font-display text-[11px] font-bold text-[#00FF88]">Rp100,000</span>
                   </div>
                 ))
               )}
@@ -95,46 +95,48 @@ export default function WeeklyRewardCard() {
         </div>
       )}
 
-      <div className="mx-4 rounded-xl border border-white/20 bg-white/95 backdrop-blur-sm p-6 shadow-md">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Gift size={16} className="text-green-500" />
-          <h2 className="font-display text-xs font-bold text-gray-900">Weekly Reward</h2>
+      <div className="mx-4 card-radar rounded-2xl p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/20">
+            <Gift size={18} className="text-[#00FF88]" />
+          </div>
+          <h2 className="font-display text-sm font-bold text-white">Weekly Reward</h2>
         </div>
 
-        <p className="font-display text-base font-bold text-gray-900">Win a Rp100,000 Shopping Voucher</p>
-        <p className="text-[10px] text-gray-700">5 winners every week</p>
+        <p className="font-display text-lg font-bold text-white">Win a Rp100,000 Shopping Voucher</p>
+        <p className="text-xs text-white/60 mt-0.5">5 winners every week</p>
 
-        <div className="mt-2">
-          <p className="text-[9px] text-gray-500">Weekly Prize Pool</p>
-          <p className="font-display text-sm font-bold text-green-600">5 × Rp100,000 vouchers</p>
+        <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10">
+          <p className="text-[10px] text-white/50">Weekly Prize Pool</p>
+          <p className="font-display text-sm font-bold text-[#00FF88]">5 × Rp100,000 vouchers</p>
         </div>
 
-        <div className="mt-2">
-          <p className="text-[9px] text-gray-500">Your Weekly Tickets</p>
-          <p className="font-display text-sm font-bold text-gray-900">
+        <div className="mt-4">
+          <p className="text-[10px] text-white/50 mb-1">Your Weekly Tickets</p>
+          <p className="font-display text-sm font-bold text-white">
             {ticketCount} / {MAX_TICKETS_PER_WEEK} tickets
           </p>
-          <div className="mt-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+          <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-green-500 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-[#00FF88] to-[#00cc6a] transition-all duration-500 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="text-[8px] text-gray-500 mt-0.5">Max {MAX_TICKETS_PER_WEEK} tickets per week</p>
+          <p className="text-[9px] text-white/40 mt-1">Max {MAX_TICKETS_PER_WEEK} tickets per week</p>
         </div>
 
-        <div className="mt-3">
-          <p className="text-[10px] text-gray-500 mb-2">Next draw in</p>
-          <div className="flex gap-2.5 items-stretch">
+        <div className="mt-4">
+          <p className="text-[10px] text-white/50 mb-2">Next draw in</p>
+          <div className="flex gap-2 items-stretch">
             {[
               { val: pad(timeLeft.days), label: "Days" },
               { val: pad(timeLeft.hours), label: "Hours" },
               { val: pad(timeLeft.minutes), label: "Min" },
               { val: pad(timeLeft.seconds), label: "Sec" },
             ].map((block) => (
-              <div key={block.label} className="flex flex-1 flex-col items-center justify-center rounded-lg bg-gray-100 py-3 px-2 min-w-0">
-                <span className="font-display text-base font-bold text-gray-900 tabular-nums leading-tight">{block.val}</span>
-                <span className="text-[9px] text-gray-500 uppercase mt-1.5">{block.label}</span>
+              <div key={block.label} className="flex flex-1 flex-col items-center justify-center rounded-xl bg-white/5 border border-white/10 py-3 px-2 min-w-0">
+                <span className="font-display text-base font-bold text-white tabular-nums leading-tight">{block.val}</span>
+                <span className="text-[9px] text-white/50 uppercase mt-1">{block.label}</span>
               </div>
             ))}
           </div>
@@ -142,12 +144,12 @@ export default function WeeklyRewardCard() {
 
         <button
           onClick={() => setShowWinners(true)}
-          className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-600 py-3.5 min-h-[48px] font-display font-bold text-sm text-white transition-colors"
+          className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00FF88] to-[#00cc6a] py-3.5 min-h-[48px] font-display font-bold text-sm text-[#0a0e14] transition-all hover:shadow-[0_0_20px_rgba(0,255,136,0.3)]"
         >
           <Award size={16} />
           View Winners
         </button>
-        <p className="text-[9px] text-gray-500 mt-2 text-center">More tickets = higher chance to win</p>
+        <p className="text-[9px] text-white/40 mt-2 text-center">More tickets = higher chance to win</p>
       </div>
     </>
   );

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
-/** Global gradient background - StrukCuan brand (fuchsia top → purple bottom) */
-const APP_GRADIENT = "bg-gradient-to-b from-[#ff6ec4] via-[#c94fd6] to-[#8e2de2]";
+/** Radar theme: deep navy background */
+const APP_GRADIENT = "bg-gradient-to-b from-[#0a0e14] via-[#0d1321] to-[#0a0e14]";
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -17,8 +17,9 @@ export function PageLayout({ children, className = "" }: PageLayoutProps) {
   );
 }
 
-/** Content card style - dark translucent, matches Invite/Cuan */
+/** Radar premium card style */
 export const CARD_STYLE = {
-  background: "rgba(0,0,0,0.45)",
-  border: "1px solid rgba(255,255,255,0.15)",
+  background: "linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%)",
+  border: "1px solid rgba(0, 255, 136, 0.12)",
+  boxShadow: "0 4px 24px rgba(0, 0, 0, 0.4)",
 };

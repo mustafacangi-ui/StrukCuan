@@ -4,53 +4,55 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* Radar theme: deep navy, neon green accents, electric blue */
 @layer base {
   :root,
   .dark {
-    /* Primary: #00FF88, Background: #0B0F14, Promo: #FF3B3B */
-    --background: 210 29% 6%;
-    --foreground: 0 0% 100%;
+    /* Primary: #00FF88 neon green (radar), Secondary: #00D4FF electric blue */
+    --background: 220 25% 5%;
+    --foreground: 0 0% 98%;
 
-    --card: 210 20% 8%;
-    --card-foreground: 0 0% 100%;
+    --card: 220 22% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 210 20% 8%;
+    --popover: 220 22% 8%;
     --popover-foreground: 0 0% 95%;
 
     --primary: 150 100% 50%;
-    --primary-foreground: 0 0% 5%;
+    --primary-foreground: 220 25% 5%;
 
-    --secondary: 210 20% 12%;
+    --secondary: 210 25% 12%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 210 20% 12%;
+    --muted: 220 20% 14%;
     --muted-foreground: 0 0% 85%;
 
-    --accent: 0 100% 61%;
+    --accent: 195 100% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 100% 61%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 15%;
-    --input: 210 20% 15%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
     --ring: 150 100% 50%;
 
     --radius: 0.75rem;
 
     --neon-green: 150 100% 50%;
+    --neon-blue: 195 100% 50%;
     --neon-red: 0 100% 61%;
-    --neon-green-glow: 0 0 12px hsl(150 100% 50% / 0.25);
+    --neon-green-glow: 0 0 20px hsl(150 100% 50% / 0.25);
+    --neon-blue-glow: 0 0 20px hsl(195 100% 50% / 0.25);
     --neon-red-glow: 0 0 12px hsl(0 100% 61% / 0.25);
 
-    --sidebar-background: 210 25% 6%;
+    --sidebar-background: 220 25% 5%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 150 100% 50%;
     --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 210 20% 12%;
+    --sidebar-accent: 220 20% 12%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 210 20% 15%;
+    --sidebar-border: 220 20% 18%;
     --sidebar-ring: 150 100% 50%;
   }
 
@@ -94,7 +96,7 @@
   }
 
   body {
-    background: linear-gradient(180deg, #ff6ec4 0%, #c94fd6 50%, #8e2de2 100%);
+    background: linear-gradient(180deg, #0a0e14 0%, #0d1321 40%, #0d1321 100%);
     min-height: 100vh;
     @apply text-foreground font-body antialiased;
   }
@@ -106,19 +108,36 @@
     min-height: 100vh;
   }
 
-  /* Semi-transparent dark cards for readability on gradient */
+  /* Premium radar cards - Revolut/Apple Card style */
+  .card-radar {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 255, 136, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 255, 136, 0.12);
+  }
+
+  .card-radar-subtle {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.75) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
   .bg-card,
   [class*="bg-card"] {
-    background: rgba(0, 0, 0, 0.45) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 255, 136, 0.1) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
   }
 }
 
 @layer utilities {
   .glow-green {
-    box-shadow: 0 0 12px hsl(150 100% 50% / 0.2);
+    box-shadow: 0 0 16px hsl(150 100% 50% / 0.25);
   }
   .glow-red {
     box-shadow: 0 0 12px hsl(0 100% 61% / 0.2);
@@ -145,5 +164,22 @@
   }
   .animate-scan-line {
     animation: scan-line 2.5s ease-in-out infinite;
+  }
+  /* Radar sweep pulse - subtle, eye-friendly */
+  @keyframes radar-sweep {
+    0% { transform: scale(1); opacity: 0.5; }
+    70% { opacity: 0.15; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  .animate-radar-sweep {
+    animation: radar-sweep 2.5s ease-out infinite;
+  }
+  @keyframes radar-sweep-delayed {
+    0% { transform: scale(1); opacity: 0.4; }
+    70% { opacity: 0.1; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  .animate-radar-sweep-delayed {
+    animation: radar-sweep-delayed 2.5s ease-out infinite 1.2s;
   }
 }
