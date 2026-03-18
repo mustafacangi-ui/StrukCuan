@@ -30,22 +30,22 @@ export function StatsBar({ compact }: StatsBarProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <button onClick={handleStatsClick} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-white/5 border border-white/10">
+      <button onClick={handleStatsClick} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-white/20 border border-white/25">
         <Ticket size={14} style={{ color: TICKET_COLOR }} />
         <span className="font-display text-xs font-semibold text-white">
           {weeklyTickets.toLocaleString()}
         </span>
-        {!compact && <span className="text-[9px] text-white/60">Bilet</span>}
+        {!compact && <span className="text-[9px] text-white/90">Bilet</span>}
       </button>
-      <button onClick={handleStatsClick} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-white/5 border border-white/10">
-        <span className="text-[10px] font-semibold text-white/80">Cuan</span>
+      <button onClick={handleStatsClick} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-white/20 border border-white/25">
+        <span className="text-[10px] font-semibold text-white">Cuan</span>
         <span className="font-display text-xs font-semibold" style={{ color: CUAN_COLOR }}>
           {cuan.toLocaleString()}
         </span>
       </button>
       <button
         onClick={handleProfileClick}
-        className="rounded-lg bg-white/5 border border-white/10 p-2"
+        className="rounded-lg bg-white/20 border border-white/25 p-2"
       >
         <Settings size={18} className="text-white" />
       </button>

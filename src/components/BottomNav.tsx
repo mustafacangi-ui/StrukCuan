@@ -20,7 +20,7 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#1a0f3c]/80 backdrop-blur-2xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/25 bg-purple-950/95 backdrop-blur-2xl">
       <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -39,19 +39,19 @@ const BottomNav = () => {
                     ? `p-2 ${
                         isActive
                           ? "bg-theme-green text-[#001a09] shadow-[0_0_18px_rgba(0,230,118,0.55)]"
-                          : "bg-white/10 text-white/70"
+                          : "bg-white/20 text-white/90"
                       }`
                     : ""
                 }`}
               >
                 <item.icon
                   size={isCenter ? 24 : 20}
-                  className={!isCenter && (isActive ? "text-theme-green" : "text-white/60")}
+                  className={!isCenter && (isActive ? "text-theme-green" : "text-white/90")}
                 />
               </span>
               <span
                 className={`text-[10px] font-medium ${
-                  isActive ? "text-theme-green" : "text-white/60"
+                  isActive ? "text-theme-green" : "text-white/90"
                 }`}
               >
                 {t(item.labelKey)}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
   ClipboardList,
   Video,
   Gamepad2,
@@ -27,7 +28,7 @@ import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import { formatCurrency } from "@/config/locale";
-import { PageHeader } from "@/components/PageHeader";
+import { StatsBar } from "@/components/StatsBar";
 import BottomNav from "@/components/BottomNav";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyListModal from "@/components/SurveyListModal";
@@ -36,12 +37,8 @@ import { toast } from "sonner";
 
 const WEEKLY_MAX = 42;
 
-const CARD_STYLE =
-  "rounded-2xl p-4 border border-white/30 shadow-[0_4px_24px_rgba(0,0,0,0.25)] transition-all";
-const GLASS = "rgba(255,255,255,0.18)";
-const NEON_GREEN = "#4ade80";
-const NEON_PINK = "#ec4899";
-const DEEP_PURPLE = "#1e1b4b";
+const CARD_BASE =
+  "rounded-2xl p-4 bg-white/20 backdrop-blur-md border border-white/20 shadow-lg transition-all";
 
 export default function Earn() {
   const navigate = useNavigate();
@@ -94,7 +91,6 @@ export default function Earn() {
   const cuan = stats?.cuan ?? 0;
   const countryCode = user?.countryCode ?? "ID";
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
-  const adProgressPercent = Math.min(100, (adsWatched / MAX_ADS_PER_DAY) * 100);
   const ticketsFromAdsCount = ticketsFromAds(adsWatched);
   const isWeeklyLimitReached = weeklyTickets >= MAX_TICKETS_PER_WEEK;
 
@@ -145,78 +141,67 @@ export default function Earn() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#4c1d95] to-[#1e1b4b]">
-        <p className="text-white/70 animate-pulse">Yükleniyor...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
+        <p className="text-white font-medium animate-pulse">Yükleniyor...</p>
       </div>
     );
   }
 
   if (isRedirecting) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#4c1d95] to-[#1e1b4b]">
-        <p className="text-white/70 animate-pulse">Yönlendiriliyor...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
+        <p className="text-white font-medium animate-pulse">Yönlendiriliyor...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      {/* Background: deep purple + pink gradient, stars & blobs */}
-      <div
-        className="fixed inset-0 -z-10 bg-fixed"
-        style={{
-          background: "linear-gradient(180deg, #4c1d95 0%, #7c3aed 35%, #ec4899 70%, #1e1b4b 100%)",
-        }}
-      />
-      <div
-        className="fixed inset-0 -z-10 opacity-30"
-        style={{
-          backgroundImage: `
-            radial-gradient(2px 2px at 20% 30%, white, transparent),
-            radial-gradient(2px 2px at 40% 70%, white, transparent),
-            radial-gradient(2px 2px at 60% 20%, white, transparent),
-            radial-gradient(2px 2px at 80% 80%, white, transparent)
-          `,
-        }}
-      />
-      <div
-        className="fixed -z-10 w-96 h-96 rounded-full opacity-20 blur-3xl"
-        style={{
-          background: "rgba(236,72,153,0.4)",
-          top: "-10%",
-          right: "-20%",
-        }}
-      />
-      <div
-        className="fixed -z-10 w-80 h-80 rounded-full opacity-15 blur-3xl"
-        style={{
-          background: "rgba(124,58,237,0.5)",
-          bottom: "10%",
-          left: "-15%",
-        }}
-      />
+    <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden bg-gradient-to-b from-purple-700 to-pink-600">
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-purple-700 to-pink-600" />
 
-      <PageHeader title="Earn Tickets 🎟️" onBack={() => navigate(-1)} />
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b border-white/20 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="rounded-xl bg-white/20 border border-white/20 p-2 hover:bg-white/30 transition-colors shrink-0"
+            >
+              <ArrowLeft size={18} className="text-white" />
+            </button>
+            <div>
+              <h1 className="font-display text-xl font-bold text-white">Earn Tickets</h1>
+              <p className="text-sm text-white/80">Earn up to 42 tickets this week</p>
+            </div>
+          </div>
+        </div>
+        <StatsBar compact />
+      </div>
 
       <div className="relative z-10 px-4 mt-4 space-y-4">
-        {/* Cuan Balance - neon pink + Convert */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+        {/* Progress Section */}
+        <div className={CARD_BASE}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-bold text-white">Your Progress</span>
+            <span className="text-sm font-bold text-white">{weeklyTickets} / {WEEKLY_MAX} tickets</span>
+          </div>
+          <div className="h-3 rounded-full overflow-hidden bg-white/20">
+            <div
+              className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-green-400 to-emerald-600"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Cuan Balance + Convert */}
+        <div className={CARD_BASE}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Coins size={24} className="text-white" style={{ filter: "drop-shadow(0 0 8px rgba(236,72,153,0.8))" }} />
-              <span className="text-sm font-medium text-white/90">Cuan Balance</span>
+              <Coins size={24} className="text-white" />
+              <span className="text-sm font-bold text-white">Cuan Balance</span>
             </div>
-            <span
-              className="font-display font-bold text-xl"
-              style={{ color: NEON_PINK, textShadow: "0 0 12px rgba(236,72,153,0.8)" }}
-            >
+            <span className="font-display font-bold text-xl text-white">
               {formatCurrency(cuan, countryCode)}
             </span>
           </div>
@@ -253,12 +238,7 @@ export default function Earn() {
               }
             }}
             disabled={convertLoading || cuan < 100 || isWeeklyLimitReached}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            style={{
-              background: NEON_GREEN,
-              color: DEEP_PURPLE,
-              boxShadow: "0 0 16px rgba(74,222,128,0.6)",
-            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
           >
             {convertLoading ? (
               <RefreshCw size={18} className="animate-spin" />
@@ -271,172 +251,57 @@ export default function Earn() {
           </button>
         </div>
 
-        {/* Weekly Progress */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold text-white">Weekly Progress</span>
-            <span className="text-sm font-bold text-white">{weeklyTickets}/{WEEKLY_MAX}</span>
-          </div>
-          <div
-            className="h-3 rounded-full overflow-hidden bg-white/10"
-            style={{ boxShadow: "0 0 12px rgba(74,222,128,0.3)" }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${progressPercent}%`,
-                background: "linear-gradient(90deg, #4ade80, #22c55e)",
-                boxShadow: "0 0 12px rgba(74,222,128,0.6)",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Ad Progress */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold text-white">Ad Progress</span>
-            <span className="text-sm font-bold text-white">{adsWatched}/{MAX_ADS_PER_DAY}</span>
-          </div>
-          <div
-            className="h-3 rounded-full overflow-hidden bg-white/10"
-            style={{ boxShadow: "0 0 12px rgba(74,222,128,0.3)" }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${adProgressPercent}%`,
-                background: "linear-gradient(90deg, #4ade80, #22c55e)",
-                boxShadow: "0 0 12px rgba(74,222,128,0.6)",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Watch Ad - Hot badge */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+        {/* A) Watch Ads */}
+        <div className={CARD_BASE}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                background: "rgba(74,222,128,0.2)",
-                boxShadow: "0 0 16px rgba(74,222,128,0.5)",
-              }}
-            >
-              <Video size={24} className="text-[#4ade80]" style={{ filter: "drop-shadow(0 0 6px rgba(74,222,128,0.8))" }} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
+              <Video size={24} className="text-emerald-300" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-display font-bold text-white">Watch Ad</h3>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                  style={{
-                    background: "linear-gradient(90deg, #f97316, #ef4444)",
-                    color: "white",
-                  }}
-                >
-                  🔥 Fastest
-                </span>
-              </div>
-              <p className="text-xs text-white/70 mt-0.5">+{ticketsFromAdsCount} Tickets</p>
+              <h3 className="font-display font-bold text-white">Watch Ads</h3>
+              <p className="text-xs text-white/80 mt-0.5">Earn tickets instantly</p>
+              <p className="text-xs text-white/80 mt-0.5">{adsWatched}/{MAX_ADS_PER_DAY} ads · +{ticketsFromAdsCount} Tickets</p>
             </div>
             <button
               type="button"
               onClick={handleWatchAd}
               disabled={adsWatched >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style={{
-                background: NEON_GREEN,
-                color: DEEP_PURPLE,
-                boxShadow: "0 0 20px rgba(74,222,128,0.8)",
-              }}
+              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-green-400 to-emerald-600 shadow-lg"
             >
               {showModal ? "Watching..." : "Watch Ad"}
             </button>
           </div>
         </div>
 
-        {/* Start Survey */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+        {/* B) Surveys */}
+        <div className={CARD_BASE}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                background: "rgba(74,222,128,0.2)",
-                boxShadow: "0 0 16px rgba(74,222,128,0.5)",
-              }}
-            >
-              <ClipboardList size={24} className="text-[#4ade80]" style={{ filter: "drop-shadow(0 0 6px rgba(74,222,128,0.8))" }} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
+              <ClipboardList size={24} className="text-purple-300" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Start Survey</h3>
-              <p className="text-xs text-white/70 mt-0.5">Earn Cuan</p>
+              <h3 className="font-display font-bold text-white">Surveys</h3>
+              <p className="text-xs text-white/80 mt-0.5">Earn Cuan with BitLabs</p>
             </div>
             <button
               type="button"
               onClick={() => setSurveyListOpen(true)}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-105 active:scale-95"
-              style={{
-                background: NEON_GREEN,
-                color: DEEP_PURPLE,
-                boxShadow: "0 0 20px rgba(74,222,128,0.8)",
-              }}
+              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
             >
               Start
             </button>
           </div>
         </div>
 
-        {/* Shake to Win - Weekly Game */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+        {/* C) Weekly Game */}
+        <div className={CARD_BASE}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                background: "rgba(74,222,128,0.2)",
-                boxShadow: "0 0 16px rgba(74,222,128,0.5)",
-              }}
-            >
-              <Smartphone size={24} className="text-[#4ade80]" style={{ filter: "drop-shadow(0 0 6px rgba(74,222,128,0.8))" }} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
+              <Smartphone size={24} className="text-purple-300" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Shake to Win</h3>
-              <p className="text-xs text-white/70 mt-0.5">1-5 Bilet · 1x/hari</p>
+              <h3 className="font-display font-bold text-white">Weekly Game</h3>
+              <p className="text-xs text-white/80 mt-0.5">Shake to win 1-5 tickets · 1x/day</p>
             </div>
             <button
               type="button"
@@ -461,12 +326,7 @@ export default function Earn() {
                 setShakeModalOpen(true);
               }}
               disabled={isWeeklyLimitReached}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: NEON_GREEN,
-                color: DEEP_PURPLE,
-                boxShadow: "0 0 20px rgba(74,222,128,0.8)",
-              }}
+              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
             >
               Shake
             </button>
@@ -474,37 +334,19 @@ export default function Earn() {
         </div>
 
         {/* Play - link to Promo */}
-        <div
-          className={CARD_STYLE}
-          style={{
-            background: GLASS,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+        <div className={CARD_BASE}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                background: "rgba(74,222,128,0.2)",
-                boxShadow: "0 0 16px rgba(74,222,128,0.5)",
-              }}
-            >
-              <Gamepad2 size={24} className="text-[#4ade80]" style={{ filter: "drop-shadow(0 0 6px rgba(74,222,128,0.8))" }} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
+              <Gamepad2 size={24} className="text-emerald-300" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display font-bold text-white">Play</h3>
-              <p className="text-xs text-white/70 mt-0.5">Earn Tickets</p>
+              <p className="text-xs text-white/80 mt-0.5">Earn Tickets</p>
             </div>
             <button
               type="button"
               onClick={() => navigate("/promo")}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-105 active:scale-95"
-              style={{
-                background: NEON_GREEN,
-                color: DEEP_PURPLE,
-                boxShadow: "0 0 20px rgba(74,222,128,0.8)",
-              }}
+              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 bg-gradient-to-r from-green-400 to-emerald-600 shadow-lg"
             >
               Play
             </button>
@@ -540,28 +382,22 @@ export default function Earn() {
         />
       )}
 
-      {/* Shake to Win modal - "Salla!" prompt */}
+      {/* Shake to Win modal */}
       {shakeModalOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">
-          <div
-            className="mx-4 max-w-sm rounded-2xl p-6 text-center border border-white/30"
-            style={{
-              background: GLASS,
-              backdropFilter: "blur(16px)",
-            }}
-          >
-            <Smartphone size={48} className="mx-auto text-[#4ade80] mb-4" style={{ filter: "drop-shadow(0 0 12px rgba(74,222,128,0.8))" }} />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+          <div className="mx-4 max-w-sm rounded-2xl p-6 text-center bg-white/20 backdrop-blur-md border border-white/20 shadow-lg">
+            <Smartphone size={48} className="mx-auto text-purple-300 mb-4" />
             <h3 className="font-display font-bold text-white text-lg mb-2">Salla Kazan!</h3>
-            <p className="text-sm text-white/70 mb-4">
+            <p className="text-sm text-white/80 mb-4">
               Goyangkan ponsel. Dapat 1-5 bilet!
             </p>
             {shakeLoading && (
-              <p className="text-[#4ade80] text-sm font-medium mb-2">Memproses...</p>
+              <p className="text-purple-300 text-sm font-bold mb-2">Memproses...</p>
             )}
             <button
               type="button"
               onClick={() => setShakeModalOpen(false)}
-              className="text-white/60 text-sm hover:text-white"
+              className="text-white/80 text-sm font-medium hover:text-white"
             >
               Batal
             </button>

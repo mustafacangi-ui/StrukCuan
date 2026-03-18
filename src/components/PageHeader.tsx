@@ -23,12 +23,12 @@ export function PageHeader({
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/10">
+    <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-white/25">
       <div className="flex items-center gap-3 min-w-0">
         {onBack && (
           <button
             onClick={onBack}
-            className="rounded-xl bg-white/5 border border-white/10 p-2 hover:bg-white/10 transition-colors shrink-0"
+            className="rounded-xl bg-white/15 border border-white/25 p-2 hover:bg-white/25 transition-colors shrink-0"
           >
             <ArrowLeft size={18} className="text-white" />
           </button>
