@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -15,7 +15,6 @@ import {
   useTodayRewardedTickets,
   TODAY_REWARDED_TICKETS_QUERY_KEY,
   MAX_ADS_PER_DAY,
-  ticketsFromAds,
 } from "@/hooks/useTodayRewardedTickets";
 import { useBitLabsSurveys, type SurveyDisplay } from "@/hooks/useBitLabsSurveys";
 import { useQueryClient } from "@tanstack/react-query";
@@ -309,38 +308,47 @@ export default function Earn() {
               </>
             )}
           </button>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <span className="text-xs font-bold text-white/90">Survey List</span>
             {surveysLoading ? (
-              <p className="text-sm text-white/80 py-4">Memuat survei...</p>
-            ) : surveys.length === 0 ? (
-              <p className="text-sm text-white/80 py-4">Survei tidak tersedia saat ini.</p>
+              <p className="text-sm text-white/80 py-6">Memuat survei...</p>
+            ) : displaySurveys.length === 0 ? (
+              <p className="text-sm text-white/80 py-6">Survei tidak tersedia saat ini.</p>
             ) : (
-              surveys.map((survey) => (
-                <button
-                  key={survey.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedSurvey(survey);
-                  }}
-                  className="w-full rounded-xl p-3 border border-white/20 bg-white/10 backdrop-blur-md flex items-center gap-3 text-left hover:bg-white/15 hover:border-white/30 transition-all"
-                >
-                  <div className="shrink-0 w-10 h-10 rounded-lg bg-green-500/30 border border-green-400/40 flex items-center justify-center">
-                    <span className="text-base">📋</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-display font-bold text-white text-sm truncate">
-                      {survey.title || "BitLabs Survey"}
-                    </h4>
-                    <p className="text-xs text-white/80 mt-0.5">
-                      +{survey.rewardCuan} Cuan · {survey.durationMin} menit
-                    </p>
-                  </div>
-                  <span className="shrink-0 px-3 py-1.5 rounded-lg font-display font-bold text-xs text-white bg-gradient-to-r from-green-500 to-emerald-600">
-                    Mulai
-                  </span>
-                </button>
-              ))
+              displaySurveys.map((survey, index) => {
+                const isFeatured = index === 0;
+                const ticketLabel = isFeatured ? "🎟️ 2 TICKETS" : "🎟️ 1 TICKET";
+                return (
+                  <button
+                    key={survey.id}
+                    type="button"
+                    onClick={() => setSelectedSurvey(survey)}
+                    className={`w-full rounded-2xl p-4 bg-white/10 backdrop-blur-md flex items-center gap-4 text-left hover:bg-white/15 transition-all relative ${
+                      isFeatured
+                        ? "border-2 border-[#4ade80]/60 shadow-[0_0_20px_rgba(74,222,128,0.25)]"
+                        : "border border-white/20 hover:border-white/30"
+                    }`}
+                  >
+                    {isFeatured && (
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#4ade80]/30 text-[#4ade80] border border-[#4ade80]/50">
+                        🔥 BEST OFFER
+                      </span>
+                    )}
+                    <div className="shrink-0 w-12 h-12 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center">
+                      <span className="text-xl">📋</span>
+                    </div>
+                    <div className="flex-1 min-w-0 pr-16">
+                      <h4 className="font-display font-bold text-white text-sm truncate">
+                        {survey.title || "BitLabs Survey"}
+                      </h4>
+                      <p className="text-sm font-bold text-[#4ade80] mt-1">{ticketLabel}</p>
+                    </div>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-[#001a09] bg-[#4ade80] shadow-[0_0_12px_rgba(74,222,128,0.5)] hover:bg-[#4ade80]/90 transition-colors">
+                      MULAI
+                    </span>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
