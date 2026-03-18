@@ -104,6 +104,8 @@ export default function Earn() {
     }
   }, [authLoading, isOnboarded, navigate]);
 
+  const isRedirecting = !authLoading && !isOnboarded;
+
   const handleWatchAd = useCallback(() => {
     if (!user?.id) {
       toast.error("Masuk untuk mendapatkan tiket");
@@ -141,7 +143,21 @@ export default function Earn() {
     }
   }, [refetch, queryClient]);
 
-  if (!isOnboarded && !authLoading) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#4c1d95] to-[#1e1b4b]">
+        <p className="text-white/70 animate-pulse">Yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#4c1d95] to-[#1e1b4b]">
+        <p className="text-white/70 animate-pulse">Yönlendiriliyor...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
@@ -182,7 +198,7 @@ export default function Earn() {
 
       <PageHeader title="Earn Tickets 🎟️" onBack={() => navigate(-1)} />
 
-      <div className="px-4 mt-4 space-y-4">
+      <div className="relative z-10 px-4 mt-4 space-y-4">
         {/* Cuan Balance - neon pink + Convert */}
         <div
           className={CARD_STYLE}
