@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
 import Promo from "./pages/Promo";
+import Earn from "./pages/Earn";
 import Map from "./pages/Map";
 import WeeklyDraw from "./pages/WeeklyDraw";
 import Invite from "./pages/Invite";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
+              <Route path="/earn" element={<Earn />} />
               <Route path="/map" element={<Map />} />
               <Route path="/weekly-draw" element={<WeeklyDraw />} />
               <Route path="/invite" element={<Invite />} />

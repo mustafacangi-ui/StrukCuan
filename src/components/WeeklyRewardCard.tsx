@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Award, X, Gift } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -24,6 +25,7 @@ function getNextDrawTime(): Date {
 }
 
 export default function WeeklyRewardCard() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const { data: ticketCount = 0 } = useUserTickets(user?.id);
   const { data: winners = [] } = useLotteryWinners(5);
@@ -149,7 +151,12 @@ export default function WeeklyRewardCard() {
           <Award size={16} />
           View Winners
         </button>
-        <p className="text-[9px] text-white/40 mt-2 text-center">More tickets = higher chance to win</p>
+        <button
+          onClick={() => navigate("/earn")}
+          className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 py-2.5 font-display font-bold text-xs text-white transition-all hover:bg-white/20"
+        >
+          Earn More Tickets
+        </button>
       </div>
     </>
   );

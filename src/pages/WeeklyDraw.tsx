@@ -171,7 +171,7 @@ export default function WeeklyDraw() {
             {/* Earn More Tickets */}
             <button
               type="button"
-              onClick={() => navigate("/promo")}
+              onClick={() => navigate("/earn")}
               className={gradientBtn}
             >
               <Ticket size={18} />
