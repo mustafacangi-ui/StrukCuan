@@ -102,6 +102,9 @@ export default function Earn() {
 
   const isRedirecting = !authLoading && !isOnboarded;
 
+  /** HARD RESET DEBUG: Set to false after confirming page renders */
+  const FORCE_SHOW_EARN = true;
+
   const handleWatchAd = useCallback(() => {
     if (!user?.id) {
       toast.error("Masuk untuk mendapatkan tiket");
@@ -139,7 +142,7 @@ export default function Earn() {
     }
   }, [refetch, queryClient]);
 
-  if (authLoading) {
+  if (!FORCE_SHOW_EARN && authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
         <p className="text-white font-medium animate-pulse">Yükleniyor...</p>
@@ -147,7 +150,7 @@ export default function Earn() {
     );
   }
 
-  if (isRedirecting) {
+  if (!FORCE_SHOW_EARN && isRedirecting) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
         <p className="text-white font-medium animate-pulse">Yönlendiriliyor...</p>
@@ -156,7 +159,10 @@ export default function Earn() {
   }
 
   return (
-    <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden bg-gradient-to-b from-purple-700 to-pink-600">
+    <div
+      className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden bg-gradient-to-b from-purple-700 to-pink-600"
+      style={{ position: "relative", zIndex: 9999, minHeight: "100vh", ...(FORCE_SHOW_EARN ? { background: "red" } : {}) }}
+    >
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-purple-700 to-pink-600" />
 
       {/* Header */}

@@ -35,19 +35,19 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
   return (
     <div className="mx-4 space-y-4">
       {/* Daily Mission */}
-      <div className="card-radar rounded-2xl p-4">
+      <div className="rounded-2xl p-6 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${missionCompleted ? "bg-primary/20 border border-primary/30" : "bg-white/5 border border-white/10"}`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${missionCompleted ? "bg-primary/20 border border-primary/30" : "bg-black/40 border border-white/20"}`}>
               {missionCompleted ? (
                 <Check size={18} className="text-primary" />
               ) : (
-                <Target size={18} className="text-white/70" />
+                <Target size={18} className="text-white/80" />
               )}
             </div>
             <div>
               <p className="text-sm font-semibold text-white">Daily Mission</p>
-              <p className="text-xs text-white/60">
+              <p className="text-xs text-white/90">
                 {missionCompleted ? "Done!" : "Upload 1 receipt today"}
               </p>
               {!missionCompleted && (
@@ -68,7 +68,7 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
       </div>
 
       {/* Streak Counter */}
-      <div className="card-radar rounded-2xl p-4">
+      <div className="rounded-2xl p-6 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30">
@@ -76,11 +76,11 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
             </div>
             <div>
               <p className="text-sm font-semibold text-white">Streak</p>
-              <p className="text-xs text-white/60">{streak} days</p>
+              <p className="text-xs text-white/80">{streak} days</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-white/50">
+            <p className="text-[10px] text-white/80">
               {nextMilestone
                 ? `${nextMilestone.days - streak} more days → +${nextMilestone.reward} ticket`
                 : "Max!"}
