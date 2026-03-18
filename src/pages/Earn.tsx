@@ -5,7 +5,6 @@ import {
   ClipboardList,
   Video,
   Gamepad2,
-  Coins,
   RefreshCw,
   Smartphone,
 } from "lucide-react";
@@ -31,14 +30,27 @@ import { formatCurrency } from "@/config/locale";
 import { StatsBar } from "@/components/StatsBar";
 import BottomNav from "@/components/BottomNav";
 import RewardedAdModal from "@/components/RewardedAdModal";
-import SurveyListModal from "@/components/SurveyListModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
 
 const WEEKLY_MAX = 42;
 
 const CARD_BASE =
-  "rounded-2xl p-4 bg-white/20 backdrop-blur-md border border-white/20 shadow-lg transition-all";
+  "rounded-2xl p-4 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10 transition-all";
+
+/** Next Sunday 21:00 Jakarta (WIB) - weekly draw reset */
+function getNextDrawTime(): Date {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const hour = now.getUTCHours();
+  const minute = now.getUTCMinutes();
+  let daysToAdd = (7 - day) % 7;
+  if (daysToAdd === 0 && (hour > 14 || (hour === 14 && minute >= 0))) daysToAdd = 7;
+  const next = new Date(now);
+  next.setUTCDate(next.getUTCDate() + daysToAdd);
+  next.setUTCHours(14, 0, 0, 0);
+  return next;
+}
 
 export default function Earn() {
   const navigate = useNavigate();
@@ -49,13 +61,27 @@ export default function Earn() {
   const { adsWatched, refetch } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const [surveyListOpen, setSurveyListOpen] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
   const [convertLoading, setConvertLoading] = useState(false);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
   const [shakeLoading, setShakeLoading] = useState(false);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0 });
 
   const { surveys, isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
+
+  useEffect(() => {
+    const tick = () => {
+      const diff = getNextDrawTime().getTime() - Date.now();
+      if (diff <= 0) return setCountdown({ days: 0, hours: 0 });
+      setCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff / 3600000) % 24),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleShake = useCallback(async () => {
     if (shakeLoading || !user?.id) return;
@@ -91,7 +117,6 @@ export default function Earn() {
   const cuan = stats?.cuan ?? 0;
   const countryCode = user?.countryCode ?? "ID";
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
-  const ticketsFromAdsCount = ticketsFromAds(adsWatched);
   const isWeeklyLimitReached = weeklyTickets >= MAX_TICKETS_PER_WEEK;
 
   useEffect(() => {
@@ -139,7 +164,7 @@ export default function Earn() {
     }
   }, [refetch, queryClient]);
 
-  if (!FORCE_SHOW_EARN && authLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
         <p className="text-white font-medium animate-pulse">Yükleniyor...</p>
@@ -197,17 +222,49 @@ export default function Earn() {
           </div>
         </div>
 
-        {/* Cuan Balance + Convert */}
+        {/* Bölüm 1: WATCH ADS (Üst) */}
         <div className={CARD_BASE}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Coins size={24} className="text-white" />
-              <span className="text-sm font-bold text-white">Cuan Balance</span>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
+              <Video size={24} className="text-emerald-300" />
             </div>
-            <span className="font-display font-bold text-xl text-white">
-              {formatCurrency(cuan, countryCode)}
-            </span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display font-bold text-white">Watch Ads</h3>
+              <p className="text-xs text-white/80 mt-0.5">Earn tickets instantly</p>
+            </div>
           </div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-white/90">Progress</span>
+            <span className="font-display font-bold text-white">{adsWatched} / {MAX_ADS_PER_DAY}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleWatchAd}
+            disabled={adsWatched >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
+            className="w-full py-3 rounded-xl font-display font-bold text-sm text-[#001a09] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-theme-green shadow-[0_0_18px_rgba(0,230,118,0.55)]"
+          >
+            {showModal ? "Watching..." : "Watch Ad"}
+          </button>
+        </div>
+
+        {/* Bölüm 2: SURVEYS (Orta) */}
+        <div className={CARD_BASE}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
+              <ClipboardList size={24} className="text-purple-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display font-bold text-white">Complete Surveys</h3>
+              <p className="text-xs text-white/80 mt-0.5">Earn cuan and convert to tickets</p>
+            </div>
+          </div>
+          <div className="mb-3">
+            <span className="text-xs text-white/80">Cuan balance</span>
+            <p className="font-display font-bold text-2xl text-[#ff4ecd] drop-shadow-[0_0_12px_rgba(255,78,205,0.6)]">
+              {formatCurrency(cuan, countryCode)}
+            </p>
+          </div>
+          <p className="text-xs text-white/80 mb-3">100 cuan = 1 ticket</p>
           <button
             type="button"
             onClick={async () => {
@@ -241,7 +298,7 @@ export default function Earn() {
               }
             }}
             disabled={convertLoading || cuan < 100 || isWeeklyLimitReached}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg mb-4"
           >
             {convertLoading ? (
               <RefreshCw size={18} className="animate-spin" />
@@ -252,60 +309,60 @@ export default function Earn() {
               </>
             )}
           </button>
-        </div>
-
-        {/* A) Watch Ads */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
-              <Video size={24} className="text-emerald-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Watch Ads</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn tickets instantly</p>
-              <p className="text-xs text-white/80 mt-0.5">{adsWatched}/{MAX_ADS_PER_DAY} ads · +{ticketsFromAdsCount} Tickets</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleWatchAd}
-              disabled={adsWatched >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-green-400 to-emerald-600 shadow-lg"
-            >
-              {showModal ? "Watching..." : "Watch Ad"}
-            </button>
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-white/90">Survey List</span>
+            {surveysLoading ? (
+              <p className="text-sm text-white/80 py-4">Memuat survei...</p>
+            ) : surveys.length === 0 ? (
+              <p className="text-sm text-white/80 py-4">Survei tidak tersedia saat ini.</p>
+            ) : (
+              surveys.map((survey) => (
+                <button
+                  key={survey.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSurvey(survey);
+                  }}
+                  className="w-full rounded-xl p-3 border border-white/20 bg-white/10 backdrop-blur-md flex items-center gap-3 text-left hover:bg-white/15 hover:border-white/30 transition-all"
+                >
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-green-500/30 border border-green-400/40 flex items-center justify-center">
+                    <span className="text-base">📋</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-display font-bold text-white text-sm truncate">
+                      {survey.title || "BitLabs Survey"}
+                    </h4>
+                    <p className="text-xs text-white/80 mt-0.5">
+                      +{survey.rewardCuan} Cuan · {survey.durationMin} menit
+                    </p>
+                  </div>
+                  <span className="shrink-0 px-3 py-1.5 rounded-lg font-display font-bold text-xs text-white bg-gradient-to-r from-green-500 to-emerald-600">
+                    Mulai
+                  </span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
-        {/* B) Surveys */}
+        {/* Bölüm 3: GAME / SPIN (Alt) */}
         <div className={CARD_BASE}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
-              <ClipboardList size={24} className="text-purple-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Surveys</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn Cuan with BitLabs</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSurveyListOpen(true)}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
-            >
-              Start
-            </button>
-          </div>
-        </div>
-
-        {/* C) Weekly Game */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
-              <Smartphone size={24} className="text-purple-300" />
+              <Gamepad2 size={24} className="text-purple-300" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display font-bold text-white">Weekly Game</h3>
-              <p className="text-xs text-white/80 mt-0.5">Shake to win 1-5 tickets · 1x/day</p>
+              <p className="text-xs text-white/80 mt-0.5">Play & win bonus tickets</p>
             </div>
+          </div>
+          <div className="mb-3">
+            <span className="text-xs text-white/80">Countdown</span>
+            <p className="font-display font-bold text-lg text-white">
+              {countdown.days} days {countdown.hours} hours
+            </p>
+          </div>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={async () => {
@@ -329,27 +386,14 @@ export default function Earn() {
                 setShakeModalOpen(true);
               }}
               disabled={isWeeklyLimitReached}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
+              className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
             >
               Shake
             </button>
-          </div>
-        </div>
-
-        {/* Play - link to Promo */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
-              <Gamepad2 size={24} className="text-emerald-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Play</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn Tickets</p>
-            </div>
             <button
               type="button"
-              onClick={() => navigate("/promo")}
-              className="shrink-0 px-5 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-105 active:scale-95 bg-gradient-to-r from-green-400 to-emerald-600 shadow-lg"
+              disabled
+              className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm text-white/60 transition-all cursor-not-allowed bg-white/10 border border-white/20"
             >
               Play
             </button>
@@ -364,17 +408,6 @@ export default function Earn() {
         onClose={() => setShowModal(false)}
         onComplete={handleAdComplete}
         popupBlocked={popupBlocked}
-      />
-
-      <SurveyListModal
-        open={surveyListOpen}
-        onClose={() => setSurveyListOpen(false)}
-        surveys={surveys}
-        isLoading={surveysLoading}
-        onSelectSurvey={(s) => {
-          setSurveyListOpen(false);
-          setSelectedSurvey(s);
-        }}
       />
 
       {selectedSurvey && (
