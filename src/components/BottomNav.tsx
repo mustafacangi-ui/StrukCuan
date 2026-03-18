@@ -1,16 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Radar, Gift, Home, Trophy, User, Ticket, Users } from "lucide-react";
+import { Home, Ticket, Trophy, Users } from "lucide-react";
 
-const defaultNavItems = [
-  { path: "/map", icon: Radar, labelKey: "nav.radar" },
-  { path: "/promo", icon: Gift, labelKey: "nav.campaigns" },
-  { path: "/", icon: Home, labelKey: "nav.home", isCenter: true },
-  { path: "/rewards", icon: Trophy, labelKey: "nav.rewards" },
-  { path: "/settings", icon: User, labelKey: "nav.profile" },
-];
-
-const earnNavItems = [
+const navItems = [
   { path: "/", icon: Home, labelKey: "nav.home" },
   { path: "/earn", icon: Ticket, labelKey: "nav.earn", isCenter: true },
   { path: "/rank", icon: Trophy, labelKey: "nav.rank" },
@@ -21,9 +13,6 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-
-  const isEarnPage = location.pathname === "/earn";
-  const navItems = isEarnPage ? earnNavItems : defaultNavItems;
 
   const handleNavClick = (path: string) => {
     navigate(path);
