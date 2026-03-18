@@ -68,6 +68,13 @@ export default function Earn() {
 
   const { surveys, isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
+  const displaySurveys = useMemo(() => {
+    const list = Array.isArray(surveys) ? surveys : [];
+    const longer = list.filter((s) => (s?.durationMin ?? 0) > 3);
+    const shorter = list.filter((s) => (s?.durationMin ?? 0) <= 3);
+    return [...longer, ...shorter].slice(0, 5);
+  }, [surveys]);
+
   useEffect(() => {
     const tick = () => {
       const diff = getNextDrawTime().getTime() - Date.now();
