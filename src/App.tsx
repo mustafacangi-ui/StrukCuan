@@ -44,14 +44,15 @@ const App = () => (
             <ReferralCapture />
             <PostLoginRedirect />
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Map />} />
+              <Route path="/home" element={<Index />} />
+              <Route path="/map" element={<Navigate to="/" replace />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
               <Route path="/earn" element={<Earn />} />
-              <Route path="/map" element={<Map />} />
               <Route path="/weekly-draw" element={<WeeklyDraw />} />
               <Route path="/invite" element={<Invite />} />
-              <Route path="/upload" element={<Navigate to="/" replace />} />
+              <Route path="/upload" element={<Navigate to="/home" replace />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/rank" element={<Navigate to="/leaderboard" replace />} />
               <Route path="/settings" element={<Settings />} />

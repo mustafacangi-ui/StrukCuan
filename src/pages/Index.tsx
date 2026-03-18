@@ -39,11 +39,11 @@ const Index = () => {
     const state = location.state as { requireLogin?: "camera" | "profile"; openCamera?: boolean } | null;
     if (state?.requireLogin) {
       requireLogin(state.requireLogin);
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
     }
     if (state?.openCamera) {
       setScannerMode("receipt");
-      navigate("/", { replace: true, state: {} });
+      navigate("/home", { replace: true, state: {} });
     }
   }, [location.state, requireLogin, navigate]);
 

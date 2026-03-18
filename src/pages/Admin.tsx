@@ -29,7 +29,7 @@ export default function Admin() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-muted-foreground text-center">Bu sayfaya erişim yetkiniz yok.</p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="mt-4 text-primary font-semibold hover:underline"
         >
           Ana sayfaya dön

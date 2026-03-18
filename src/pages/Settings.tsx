@@ -20,13 +20,13 @@ const Settings = () => {
   useEffect(() => {
     if (isLoading) return;
     if (!isOnboarded) {
-      navigate("/", { replace: true, state: { requireLogin: "profile" as const } });
+      navigate("/home", { replace: true, state: { requireLogin: "profile" as const } });
     }
   }, [isLoading, isOnboarded, navigate]);
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate("/home");
   };
 
   if (!isOnboarded && !isLoading) return null;

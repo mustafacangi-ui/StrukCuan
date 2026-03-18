@@ -42,7 +42,7 @@ export default function Upload() {
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
-      navigate("/", { replace: true, state: { requireLogin: "camera" as const } });
+      navigate("/home", { replace: true, state: { requireLogin: "camera" as const } });
       return;
     }
     if (!isOnboarded) {

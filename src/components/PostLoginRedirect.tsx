@@ -13,7 +13,7 @@ const PostLoginRedirect = () => {
   useEffect(() => {
     if (!session || !pendingAction) return;
     if (pendingAction === "camera") {
-      navigate("/", { state: { openCamera: true } });
+      navigate("/home", { state: { openCamera: true } });
     } else if (pendingAction === "profile") {
       navigate("/settings");
     }

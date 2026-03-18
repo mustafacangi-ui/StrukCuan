@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Home, Ticket, Trophy, Users } from "lucide-react";
+import { Ticket, Radar, Home, Trophy, Users } from "lucide-react";
 
 const navItems = [
-  { path: "/", icon: Home, labelKey: "nav.home" },
-  { path: "/earn", icon: Ticket, labelKey: "nav.earn", isCenter: true },
+  { path: "/earn", icon: Ticket, labelKey: "nav.earn" },
+  { path: "/", icon: Radar, labelKey: "nav.radar" },
+  { path: "/home", icon: Home, labelKey: "nav.home", isCenter: true },
   { path: "/rank", icon: Trophy, labelKey: "nav.rank" },
   { path: "/invite", icon: Users, labelKey: "nav.invite" },
 ];
@@ -19,25 +20,27 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/25 bg-purple-950/95 backdrop-blur-2xl">
-      <div className="mx-auto flex max-w-[420px] items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/20 bg-black/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[420px] items-center justify-around px-1 py-2.5">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive =
+            location.pathname === item.path ||
+            (item.path === "/rank" && location.pathname === "/leaderboard");
           const isCenter = "isCenter" in item && item.isCenter;
           return (
             <button
               key={item.path}
               onClick={() => handleNavClick(item.path)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px] relative ${
+              className={`flex flex-col items-center gap-1 px-2 py-1 min-w-0 flex-1 relative transition-opacity ${
                 isCenter ? "-mt-1" : ""
-              }`}
+              } ${!isActive ? "opacity-50" : "opacity-100"}`}
             >
               <span
-                className={`flex items-center justify-center rounded-full transition-colors ${
+                className={`flex items-center justify-center rounded-full transition-all ${
                   isCenter
-                    ? `p-2 ${
+                    ? `p-2.5 ${
                         isActive
-                          ? "bg-theme-green text-[#001a09] shadow-[0_0_18px_rgba(0,230,118,0.55)]"
+                          ? "bg-[#4ade80] text-[#001a09] shadow-[0_0_18px_rgba(74,222,128,0.6)]"
                           : "bg-white/20 text-white/90"
                       }`
                     : ""
@@ -45,18 +48,24 @@ const BottomNav = () => {
               >
                 <item.icon
                   size={isCenter ? 24 : 20}
-                  className={!isCenter && (isActive ? "text-theme-green" : "text-white/90")}
+                  className={
+                    !isCenter
+                      ? isActive
+                        ? "text-[#4ade80]"
+                        : "text-white/90"
+                      : undefined
+                  }
                 />
               </span>
               <span
-                className={`text-[10px] font-medium ${
-                  isActive ? "text-theme-green" : "text-white/90"
+                className={`text-[10px] font-medium truncate w-full text-center ${
+                  isActive ? "text-[#4ade80]" : "text-white/90"
                 }`}
               >
                 {t(item.labelKey)}
               </span>
               {isCenter && isActive && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-theme-green shadow-[0_0_6px_rgba(0,230,118,0.8)]" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[#4ade80] shadow-[0_0_6px_rgba(74,222,128,0.8)]" />
               )}
             </button>
           );

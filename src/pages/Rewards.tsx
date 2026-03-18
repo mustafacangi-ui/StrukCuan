@@ -32,7 +32,7 @@ export default function Rewards() {
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
-      navigate("/", { replace: true, state: { requireLogin: "profile" as const } });
+      navigate("/home", { replace: true, state: { requireLogin: "profile" as const } });
     }
   }, [authLoading, isOnboarded, navigate]);
 

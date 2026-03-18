@@ -35,7 +35,7 @@ const Onboarding = () => {
 
   useEffect(() => {
     if (isOnboarded) {
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
     }
   }, [isOnboarded, navigate]);
 

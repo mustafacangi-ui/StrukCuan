@@ -29,7 +29,7 @@ export default function DailyMissionStreak({ onOpenScanner }: DailyMissionStreak
       requireLogin("camera");
       return;
     }
-    onOpenScanner?.() ?? navigate("/");
+    onOpenScanner?.() ?? navigate("/home");
   };
 
   return (

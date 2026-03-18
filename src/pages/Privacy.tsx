@@ -5,7 +5,7 @@ export default function Privacy() {
   return (
     <div className="min-h-screen max-w-[420px] mx-auto px-4 py-6 pb-12">
       <Link
-        to="/"
+        to="/home"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-6"
       >
         <ArrowLeft size={18} />
