@@ -70,9 +70,8 @@ function buildPollfishUrl(params: SurveyParams): string {
 }
 
 /**
- * Anketi başlatır. CPX/Pollfish URL'ini açar.
- * Kullanıcı anket tamamladığında sağlayıcı survey-callback webhook'unu çağırır.
- * .env'de VITE_CPX_APP_ID veya VITE_POLLFISH_API_KEY tanımlayın.
+ * Anketi başlatır. CPX/Pollfish (legacy) veya BitLabs.
+ * BitLabs odaklı: Anketler Home ekranından BitLabs API ile gelir.
  */
 export function startSurvey(countryCode: string | null | undefined, userId?: string): void {
   const params = getSurveyParams(countryCode, userId);
@@ -91,8 +90,8 @@ export function startSurvey(countryCode: string | null | undefined, userId?: str
       });
     } else {
       import("sonner").then(({ toast }) => {
-        toast.info("Anket hazırlanıyor", {
-          description: "VITE_CPX_APP_ID veya VITE_POLLFISH_API_KEY ile .env dosyasını yapılandırın.",
+        toast.info("Survei tidak tersedia saat ini", {
+          description: "Silakan coba lagi nanti.",
         });
       });
     }
