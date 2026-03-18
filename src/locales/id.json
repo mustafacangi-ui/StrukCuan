@@ -1,6 +1,9 @@
 {
   "nav": {
     "home": "Beranda",
+    "earn": "Earn",
+    "rank": "Rank",
+    "invite": "Undang",
     "radar": "Radar",
     "campaigns": "Kampanye",
     "surveys": "Survei",

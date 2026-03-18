@@ -1,6 +1,9 @@
 {
   "nav": {
     "home": "Ana Sayfa",
+    "earn": "Kazan",
+    "rank": "Sıra",
+    "invite": "Davet",
     "radar": "Radar",
     "campaigns": "Kampanyalar",
     "surveys": "Anketler",

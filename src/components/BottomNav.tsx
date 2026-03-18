@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Radar, Gift, Home, Trophy, User } from "lucide-react";
+import { Radar, Gift, Home, Trophy, User, Ticket, Users } from "lucide-react";
 
-const navItems = [
+const defaultNavItems = [
   { path: "/map", icon: Radar, labelKey: "nav.radar" },
   { path: "/promo", icon: Gift, labelKey: "nav.campaigns" },
   { path: "/", icon: Home, labelKey: "nav.home", isCenter: true },
@@ -10,10 +10,20 @@ const navItems = [
   { path: "/settings", icon: User, labelKey: "nav.profile" },
 ];
 
+const earnNavItems = [
+  { path: "/", icon: Home, labelKey: "nav.home" },
+  { path: "/earn", icon: Ticket, labelKey: "nav.earn", isCenter: true },
+  { path: "/rank", icon: Trophy, labelKey: "nav.rank" },
+  { path: "/invite", icon: Users, labelKey: "nav.invite" },
+];
+
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+
+  const isEarnPage = location.pathname === "/earn";
+  const navItems = isEarnPage ? earnNavItems : defaultNavItems;
 
   const handleNavClick = (path: string) => {
     navigate(path);
@@ -29,8 +39,8 @@ const BottomNav = () => {
             <button
               key={item.path}
               onClick={() => handleNavClick(item.path)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px] ${
-                isCenter ? "relative -mt-1" : ""
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px] relative ${
+                isCenter ? "-mt-1" : ""
               }`}
             >
               <span
@@ -56,6 +66,9 @@ const BottomNav = () => {
               >
                 {t(item.labelKey)}
               </span>
+              {isCenter && isActive && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-theme-green shadow-[0_0_6px_rgba(0,230,118,0.8)]" />
+              )}
             </button>
           );
         })}

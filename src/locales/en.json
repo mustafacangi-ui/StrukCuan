@@ -1,6 +1,9 @@
 {
   "nav": {
     "home": "Home",
+    "earn": "Earn",
+    "rank": "Rank",
+    "invite": "Invite",
     "radar": "Radar",
     "campaigns": "Campaigns",
     "surveys": "Surveys",

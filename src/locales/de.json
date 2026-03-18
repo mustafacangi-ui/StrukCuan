@@ -1,6 +1,9 @@
 {
   "nav": {
     "home": "Startseite",
+    "earn": "Verdienen",
+    "rank": "Rang",
+    "invite": "Einladen",
     "radar": "Radar",
     "campaigns": "Kampagnen",
     "surveys": "Umfragen",
