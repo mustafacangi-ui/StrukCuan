@@ -1,18 +1,22 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Map, { Marker, NavigationControl, Source, Layer } from "react-map-gl";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useRadar } from "@/contexts/RadarContext";
-import { useDealsWithRadius, type DealWithDistance } from "@/hooks/useDealsWithRadius";
+import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
 import { haversineDistance } from "@/hooks/useUserLocation";
+import MapMarker from "@/components/MapMarker";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
 const RADIUS_OPTIONS = [3, 5, 10];
 
-const RED_LABEL_PIN = { bg: "#FF0000", glow: "rgba(255,0,0,0.9)" };
-const RED_PIN = { bg: "#FF3B3B", glow: "rgba(255,59,59,0.8)" };
-const GREEN_PIN = { bg: "#00E676", glow: "rgba(0,230,118,0.6)" };
+/** Zoom level by radius: 3km=14, 5km=12, 10km=10 */
+function zoomForRadius(km: number): number {
+  if (km <= 3) return 14;
+  if (km <= 5) return 12;
+  return 10;
+}
 
 function createCircleGeoJSON(lat: number, lng: number, radiusKm: number) {
   const points: [number, number][] = [];
@@ -43,163 +47,48 @@ function createCircleGeoJSON(lat: number, lng: number, radiusKm: number) {
   };
 }
 
-function formatDistance(km: number): string {
-  if (km < 1) return `${(km * 1000).toFixed(0)} m`;
-  return `${km.toFixed(1)} km`;
-}
-
-function formatPrice(price?: number | null): string {
-  if (price == null || price <= 0) return "Promo";
-  return `Rp ${price.toLocaleString()}`;
-}
-
-function PromoMarker({
-  deal,
-  onClick,
-}: {
-  deal: DealWithDistance;
-  onClick: () => void;
-}) {
-  const priceLabel = formatPrice(deal.price);
-  const isRedLabel = deal.isRedLabel;
-  const pin = isRedLabel ? RED_LABEL_PIN : GREEN_PIN;
-  return (
-    <Marker
-      latitude={deal.lat}
-      longitude={deal.lng}
-      anchor="bottom"
-      onClick={(e) => {
-        e.originalEvent.stopPropagation();
-        onClick();
-      }}
-    >
-      <button
-        type="button"
-        className="flex flex-col items-center cursor-pointer group"
-        aria-label={`Promo: ${deal.store ?? "Store"} - ${priceLabel}`}
-      >
-        <div
-          className={`rounded-md border-2 border-white px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap shadow-lg flex items-center gap-0.5 ${
-            isRedLabel ? "animate-pulse" : ""
-          }`}
-          style={{
-            backgroundColor: pin.bg,
-            boxShadow: `0 0 ${isRedLabel ? 14 : 10}px ${pin.glow}`,
-          }}
-        >
-          {isRedLabel && <span className="text-[10px]">🔥</span>}
-          {priceLabel}
-        </div>
-        <div
-          className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] -mt-0.5"
-          style={{ borderTopColor: pin.bg }}
-        />
-      </button>
-    </Marker>
-  );
-}
-
-function PromoCardPopup({
-  deal,
-  onClose,
-  onViewPromo,
-}: {
-  deal: DealWithDistance;
-  onClose: () => void;
-  onViewPromo: () => void;
-}) {
-  const priceStr = deal.price
-    ? `Rp ${deal.price.toLocaleString()}`
-    : "View price";
-  const discount = (deal as DealWithDistance & { discount?: number }).discount;
-  const discountStr = discount ? `-${discount}%` : "Promo";
-
-  return (
-    <div className="absolute bottom-4 left-4 right-4 z-50 rounded-xl border border-border bg-card overflow-hidden shadow-xl">
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 z-10 rounded-full bg-black/30 p-1 text-white text-lg leading-none hover:bg-black/50"
-      >
-        ×
-      </button>
-      <div className="flex gap-3 p-4">
-        {deal.image ? (
-          <img
-            src={deal.image}
-            alt={deal.product_name ?? "Product"}
-            className="w-16 h-16 rounded-lg object-cover shrink-0"
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center text-muted-foreground text-xs">
-            No img
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="font-display font-bold text-foreground text-sm">
-            {deal.product_name ?? "Promo available"}
-          </p>
-          <p className="text-sm font-bold text-primary mt-0.5">{priceStr}</p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            {deal.store ?? "Toko"}
-          </p>
-          <p className="text-[9px] text-muted-foreground">
-            {formatDistance(deal.distanceKm)} away
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span
-              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                deal.isRedLabel
-                  ? "bg-red-500/20 text-red-600"
-                  : "bg-theme-green/20 text-theme-green"
-              }`}
-            >
-              {discountStr}
-            </span>
-          </div>
-        </div>
-      </div>
-      <button
-        onClick={onViewPromo}
-        className="w-full rounded-b-xl bg-theme-green py-2.5 font-display font-bold text-sm text-[#001a09] hover:bg-theme-green/90"
-      >
-        View Promo
-      </button>
-    </div>
-  );
-}
-
 interface PromoMapProps {
   /** Map height in px when used as full page (default 260) */
   height?: number;
+  /** Called when user taps a deal marker */
+  onDealSelect?: (deal: DealWithDistance) => void;
+  /** Currently selected deal (for highlighting) */
+  selectedDealId?: number | null;
 }
 
-export default function PromoMap({ height = 260 }: PromoMapProps) {
-  const { radius, setRadius } = useRadar();
-  const { deals, isLoading, userLocation } = useDealsWithRadius(radius);
-  const [selectedDeal, setSelectedDeal] = useState<DealWithDistance | null>(
-    null
-  );
+export default function PromoMap({ height = 260, onDealSelect, selectedDealId }: PromoMapProps) {
+  const { radius, setRadius, deals, isLoading, userLocation } = useRadar();
   const mapRef = useRef<mapboxgl.Map | null>(null);
-
   const hasFlownRef = useRef(false);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !userLocation) return;
     map.flyTo({
       center: [userLocation.lng, userLocation.lat],
-      zoom: 12,
-      duration: hasFlownRef.current ? 1000 : 0,
+      zoom: zoomForRadius(radius),
+      duration: hasFlownRef.current ? 800 : 0,
     });
     hasFlownRef.current = true;
   }, [userLocation.lat, userLocation.lng]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+    map.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: zoomForRadius(radius),
+      duration: 800,
+    });
+  }, [radius, userLocation.lat, userLocation.lng]);
 
   const initialViewState = useMemo(
     () => ({
       latitude: userLocation.lat,
       longitude: userLocation.lng,
-      zoom: 12,
+      zoom: zoomForRadius(5),
     }),
-    [] // Stable on mount - flyTo handles location updates
+    []
   );
 
   const circleGeoJSON = useMemo(
@@ -224,12 +113,6 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
     }
     return clusters;
   }, [deals]);
-
-  const handleViewPromo = useCallback(() => {
-    if (selectedDeal) {
-      setSelectedDeal(null);
-    }
-  }, [selectedDeal]);
 
   if (!MAPBOX_TOKEN || MAPBOX_TOKEN === "YOUR_MAPBOX_PUBLIC_TOKEN") {
     return (
@@ -421,14 +304,6 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-lg bg-black/70 px-4 py-2 text-[10px] text-white text-center max-w-[200px]">
             No promos within {radius} km
           </div>
-        )}
-
-        {selectedDeal && (
-          <PromoCardPopup
-            deal={selectedDeal}
-            onClose={() => setSelectedDeal(null)}
-            onViewPromo={handleViewPromo}
-          />
         )}
       </div>
     </div>

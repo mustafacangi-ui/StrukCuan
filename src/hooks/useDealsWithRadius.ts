@@ -4,11 +4,26 @@ import { useUserLocation, haversineDistance } from "./useUserLocation";
 
 export type PromoType = "big_discount" | "bonus_cuan" | "normal";
 
+/** Inferred from store/product for category filtering */
+export type DealCategory = "Market" | "Cafe" | "Electronics" | "Fashion" | "General";
+
+function inferCategory(deal: Deal): DealCategory {
+  const store = (deal.store ?? "").toLowerCase();
+  const product = (deal.product_name ?? "").toLowerCase();
+  const combined = `${store} ${product}`;
+  if (combined.includes("cafe") || combined.includes("coffee") || combined.includes("kopi")) return "Cafe";
+  if (combined.includes("market") || combined.includes("mart") || combined.includes("super") || combined.includes("toko")) return "Market";
+  if (combined.includes("tech") || combined.includes("electronic") || combined.includes("phone")) return "Electronics";
+  if (combined.includes("fashion") || combined.includes("clothes") || combined.includes("pakaian")) return "Fashion";
+  return "General";
+}
+
 export interface DealWithDistance extends Deal {
   distanceKm: number;
   promoType: PromoType;
   /** Kırmızı Etiket: discount >= 50% OR expiry within 48h OR is_red_label from DB */
   isRedLabel: boolean;
+  category: DealCategory;
 }
 
 /** Expiry within 48 hours = Red Label (urgent) */
@@ -49,6 +64,7 @@ export function useDealsWithRadius(radiusKm: number) {
           ),
           promoType: getPromoType(d),
           isRedLabel,
+          category: inferCategory(d),
         };
       })
       .filter((d) => d.distanceKm <= radiusKm)
