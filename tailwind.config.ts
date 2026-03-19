@@ -188,6 +188,18 @@ export default {
           "0%, 100%": { boxShadow: "0 0 12px rgba(236,72,153,0.6), 0 0 24px rgba(168,85,247,0.3)" },
           "50%": { boxShadow: "0 0 22px rgba(236,72,153,0.9), 0 0 44px rgba(168,85,247,0.6)" },
         },
+        "gold-breathing-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 16px rgba(251,191,36,0.45), 0 0 32px rgba(245,158,11,0.25), inset 0 0 12px rgba(251,191,36,0.06)",
+          },
+          "50%": {
+            boxShadow: "0 0 32px rgba(251,191,36,0.75), 0 0 64px rgba(245,158,11,0.45), inset 0 0 24px rgba(251,191,36,0.12)",
+          },
+        },
+        "gold-pulse-btn": {
+          "0%, 100%": { boxShadow: "0 0 14px rgba(251,191,36,0.6), 0 4px 12px rgba(0,0,0,0.4)" },
+          "50%": { boxShadow: "0 0 28px rgba(251,191,36,0.9), 0 4px 16px rgba(0,0,0,0.5)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -211,6 +223,8 @@ export default {
         "card-ready-pulse": "card-ready-pulse 1.8s ease-in-out infinite",
         "progress-liquid-shake": "progress-liquid-shake 0.4s ease-in-out forwards",
         "neon-pulse-glow": "neon-pulse-glow 1.4s ease-in-out infinite",
+        "gold-breathing-glow": "gold-breathing-glow 3s ease-in-out infinite",
+        "gold-pulse-btn": "gold-pulse-btn 1.6s ease-in-out infinite",
       },
     },
   },

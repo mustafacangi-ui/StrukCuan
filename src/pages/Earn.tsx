@@ -1,9 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  ClipboardList,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import {
@@ -21,6 +18,7 @@ import { StatsBar } from "@/components/StatsBar";
 import BottomNav from "@/components/BottomNav";
 import LuckyShakeCard from "@/components/LuckyShakeCard";
 import WatchAdsCard from "@/components/WatchAdsCard";
+import SurveysCard from "@/components/SurveysCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
@@ -198,60 +196,11 @@ export default function Earn() {
         />
 
         {/* Bölüm 2: SURVEYS (Orta) */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
-              <ClipboardList size={24} className="text-purple-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Complete Surveys</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn tickets directly</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <span className="text-xs font-bold text-white/90">Survey List</span>
-            {surveysLoading ? (
-              <p className="text-sm text-white/80 py-6">Memuat survei...</p>
-            ) : displaySurveys.length === 0 ? (
-              <p className="text-sm text-white/80 py-6">Survei tidak tersedia saat ini.</p>
-            ) : (
-              displaySurveys.map((survey, index) => {
-                const isFeatured = index === 0;
-                const ticketLabel = isFeatured ? "🎟️ 2 TICKETS" : "🎟️ 1 TICKET";
-                return (
-                  <button
-                    key={survey.id}
-                    type="button"
-                    onClick={() => setSelectedSurvey(survey)}
-                    className={`w-full rounded-2xl p-4 bg-white/10 backdrop-blur-md flex items-center gap-4 text-left hover:bg-white/15 transition-all relative ${
-                      isFeatured
-                        ? "border-2 border-[#4ade80]/60 shadow-[0_0_20px_rgba(74,222,128,0.25)]"
-                        : "border border-white/20 hover:border-white/30"
-                    }`}
-                  >
-                    {isFeatured && (
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#4ade80]/30 text-[#4ade80] border border-[#4ade80]/50">
-                        🔥 BEST OFFER
-                      </span>
-                    )}
-                    <div className="shrink-0 w-12 h-12 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center">
-                      <span className="text-xl">📋</span>
-                    </div>
-                    <div className="flex-1 min-w-0 pr-16">
-                      <h4 className="font-display font-bold text-white text-sm truncate">
-                        {survey.title || "BitLabs Survey"}
-                      </h4>
-                      <p className="text-sm font-bold text-[#4ade80] mt-1 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">{ticketLabel}</p>
-                    </div>
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-[#001a09] bg-[#4ade80] shadow-[0_0_16px_rgba(74,222,128,0.6)] hover:bg-[#4ade80]/90 transition-colors">
-                      START
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
+        <SurveysCard
+          surveys={displaySurveys}
+          isLoading={surveysLoading}
+          onSelect={setSelectedSurvey}
+        />
 
         {/* Bölüm 3: LUCKY SHAKE */}
         <LuckyShakeCard
