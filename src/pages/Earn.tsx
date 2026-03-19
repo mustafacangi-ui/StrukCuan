@@ -43,6 +43,7 @@ export default function Earn() {
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
   const [countdown, setCountdown] = useState(DEFAULT_COUNTDOWN);
+  const [countdownReady, setCountdownReady] = useState(false);
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
@@ -61,9 +62,11 @@ export default function Earn() {
     const tick = () => {
       try {
         setCountdown(getCountdownParts());
+        setCountdownReady(true);
       } catch (err) {
         console.error("[Earn] countdown tick error:", err);
         setCountdown(DEFAULT_COUNTDOWN);
+        setCountdownReady(true);
       }
     };
     tick();
@@ -129,7 +132,7 @@ export default function Earn() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f0726]">
         <p className="text-white font-medium animate-pulse">Yükleniyor...</p>
       </div>
     );
@@ -137,7 +140,7 @@ export default function Earn() {
 
   if (isRedirecting) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-pink-600">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f0726]">
         <p className="text-white font-medium animate-pulse">Yönlendiriliyor...</p>
       </div>
     );
@@ -145,10 +148,10 @@ export default function Earn() {
 
   return (
     <div
-      className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden bg-gradient-to-b from-purple-700 to-pink-600"
-      style={{ position: "relative", zIndex: 10, minHeight: "100vh" }}
+      className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden"
+      style={{ background: "linear-gradient(160deg,#0f0726 0%,#1a0d40 50%,#0d0520 100%)", position: "relative", zIndex: 10, minHeight: "100vh" }}
     >
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-purple-700 to-pink-600" />
+      <div className="fixed inset-0 -z-10" style={{ background: "linear-gradient(160deg,#0f0726 0%,#1a0d40 50%,#0d0520 100%)" }} />
 
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-white/20 flex items-start justify-between gap-3">
@@ -270,6 +273,7 @@ export default function Earn() {
         {/* Bölüm 3: LUCKY SHAKE */}
         <LuckyShakeCard
           countdown={countdown}
+          countdownReady={countdownReady}
           userId={user?.id}
           isWeeklyLimitReached={isWeeklyLimitReached}
         />

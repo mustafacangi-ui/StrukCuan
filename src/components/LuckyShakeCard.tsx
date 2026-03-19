@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Smartphone, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { shakeToWin } from "@/hooks/useShakeToWin";
@@ -16,11 +16,17 @@ interface CountdownState {
 
 interface LuckyShakeCardProps {
   countdown: CountdownState;
+  countdownReady: boolean;
   userId: string | undefined;
   isWeeklyLimitReached: boolean;
 }
 
-export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached }: LuckyShakeCardProps) {
+export default function LuckyShakeCard({
+  countdown,
+  countdownReady,
+  userId,
+  isWeeklyLimitReached,
+}: LuckyShakeCardProps) {
   const queryClient = useQueryClient();
   const [shakeLoading, setShakeLoading] = useState(false);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
@@ -28,12 +34,31 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
   const [isShaking, setIsShaking] = useState(false);
   const [progressFill, setProgressFill] = useState(false);
 
+  // Step 3 — one shake right per week, unlocked only when countdown hits zero
+  const [shakeRightAvailable, setShakeRightAvailable] = useState(false);
+  const hadNonZeroRef = useRef(false);
+
   const isCountdownZero =
     (countdown?.days ?? 0) === 0 &&
     (countdown?.hours ?? 0) === 0 &&
     (countdown?.minutes ?? 0) === 0 &&
     (countdown?.seconds ?? 0) === 0;
 
+  // Track when countdown transitions to zero for the first time in this session
+  useEffect(() => {
+    if (!countdownReady) return;
+    if (!isCountdownZero) {
+      hadNonZeroRef.current = true;
+    }
+    // Unlock shake right when:
+    // - countdown reaches zero after having been non-zero (natural weekly unlock), OR
+    // - page loaded while countdown was already zero (user opened mid-draw window)
+    if (isCountdownZero) {
+      setShakeRightAvailable(true);
+    }
+  }, [countdownReady, isCountdownZero]);
+
+  // Step 2 — animation fix: use inline style to override Tailwind animation atomically
   const triggerShakeAnimation = () => {
     setIsShaking(true);
     setProgressFill(true);
@@ -42,6 +67,10 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
 
   const handleShake = useCallback(async () => {
     if (shakeLoading || !userId) return;
+    if (!shakeRightAvailable) {
+      toast.error("Come back when the countdown reaches zero!");
+      return;
+    }
     setShakeLoading(true);
     setShakeWonTickets(null);
     triggerShakeAnimation();
@@ -52,10 +81,13 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
         setShakeLoading(false);
         setShakeWonTickets(result.ticketsAdded ?? 1);
+        // Consume the weekly shake right
+        setShakeRightAvailable(false);
       } else {
         const errMsg = result?.error ?? "Gagal";
         if (errMsg === "SHAKE_ALREADY_USED") {
-          toast.error("Already used today. Come back tomorrow!");
+          toast.error("Already used this period. Come back next week!");
+          setShakeRightAvailable(false);
         } else if (errMsg === "WEEKLY_LIMIT_REACHED") {
           toast.error("Weekly ticket limit reached.");
         } else {
@@ -68,7 +100,7 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
       toast.error("Gagal");
       setShakeLoading(false);
     }
-  }, [shakeLoading, userId, queryClient]);
+  }, [shakeLoading, userId, queryClient, shakeRightAvailable]);
 
   useShakeDetection({
     onShake: handleShake,
@@ -78,7 +110,11 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
   const handleOpenShake = async () => {
     try {
       if (!userId) { toast.error("Login to play"); return; }
-      if (isWeeklyLimitReached) { toast.error("Weekly limit reached."); return; }
+      if (isWeeklyLimitReached) { toast.error("Weekly ticket limit reached."); return; }
+      if (!shakeRightAvailable) {
+        toast.error("Your shake unlocks when the countdown hits zero!");
+        return;
+      }
       if (!isShakeSupported()) { toast.error("Device not supported. Try on mobile."); return; }
       const granted = await requestShakePermission();
       if (!granted) { toast.error("Sensor permission required for Lucky Shake."); return; }
@@ -98,27 +134,33 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
     { val: pad(countdown?.seconds ?? 0), label: "SS" },
   ];
 
+  // Compute card animation via inline style to avoid Tailwind class conflict
+  const cardAnimStyle: React.CSSProperties = isShaking
+    ? { animation: "card-shake 0.55s ease-in-out forwards" }
+    : {};
+
   return (
     <>
-      {/* Lucky Shake Card */}
+      {/* ──────────── Lucky Shake Card ──────────── */}
       <div
-        className={`
+        className="
           relative overflow-hidden rounded-3xl p-5
-          bg-white/10 backdrop-blur-xl
-          border border-white/20
-          shadow-[0_8px_32px_rgba(236,72,153,0.35)]
+          bg-zinc-900/60 backdrop-blur-3xl
+          border border-white/10
+          shadow-2xl
           transition-all duration-300 ease-out
-          hover:scale-[1.02] hover:shadow-[0_12px_48px_rgba(236,72,153,0.5)]
+          hover:scale-[1.02]
           animate-shake-mount
-          ${isShaking ? "animate-card-shake" : ""}
-        `}
+        "
+        style={cardAnimStyle}
       >
-        {/* ambient glow layer */}
-        <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-pink-500/10 via-transparent to-purple-600/10" />
+        {/* Subtle ambient overlay — purple only, no pink */}
+        <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-700/8 via-transparent to-indigo-900/8" />
 
         {/* Header row */}
         <div className="flex items-start gap-3 mb-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/10 border border-white/20 shadow-[0_0_12px_rgba(236,72,153,0.3)]">
+          {/* Icon — glow limited to icon container only */}
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 border border-white/15 shadow-[0_0_14px_rgba(168,85,247,0.5)]">
             <Smartphone
               size={24}
               className="text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
@@ -129,7 +171,7 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
             <h3 className="font-display font-bold text-white text-base leading-tight tracking-tight">
               Lucky Shake
             </h3>
-            <p className="text-xs text-white/70 mt-0.5">
+            <p className="text-xs text-white/60 mt-0.5">
               Shake your phone to win bonus tickets!
             </p>
             <p className="text-xs font-semibold mt-1 text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.7)]">
@@ -138,21 +180,31 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
           </div>
         </div>
 
-        {/* Countdown */}
+        {/* Shake availability indicator */}
+        <div className="mb-3 relative z-10">
+          {shakeRightAvailable ? (
+            <p className="text-xs font-bold text-[#4ade80] drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">
+              🎯 Your shake is ready — good luck!
+            </p>
+          ) : (
+            <p className="text-[10px] text-white/60 uppercase tracking-widest">
+              Next shake unlocks when countdown hits zero
+            </p>
+          )}
+        </div>
+
+        {/* Countdown boxes */}
         <div className="mb-4 relative z-10">
-          <p className="text-[10px] text-white/60 uppercase tracking-widest mb-1.5">
-            Next draw in
-          </p>
           <div className="flex gap-2">
             {countdownBlocks.map((block) => (
               <div
                 key={block.label}
-                className="flex-1 flex flex-col items-center rounded-xl bg-black/30 border border-white/10 py-2 px-1 min-w-0 animate-pulse-border"
+                className="flex-1 flex flex-col items-center rounded-xl bg-black/40 border border-white/10 py-2 px-1 min-w-0 animate-pulse-border"
               >
                 <span className="font-display text-base font-bold text-white tabular-nums leading-none">
                   {block.val}
                 </span>
-                <span className="text-[9px] font-light text-white/50 uppercase tracking-widest mt-1">
+                <span className="text-[9px] font-light text-white/40 uppercase tracking-widest mt-1">
                   {block.label}
                 </span>
               </div>
@@ -160,27 +212,33 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
           </div>
         </div>
 
-        {/* Progress bar (fills on shake, then fades) */}
-        <div className={`h-1 w-full rounded-full bg-white/10 overflow-hidden mb-4 transition-opacity duration-700 ${progressFill ? "opacity-0" : "opacity-100"} relative z-10`}>
+        {/* Progress bar — fills on shake then fades */}
+        <div
+          className={`h-1 w-full rounded-full bg-white/10 overflow-hidden mb-4 transition-opacity duration-700 relative z-10 ${
+            progressFill ? "opacity-0" : "opacity-100"
+          }`}
+        >
           <div
-            className={`h-full rounded-full bg-gradient-to-r from-[#4ade80] to-[#22c55e] transition-all duration-500 ${progressFill ? "w-full" : "w-0"}`}
+            className={`h-full rounded-full bg-gradient-to-r from-[#4ade80] to-[#22c55e] transition-all duration-500 ${
+              progressFill ? "w-full" : "w-0"
+            }`}
           />
         </div>
 
-        {/* Shake button */}
+        {/* Shake button — glow only on the button itself */}
         <button
           type="button"
           onClick={handleOpenShake}
-          disabled={isWeeklyLimitReached || isCountdownZero}
+          disabled={isWeeklyLimitReached || !shakeRightAvailable}
           className="
             relative z-10 w-full py-3.5 rounded-2xl
             font-display font-bold text-sm text-white tracking-wide
             bg-gradient-to-r from-[#ec4899] via-[#c026d3] to-[#7c3aed]
-            shadow-[0_0_24px_rgba(236,72,153,0.5),0_4px_12px_rgba(0,0,0,0.3)]
-            hover:shadow-[0_0_36px_rgba(236,72,153,0.7),0_4px_16px_rgba(0,0,0,0.4)]
+            shadow-[0_0_24px_rgba(236,72,153,0.55),0_4px_12px_rgba(0,0,0,0.4)]
+            hover:shadow-[0_0_36px_rgba(236,72,153,0.75),0_4px_16px_rgba(0,0,0,0.5)]
             hover:scale-[1.02]
             active:scale-[0.97]
-            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+            disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none
             transition-all duration-200 ease-out
           "
         >
@@ -189,28 +247,33 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
               <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               Processing...
             </span>
+          ) : shakeRightAvailable ? (
+            "Shake Now"
           ) : (
-            "Shake"
+            "Locked — Wait for Draw"
           )}
         </button>
       </div>
 
-      {/* Lucky Shake modal */}
+      {/* ──────────── Lucky Shake modal ──────────── */}
       {shakeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-          <div className="mx-4 max-w-sm w-full rounded-3xl p-7 text-center bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_0_60px_rgba(236,72,153,0.3)] animate-shake-mount">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-lg">
+          <div className="mx-4 max-w-sm w-full rounded-3xl p-7 text-center bg-zinc-900/70 backdrop-blur-3xl border border-white/10 shadow-[0_0_60px_rgba(168,85,247,0.25)] animate-shake-mount">
             {shakeWonTickets != null ? (
-              /* Win screen */
+              /* ── Win screen ── */
               <>
                 <div className="flex justify-center mb-5">
                   <div className="w-20 h-20 rounded-full bg-[#4ade80]/15 border-2 border-[#4ade80]/50 flex items-center justify-center animate-glow-pop">
-                    <Ticket size={40} className="text-[#4ade80] drop-shadow-[0_0_12px_rgba(74,222,128,0.8)]" />
+                    <Ticket
+                      size={40}
+                      className="text-[#4ade80] drop-shadow-[0_0_12px_rgba(74,222,128,0.9)]"
+                    />
                   </div>
                 </div>
-                <h3 className="font-display font-bold text-white text-2xl mb-1 drop-shadow-[0_0_16px_rgba(255,255,255,0.4)]">
+                <h3 className="font-display font-bold text-white text-2xl mb-1 drop-shadow-[0_0_16px_rgba(255,255,255,0.3)]">
                   You won {shakeWonTickets} Ticket{shakeWonTickets !== 1 ? "s" : ""}!
                 </h3>
-                <p className="text-sm text-white/70 mb-6">Congratulations! 🎉</p>
+                <p className="text-sm text-white/60 mb-6">Congratulations! 🎉</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -225,21 +288,34 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
                 </button>
               </>
             ) : (
-              /* Waiting for shake */
+              /* ── Waiting for shake ── */
               <>
                 <div className="flex justify-center mb-5">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center bg-white/10 border border-white/20 shadow-[0_0_20px_rgba(236,72,153,0.3)] ${shakeLoading ? "animate-card-shake" : "animate-breathing"}`}>
-                    <Smartphone size={40} className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]" strokeWidth={1.5} />
+                  <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center bg-white/5 border border-white/15 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                    style={
+                      shakeLoading
+                        ? { animation: "card-shake 0.55s ease-in-out infinite" }
+                        : { animation: "breathing 3s ease-in-out infinite" }
+                    }
+                  >
+                    <Smartphone
+                      size={40}
+                      className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 </div>
-                <h3 className="font-display font-bold text-white text-xl mb-2">Lucky Shake!</h3>
-                <p className="text-sm text-white/70 mb-2">
+                <h3 className="font-display font-bold text-white text-xl mb-2">
+                  Lucky Shake!
+                </h3>
+                <p className="text-sm text-white/60 mb-2">
                   Shake your phone. Get 1–5 tickets!
                 </p>
                 {shakeLoading ? (
                   <p className="text-[#4ade80] text-sm font-bold mb-5">Processing...</p>
                 ) : (
-                  <p className="text-xs text-white/50 mb-5">Or tap the button below</p>
+                  <p className="text-xs text-white/40 mb-5">Or tap the button below</p>
                 )}
                 <div className="flex flex-col gap-2">
                   {!shakeLoading && (
@@ -258,7 +334,7 @@ export default function LuckyShakeCard({ countdown, userId, isWeeklyLimitReached
                       setShakeLoading(false);
                     }}
                     disabled={shakeLoading}
-                    className="text-white/50 text-sm font-medium hover:text-white/80 transition-colors py-1 disabled:opacity-40"
+                    className="text-white/40 text-sm font-medium hover:text-white/70 transition-colors py-1 disabled:opacity-30"
                   >
                     Cancel
                   </button>
