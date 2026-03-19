@@ -4,8 +4,8 @@ import {
   ArrowLeft,
   ClipboardList,
   Video,
-  Gamepad2,
   Smartphone,
+  Ticket,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -58,7 +58,8 @@ export default function Earn() {
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
   const [shakeLoading, setShakeLoading] = useState(false);
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0 });
+  const [shakeWonTickets, setShakeWonTickets] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const { surveys, isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
@@ -70,29 +71,23 @@ export default function Earn() {
   }, [surveys]);
 
   useEffect(() => {
-    const tick = () => {
-      const diff = getNextDrawTime().getTime() - Date.now();
-      if (diff <= 0) return setCountdown({ days: 0, hours: 0 });
-      setCountdown({
-        days: Math.floor(diff / 86400000),
-        hours: Math.floor((diff / 3600000) % 24),
-      });
-    };
+    const tick = () => setCountdown(getCountdownParts());
     tick();
-    const id = setInterval(tick, 60000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
   const handleShake = useCallback(async () => {
     if (shakeLoading || !user?.id) return;
     setShakeLoading(true);
+    setShakeWonTickets(null);
     try {
       const result = await shakeToWin();
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-        toast.success(`+${result.ticketsAdded} Bilet! 🎉`);
-        setShakeModalOpen(false);
+        setShakeLoading(false);
+        setShakeWonTickets(result.ticketsAdded);
       } else {
         if (result.error === "SHAKE_ALREADY_USED") {
           toast.error("Sudah dipakai hari ini. Coba lagi besok!");
@@ -101,17 +96,17 @@ export default function Earn() {
         } else {
           toast.error(result.error);
         }
+        setShakeLoading(false);
       }
     } catch (err) {
       toast.error("Gagal");
-    } finally {
       setShakeLoading(false);
     }
   }, [shakeLoading, user?.id, queryClient]);
 
   useShakeDetection({
     onShake: handleShake,
-    enabled: shakeModalOpen,
+    enabled: shakeModalOpen && shakeWonTickets == null,
   });
 
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
@@ -302,59 +297,62 @@ export default function Earn() {
           </div>
         </div>
 
-        {/* Bölüm 3: GAME / SPIN (Alt) */}
+        {/* Bölüm 3: LUCKY SHAKE */}
         <div className={CARD_BASE}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/30 border border-purple-400/40">
-              <Gamepad2 size={24} className="text-purple-300" />
+              <Smartphone size={24} className="text-purple-300" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Weekly Game</h3>
-              <p className="text-xs text-white/80 mt-0.5">Play & win bonus tickets</p>
+              <h3 className="font-display font-bold text-white">Lucky Shake</h3>
+              <p className="text-xs text-white/80 mt-0.5">Shake your phone to win bonus tickets!</p>
+              <p className="text-xs text-[#4ade80] mt-1 font-medium">Win 1 to 5 tickets instantly</p>
             </div>
           </div>
           <div className="mb-3">
-            <span className="text-xs text-white/80">Countdown</span>
-            <p className="font-display font-bold text-lg text-white">
-              {countdown.days} days {countdown.hours} hours
-            </p>
+            <span className="text-xs text-white/80">Next draw in</span>
+            <div className="flex gap-2 mt-1">
+              {[
+                { val: pad(countdown.days), label: "DD" },
+                { val: pad(countdown.hours), label: "HH" },
+                { val: pad(countdown.minutes), label: "MM" },
+                { val: pad(countdown.seconds), label: "SS" },
+              ].map((block) => (
+                <div key={block.label} className="flex-1 flex flex-col items-center rounded-xl bg-black/40 border border-white/20 py-2 px-1 min-w-0">
+                  <span className="font-display text-sm font-bold text-white tabular-nums">{block.val}</span>
+                  <span className="text-[9px] text-white/90 uppercase">{block.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                if (!user?.id) {
-                  toast.error("Masuk untuk bermain");
-                  return;
-                }
-                if (isWeeklyLimitReached) {
-                  toast.error("Batas tiket mingguan tercapai.");
-                  return;
-                }
-                if (!isShakeSupported()) {
-                  toast.error("Perangkat tidak mendukung. Coba di ponsel.");
-                  return;
-                }
-                const granted = await requestShakePermission();
-                if (!granted) {
-                  toast.error("Izin sensor diperlukan untuk Shake to Win.");
-                  return;
-                }
-                setShakeModalOpen(true);
-              }}
-              disabled={isWeeklyLimitReached}
-              className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
-            >
-              Shake
-            </button>
-            <button
-              type="button"
-              disabled
-              className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm text-white/60 transition-all cursor-not-allowed bg-white/10 border border-white/20"
-            >
-              Play
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!user?.id) {
+                toast.error("Masuk untuk bermain");
+                return;
+              }
+              if (isWeeklyLimitReached) {
+                toast.error("Batas tiket mingguan tercapai.");
+                return;
+              }
+              if (!isShakeSupported()) {
+                toast.error("Perangkat tidak mendukung. Coba di ponsel.");
+                return;
+              }
+              const granted = await requestShakePermission();
+              if (!granted) {
+                toast.error("Izin sensor diperlukan untuk Lucky Shake.");
+                return;
+              }
+              setShakeWonTickets(null);
+              setShakeModalOpen(true);
+            }}
+            disabled={isWeeklyLimitReached || (countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0)}
+            className="w-full py-3 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_18px_rgba(168,85,247,0.4)]"
+          >
+            Shake
+          </button>
         </div>
       </div>
 
@@ -375,25 +373,53 @@ export default function Earn() {
         />
       )}
 
-      {/* Shake to Win modal */}
+      {/* Lucky Shake modal */}
       {shakeModalOpen && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
-          <div className="mx-4 max-w-sm rounded-2xl p-6 text-center bg-white/20 backdrop-blur-md border border-white/20 shadow-lg">
-            <Smartphone size={48} className="mx-auto text-purple-300 mb-4" />
-            <h3 className="font-display font-bold text-white text-lg mb-2">Salla Kazan!</h3>
-            <p className="text-sm text-white/80 mb-4">
-              Goyangkan ponsel. Dapat 1-5 bilet!
-            </p>
-            {shakeLoading && (
-              <p className="text-purple-300 text-sm font-bold mb-2">Memproses...</p>
+          <div className="mx-4 max-w-sm w-full rounded-2xl p-6 text-center bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
+            {shakeWonTickets != null ? (
+              <>
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-[#4ade80]/20 border-2 border-[#4ade80]/50 flex items-center justify-center shadow-[0_0_24px_rgba(74,222,128,0.4)]">
+                    <Ticket size={32} className="text-[#4ade80]" />
+                  </div>
+                </div>
+                <h3 className="font-display font-bold text-white text-xl mb-2">You won {shakeWonTickets} Ticket{shakeWonTickets !== 1 ? "s" : ""}!</h3>
+                <p className="text-sm text-white/80 mb-4">Congratulations! 🎉</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShakeModalOpen(false);
+                    setShakeWonTickets(null);
+                    setShakeLoading(false);
+                  }}
+                  className="w-full py-3 rounded-xl font-display font-bold text-sm text-[#001a09] bg-[#4ade80] shadow-[0_0_18px_rgba(74,222,128,0.55)] hover:bg-[#4ade80]/90 transition-colors"
+                >
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                <Smartphone size={48} className="mx-auto text-purple-300 mb-4" />
+                <h3 className="font-display font-bold text-white text-lg mb-2">Lucky Shake!</h3>
+                <p className="text-sm text-white/80 mb-4">
+                  Shake your phone. Get 1-5 tickets!
+                </p>
+                {shakeLoading && (
+                  <p className="text-[#4ade80] text-sm font-bold mb-4">Processing...</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShakeModalOpen(false);
+                    setShakeLoading(false);
+                  }}
+                  className="text-white/80 text-sm font-medium hover:text-white"
+                >
+                  Cancel
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setShakeModalOpen(false)}
-              className="text-white/80 text-sm font-medium hover:text-white"
-            >
-              Batal
-            </button>
           </div>
         </div>
       )}
