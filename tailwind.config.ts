@@ -216,6 +216,38 @@ export default {
           "0%, 100%": { boxShadow: "0 0 12px rgba(236,72,153,0.6), 0 0 24px rgba(168,85,247,0.3)" },
           "50%":      { boxShadow: "0 0 22px rgba(236,72,153,0.9), 0 0 44px rgba(168,85,247,0.6)" },
         },
+        "live-dot": {
+          "0%, 100%": { transform: "scale(0.85)", opacity: "0.5" },
+          "50%":      { transform: "scale(1.2)",  opacity: "1"   },
+        },
+        "green-badge-glow": {
+          "0%, 100%": { boxShadow: "0 0 6px rgba(0,230,118,0.3)" },
+          "50%":      { boxShadow: "0 0 14px rgba(0,230,118,0.65), 0 0 20px rgba(0,230,118,0.2)" },
+        },
+        "red-badge-pulse": {
+          "0%, 100%": { boxShadow: "0 0 8px rgba(239,68,68,0.3)", transform: "scale(1)" },
+          "50%":      { boxShadow: "0 0 18px rgba(239,68,68,0.7)", transform: "scale(1.05)" },
+        },
+        "red-ring-out": {
+          "0%":   { transform: "scale(1)",    opacity: "0.55" },
+          "100%": { transform: "scale(1.12)", opacity: "0"    },
+        },
+        "red-dash-pulse": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%":      { opacity: "0.85" },
+        },
+        "nearby-enter": {
+          "0%":   { opacity: "0", transform: "translateY(-16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)"     },
+        },
+        "nearby-float": {
+          "0%, 100%": { transform: "translateY(0px)"  },
+          "50%":      { transform: "translateY(-2px)" },
+        },
+        "fresh-glow": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(0,230,118,0)" },
+          "50%":      { boxShadow: "0 0 18px 2px rgba(0,230,118,0.12)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -244,7 +276,15 @@ export default {
         "radar-sweep": "radar-sweep 4s linear infinite",
         "radar-ring-expand": "radar-ring-expand 2.5s ease-out infinite",
         "fab-glow-pulse": "fab-glow-pulse 2s ease-in-out infinite",
-        "unified-pulse": "unified-pulse 2s ease-in-out infinite",
+        "unified-pulse":     "unified-pulse 2s ease-in-out infinite",
+        "live-dot":          "live-dot 1.5s ease-in-out infinite",
+        "green-badge-glow":  "green-badge-glow 2s ease-in-out infinite",
+        "red-badge-pulse":   "red-badge-pulse 2s ease-in-out infinite",
+        "red-ring-out":      "red-ring-out 2.5s ease-out infinite",
+        "red-dash-pulse":    "red-dash-pulse 2s ease-in-out infinite",
+        "nearby-enter":      "nearby-enter 0.35s cubic-bezier(0.16,1,0.3,1) both",
+        "nearby-float":      "nearby-float 4s ease-in-out infinite",
+        "fresh-glow":        "fresh-glow 2s ease-in-out infinite",
       },
     },
   },

@@ -28,3 +28,24 @@ export function isOlderThan24h(createdAt: string | undefined | null): boolean {
   const now = new Date();
   return now.getTime() - date.getTime() > 24 * 60 * 60 * 1000;
 }
+
+/**
+ * Visual age tier for time-based decay effects.
+ * - fresh  : < 1 min  → brighter, glow, float
+ * - recent : < 60 min → normal
+ * - aging  : < 24 h   → slightly faded
+ * - old    : 24h+     → faded
+ */
+export type AgeTier = "fresh" | "recent" | "aging" | "old" | "unknown";
+
+export function getAgeTier(createdAt: string | undefined | null): AgeTier {
+  if (!createdAt) return "unknown";
+  const date = new Date(createdAt);
+  if (isNaN(date.getTime())) return "unknown";
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = diffMs / 60_000;
+  if (diffMin < 1) return "fresh";
+  if (diffMin < 60) return "recent";
+  if (diffMin < 1440) return "aging";
+  return "old";
+}

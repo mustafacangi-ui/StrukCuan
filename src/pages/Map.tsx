@@ -198,7 +198,17 @@ export default function Map() {
         </section>
 
         {/* ── Nearby Opportunities ─────────────────────────────────────── */}
-        <section>
+        <section className="relative">
+          {/* Ambient background — very subtle radial gradient depth layer */}
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 rounded-3xl"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 0%, rgba(0,230,118,0.03) 0%, transparent 70%)",
+              opacity: 0.8,
+            }}
+          />
+
           <h3 className="flex items-center gap-2 text-[15px] font-bold text-white mb-3">
             <span>📍</span> Nearby Opportunities
             <span className="ml-auto text-[10px] font-normal text-white/40 uppercase tracking-widest">
@@ -214,10 +224,11 @@ export default function Map() {
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {nearbyDeals.map((deal) => (
+              {nearbyDeals.map((deal, index) => (
                 <NearbyRow
                   key={deal.id}
                   deal={deal}
+                  index={index}
                   onClick={() => setSelectedDeal(deal)}
                 />
               ))}
