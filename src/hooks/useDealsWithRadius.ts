@@ -45,31 +45,43 @@ function getPromoType(deal: Deal): PromoType {
 
 export function useDealsWithRadius(radiusKm: number) {
   const { data: deals = [], isLoading } = useDeals();
-  const { location } = useUserLocation();
+  const { location, loading: locationLoading } = useUserLocation();
 
-  const filteredDeals = useMemo(() => {
-    return deals
-      .map((d) => {
-        const discount = (d as Deal & { discount?: number }).discount ?? 0;
-        const isRedLabelDb = d.is_red_label ?? false;
-        const isRedLabel =
-          isRedLabelDb || discount >= 50 || isExpirySoon(d.expiry);
-        return {
-          ...d,
-          distanceKm: haversineDistance(
-            location.lat,
-            location.lng,
-            d.lat,
-            d.lng
-          ),
-          promoType: getPromoType(d),
-          isRedLabel,
-          category: inferCategory(d),
-        };
-      })
-      .filter((d) => d.distanceKm <= radiusKm)
-      .sort((a, b) => a.distanceKm - b.distanceKm) as DealWithDistance[];
+  const { filteredDeals, userLocation } = useMemo(() => {
+    const safeLat = Number.isFinite(location?.lat) ? location.lat : -6.2088;
+    const safeLng = Number.isFinite(location?.lng) ? location.lng : 106.8456;
+    const loc = { lat: safeLat, lng: safeLng };
+
+    try {
+      const raw = Array.isArray(deals) ? deals : [];
+      const mapped = raw
+        .filter((d): d is Deal => d != null && typeof d === "object" && Number.isFinite(d.lat) && Number.isFinite(d.lng))
+        .map((d) => {
+          const discount = (d as Deal & { discount?: number }).discount ?? 0;
+          const isRedLabelDb = d.is_red_label ?? false;
+          const isRedLabel =
+            isRedLabelDb || discount >= 50 || isExpirySoon(d.expiry);
+          return {
+            ...d,
+            distanceKm: haversineDistance(safeLat, safeLng, d.lat, d.lng),
+            promoType: getPromoType(d),
+            isRedLabel,
+            category: inferCategory(d),
+          };
+        })
+        .filter((d) => d.distanceKm <= radiusKm)
+        .sort((a, b) => a.distanceKm - b.distanceKm) as DealWithDistance[];
+
+      return { filteredDeals: mapped, userLocation: loc };
+    } catch {
+      return { filteredDeals: [], userLocation: loc };
+    }
   }, [deals, location, radiusKm]);
 
-  return { deals: filteredDeals, isLoading, userLocation: location };
+  return {
+    deals: filteredDeals,
+    isLoading: isLoading || locationLoading,
+    userLocation,
+    locationReady: !locationLoading,
+  };
 }

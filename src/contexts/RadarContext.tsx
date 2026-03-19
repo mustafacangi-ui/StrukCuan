@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import { useDealsWithRadius } from "@/hooks/useDealsWithRadius";
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
 import type { UserLocation } from "@/hooks/useUserLocation";
+import { SAFE_DEFAULT_COORDS } from "@/hooks/useUserLocation";
 
 interface RadarContextType {
   radius: number;
@@ -10,6 +11,7 @@ interface RadarContextType {
   isLoading: boolean;
   deals: DealWithDistance[];
   userLocation: UserLocation;
+  locationReady: boolean;
 }
 
 const RadarContext = createContext<RadarContextType | null>(null);
@@ -22,17 +24,21 @@ export const useRadar = () => {
 
 export const RadarProvider = ({ children }: { children: ReactNode }) => {
   const [radius, setRadius] = useState(5);
-  const { deals, isLoading, userLocation } = useDealsWithRadius(radius);
+  const { deals = [], isLoading, userLocation, locationReady } = useDealsWithRadius(radius);
+
+  const safeDeals = Array.isArray(deals) ? deals : [];
+  const safeLocation: UserLocation = userLocation ?? SAFE_DEFAULT_COORDS;
 
   return (
     <RadarContext.Provider
       value={{
         radius,
         setRadius,
-        promoCount: deals.length,
-        isLoading,
-        deals,
-        userLocation,
+        promoCount: safeDeals.length,
+        isLoading: Boolean(isLoading),
+        deals: safeDeals,
+        userLocation: safeLocation,
+        locationReady: Boolean(locationReady),
       }}
     >
       {children}

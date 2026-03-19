@@ -8,6 +8,7 @@ import CameraScanner from "@/components/CameraScanner";
 import DealModal from "@/components/DealModal";
 import DealCard from "@/components/DealCard";
 import NearbyRow from "@/components/NearbyRow";
+import RadarSkeleton from "@/components/RadarSkeleton";
 import { Radar } from "lucide-react";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useRadar } from "@/contexts/RadarContext";
@@ -39,7 +40,7 @@ export default function Map() {
   const navigate = useNavigate();
   const { user, isOnboarded, requireLogin } = useUser();
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
-  const { radius, deals } = useRadar();
+  const { radius, deals, locationReady } = useRadar();
 
   const [showRedLabelScanner, setShowRedLabelScanner] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("All");
@@ -48,7 +49,10 @@ export default function Map() {
   const cats = CATEGORY_MAP[activeFilter];
 
   const filteredDeals = useMemo(() => {
-    return deals.filter((d) => cats.includes(d.category));
+    const list = Array.isArray(deals) ? deals : [];
+    return list
+      .filter((d): d is DealWithDistance => d != null && typeof d.category === "string")
+      .filter((d) => cats.includes(d.category));
   }, [deals, cats]);
 
   const flashDeals = useMemo(() => filteredDeals.slice(0, 4), [filteredDeals]);
@@ -61,6 +65,11 @@ export default function Map() {
     }
     setShowRedLabelScanner(true);
   };
+
+  // Hata Koruması — Safe Render: show skeleton until location is ready
+  if (!locationReady) {
+    return <RadarSkeleton />;
+  }
 
   return (
     <div className="min-h-screen max-w-[430px] mx-auto relative flex flex-col pb-20">

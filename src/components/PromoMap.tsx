@@ -4,10 +4,17 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useRadar } from "@/contexts/RadarContext";
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
-import { haversineDistance } from "@/hooks/useUserLocation";
+import { haversineDistance, SAFE_DEFAULT_COORDS } from "@/hooks/useUserLocation";
 import MapMarker from "@/components/MapMarker";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
+
+/** Safe coords for Mapbox — never NaN, fallback when GPS is slow */
+function safeMapCoords(lat: number | undefined, lng: number | undefined) {
+  const safeLat = Number.isFinite(lat) ? lat! : SAFE_DEFAULT_COORDS.lat;
+  const safeLng = Number.isFinite(lng) ? lng! : SAFE_DEFAULT_COORDS.lng;
+  return { lat: safeLat, lng: safeLng };
+}
 
 const RADIUS_OPTIONS = [3, 5, 10];
 
@@ -61,39 +68,41 @@ export default function PromoMap({ height = 260, onDealSelect, selectedDealId }:
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const hasFlownRef = useRef(false);
 
+  const coords = safeMapCoords(userLocation?.lat, userLocation?.lng);
+
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !userLocation) return;
+    if (!map) return;
     map.flyTo({
-      center: [userLocation.lng, userLocation.lat],
+      center: [coords.lng, coords.lat],
       zoom: zoomForRadius(radius),
       duration: hasFlownRef.current ? 800 : 0,
     });
     hasFlownRef.current = true;
-  }, [userLocation.lat, userLocation.lng]);
+  }, [coords.lat, coords.lng]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !userLocation) return;
+    if (!map) return;
     map.flyTo({
-      center: [userLocation.lng, userLocation.lat],
+      center: [coords.lng, coords.lat],
       zoom: zoomForRadius(radius),
       duration: 800,
     });
-  }, [radius, userLocation.lat, userLocation.lng]);
+  }, [radius, coords.lat, coords.lng]);
 
   const initialViewState = useMemo(
     () => ({
-      latitude: userLocation.lat,
-      longitude: userLocation.lng,
+      latitude: coords.lat,
+      longitude: coords.lng,
       zoom: zoomForRadius(5),
     }),
     []
   );
 
   const circleGeoJSON = useMemo(
-    () => createCircleGeoJSON(userLocation.lat, userLocation.lng, radius),
-    [userLocation.lat, userLocation.lng, radius]
+    () => createCircleGeoJSON(coords.lat, coords.lng, radius),
+    [coords.lat, coords.lng, radius]
   );
 
   const heatmapDeals = useMemo(() => {
@@ -213,7 +222,7 @@ export default function PromoMap({ height = 260, onDealSelect, selectedDealId }:
           </Source>
 
           {/* User location — glowing dot + concentric rings */}
-          <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
+          <Marker latitude={coords.lat} longitude={coords.lng} anchor="center">
             <div className="relative flex items-center justify-center w-16 h-16">
               {/* Expanding ring 1 */}
               <div className="absolute w-10 h-10 rounded-full border border-[#00E676]/40"
@@ -253,13 +262,16 @@ export default function PromoMap({ height = 260, onDealSelect, selectedDealId }:
           })}
 
           {/* Promo markers */}
-          {deals.map((deal) => (
-            <PromoMarker
-              key={deal.id}
-              deal={deal}
-              onClick={() => setSelectedDeal(deal)}
-            />
-          ))}
+          {(Array.isArray(deals) ? deals : [])
+            .filter((d) => d && Number.isFinite(d.lat) && Number.isFinite(d.lng))
+            .map((deal) => (
+              <MapMarker
+                key={deal.id}
+                deal={deal}
+                onClick={() => onDealSelect?.(deal)}
+                isSelected={selectedDealId === deal.id}
+              />
+            ))}
         </Map>
 
         {/* Dark tint — makes markers and names pop */}

@@ -7,34 +7,61 @@ export interface UserLocation {
 
 const JAKARTA_CENTER = { lat: -6.2088, lng: 106.8456 };
 
+/** Safe fallback coords — never NaN, used when GPS is slow or fails */
+export const SAFE_DEFAULT_COORDS = { lat: -6.2088, lng: 106.8456 };
+
+function safeCoords(lat: number, lng: number): UserLocation {
+  const safeLat = Number.isFinite(lat) ? lat : JAKARTA_CENTER.lat;
+  const safeLng = Number.isFinite(lng) ? lng : JAKARTA_CENTER.lng;
+  return { lat: safeLat, lng: safeLng };
+}
+
 export function useUserLocation() {
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocation(JAKARTA_CENTER);
-      setLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setError(null);
-        setLoading(false);
-      },
-      () => {
+    try {
+      if (!navigator?.geolocation) {
         setLocation(JAKARTA_CENTER);
-        setError("Location unavailable");
         setLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          try {
+            const lat = pos?.coords?.latitude ?? JAKARTA_CENTER.lat;
+            const lng = pos?.coords?.longitude ?? JAKARTA_CENTER.lng;
+            setLocation(safeCoords(lat, lng));
+            setError(null);
+          } catch (e) {
+            setLocation(JAKARTA_CENTER);
+            setError("Location parse error");
+          }
+          setLoading(false);
+        },
+        () => {
+          setLocation(JAKARTA_CENTER);
+          setError("Location unavailable");
+          setLoading(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    } catch (e) {
+      setLocation(JAKARTA_CENTER);
+      setError("Geolocation error");
+      setLoading(false);
+    }
   }, []);
 
-  return { location: location ?? JAKARTA_CENTER, error, loading };
+  const resolved = location ?? JAKARTA_CENTER;
+  return {
+    location: safeCoords(resolved.lat, resolved.lng),
+    error,
+    loading,
+  };
 }
 
 export function haversineDistance(
