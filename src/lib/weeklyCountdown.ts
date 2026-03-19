@@ -18,15 +18,21 @@ export function getNextDrawTime(): Date {
 
 export type CountdownParts = { days: number; hours: number; minutes: number; seconds: number };
 
+const DEFAULT_COUNTDOWN: CountdownParts = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
 export function getCountdownParts(): CountdownParts {
-  const diff = getNextDrawTime().getTime() - Date.now();
-  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-  return {
-    days: Math.floor(diff / 86400000),
-    hours: Math.floor((diff / 3600000) % 24),
-    minutes: Math.floor((diff / 60000) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
-  };
+  try {
+    const diff = getNextDrawTime().getTime() - Date.now();
+    if (diff <= 0) return DEFAULT_COUNTDOWN;
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff / 3600000) % 24),
+      minutes: Math.floor((diff / 60000) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  } catch {
+    return DEFAULT_COUNTDOWN;
+  }
 }
 
 export function pad(count: number): string {

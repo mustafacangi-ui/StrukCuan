@@ -13,6 +13,7 @@ import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
 import Promo from "./pages/Promo";
 import Earn from "./pages/Earn";
+import { EarnErrorBoundary } from "./components/EarnErrorBoundary";
 import Map from "./pages/Map";
 import WeeklyDraw from "./pages/WeeklyDraw";
 import Invite from "./pages/Invite";
@@ -49,7 +50,7 @@ const App = () => (
               <Route path="/map" element={<Navigate to="/" replace />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
-              <Route path="/earn" element={<Earn />} />
+              <Route path="/earn" element={<EarnErrorBoundary><Earn /></EarnErrorBoundary>} />
               <Route path="/weekly-draw" element={<WeeklyDraw />} />
               <Route path="/invite" element={<Invite />} />
               <Route path="/upload" element={<Navigate to="/home" replace />} />

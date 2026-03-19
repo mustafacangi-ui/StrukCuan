@@ -27,25 +27,14 @@ import BottomNav from "@/components/BottomNav";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
+import { getCountdownParts, pad } from "@/lib/weeklyCountdown";
 
 const WEEKLY_MAX = 42;
 
 const CARD_BASE =
   "rounded-2xl p-4 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10 transition-all";
 
-/** Next Sunday 21:00 Jakarta (WIB) - weekly draw reset */
-function getNextDrawTime(): Date {
-  const now = new Date();
-  const day = now.getUTCDay();
-  const hour = now.getUTCHours();
-  const minute = now.getUTCMinutes();
-  let daysToAdd = (7 - day) % 7;
-  if (daysToAdd === 0 && (hour > 14 || (hour === 14 && minute >= 0))) daysToAdd = 7;
-  const next = new Date(now);
-  next.setUTCDate(next.getUTCDate() + daysToAdd);
-  next.setUTCHours(14, 0, 0, 0);
-  return next;
-}
+const DEFAULT_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
 export default function Earn() {
   const navigate = useNavigate();
@@ -59,19 +48,30 @@ export default function Earn() {
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
   const [shakeLoading, setShakeLoading] = useState(false);
   const [shakeWonTickets, setShakeWonTickets] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState(DEFAULT_COUNTDOWN);
 
-  const { surveys, isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
+  const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
   const displaySurveys = useMemo(() => {
-    const list = Array.isArray(surveys) ? surveys : [];
-    const longer = list.filter((s) => (s?.durationMin ?? 0) > 3);
-    const shorter = list.filter((s) => (s?.durationMin ?? 0) <= 3);
-    return [...longer, ...shorter].slice(0, 5);
+    try {
+      const list = Array.isArray(surveys) ? surveys : [];
+      const longer = list.filter((s) => (s?.durationMin ?? 0) > 3);
+      const shorter = list.filter((s) => (s?.durationMin ?? 0) <= 3);
+      return [...longer, ...shorter].slice(0, 5);
+    } catch {
+      return [];
+    }
   }, [surveys]);
 
   useEffect(() => {
-    const tick = () => setCountdown(getCountdownParts());
+    const tick = () => {
+      try {
+        setCountdown(getCountdownParts());
+      } catch (err) {
+        console.error("[Earn] countdown tick error:", err);
+        setCountdown(DEFAULT_COUNTDOWN);
+      }
+    };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -83,22 +83,24 @@ export default function Earn() {
     setShakeWonTickets(null);
     try {
       const result = await shakeToWin();
-      if (result.success) {
+      if (result?.success) {
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
         setShakeLoading(false);
-        setShakeWonTickets(result.ticketsAdded);
+        setShakeWonTickets(result.ticketsAdded ?? 1);
       } else {
-        if (result.error === "SHAKE_ALREADY_USED") {
+        const errMsg = result?.error ?? "Gagal";
+        if (errMsg === "SHAKE_ALREADY_USED") {
           toast.error("Sudah dipakai hari ini. Coba lagi besok!");
-        } else if (result.error === "WEEKLY_LIMIT_REACHED") {
+        } else if (errMsg === "WEEKLY_LIMIT_REACHED") {
           toast.error("Batas tiket mingguan tercapai.");
         } else {
-          toast.error(result.error);
+          toast.error(errMsg);
         }
         setShakeLoading(false);
       }
     } catch (err) {
+      console.error("[Earn] Lucky Shake error:", err);
       toast.error("Gagal");
       setShakeLoading(false);
     }
@@ -109,8 +111,8 @@ export default function Earn() {
     enabled: shakeModalOpen && shakeWonTickets == null,
   });
 
-  const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
-  const isWeeklyLimitReached = weeklyTickets >= MAX_TICKETS_PER_WEEK;
+  const progressPercent = Math.min(100, ((weeklyTickets ?? 0) / WEEKLY_MAX) * 100);
+  const isWeeklyLimitReached = (weeklyTickets ?? 0) >= MAX_TICKETS_PER_WEEK;
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
@@ -121,21 +123,29 @@ export default function Earn() {
   const isRedirecting = !authLoading && !isOnboarded;
 
   const handleWatchAd = useCallback(() => {
-    if (!user?.id) {
-      toast.error("Masuk untuk mendapatkan tiket");
-      return;
+    try {
+      if (!user?.id) {
+        toast.error("Masuk untuk mendapatkan tiket");
+        return;
+      }
+      if ((adsWatched ?? 0) >= MAX_ADS_PER_DAY) {
+        toast.error("Batas harian tercapai. Coba lagi besok.");
+        return;
+      }
+      if (isWeeklyLimitReached) {
+        toast.error("Batas tiket mingguan tercapai.");
+        return;
+      }
+      setPopupBlocked(false);
+      const adUrl = AD_NETWORKS?.[0]?.url;
+      if (adUrl) {
+        window.open(adUrl, "monetag_ad", "width=600,height=700,scrollbars=yes,resizable=yes");
+      }
+      setShowModal(true);
+    } catch (err) {
+      console.error("[Earn] Watch Ad error:", err);
+      toast.error("Gagal");
     }
-    if (adsWatched >= MAX_ADS_PER_DAY) {
-      toast.error("Batas harian tercapai. Coba lagi besok.");
-      return;
-    }
-    if (isWeeklyLimitReached) {
-      toast.error("Batas tiket mingguan tercapai.");
-      return;
-    }
-    setPopupBlocked(false);
-    window.open(AD_NETWORKS[0].url, "monetag_ad", "width=600,height=700,scrollbars=yes,resizable=yes");
-    setShowModal(true);
   }, [user?.id, adsWatched, isWeeklyLimitReached]);
 
   const handleAdComplete = useCallback(async () => {
@@ -229,12 +239,12 @@ export default function Earn() {
           <p className="text-xs text-[#4ade80] mb-2 font-medium">Watch 5 videos to earn 1 Ticket</p>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-white/90">Progress</span>
-            <span className="font-display font-bold text-white">{adsWatched} / 5</span>
+            <span className="font-display font-bold text-white">{adsWatched ?? 0} / 5</span>
           </div>
           <button
             type="button"
             onClick={handleWatchAd}
-            disabled={adsWatched >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
+            disabled={(adsWatched ?? 0) >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
             className="w-full py-3 rounded-xl font-display font-bold text-sm text-[#001a09] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-theme-green shadow-[0_0_18px_rgba(0,230,118,0.55)]"
           >
             {showModal ? "Watching..." : "Watch Ad"}
@@ -313,10 +323,10 @@ export default function Earn() {
             <span className="text-xs text-white/80">Next draw in</span>
             <div className="flex gap-2 mt-1">
               {[
-                { val: pad(countdown.days), label: "DD" },
-                { val: pad(countdown.hours), label: "HH" },
-                { val: pad(countdown.minutes), label: "MM" },
-                { val: pad(countdown.seconds), label: "SS" },
+                { val: pad(countdown?.days ?? 0), label: "DD" },
+                { val: pad(countdown?.hours ?? 0), label: "HH" },
+                { val: pad(countdown?.minutes ?? 0), label: "MM" },
+                { val: pad(countdown?.seconds ?? 0), label: "SS" },
               ].map((block) => (
                 <div key={block.label} className="flex-1 flex flex-col items-center rounded-xl bg-black/40 border border-white/20 py-2 px-1 min-w-0">
                   <span className="font-display text-sm font-bold text-white tabular-nums">{block.val}</span>
@@ -328,27 +338,32 @@ export default function Earn() {
           <button
             type="button"
             onClick={async () => {
-              if (!user?.id) {
-                toast.error("Masuk untuk bermain");
-                return;
+              try {
+                if (!user?.id) {
+                  toast.error("Masuk untuk bermain");
+                  return;
+                }
+                if (isWeeklyLimitReached) {
+                  toast.error("Batas tiket mingguan tercapai.");
+                  return;
+                }
+                if (!isShakeSupported()) {
+                  toast.error("Perangkat tidak mendukung. Coba di ponsel.");
+                  return;
+                }
+                const granted = await requestShakePermission();
+                if (!granted) {
+                  toast.error("Izin sensor diperlukan untuk Lucky Shake.");
+                  return;
+                }
+                setShakeWonTickets(null);
+                setShakeModalOpen(true);
+              } catch (err) {
+                console.error("[Earn] Shake button error:", err);
+                toast.error("Gagal");
               }
-              if (isWeeklyLimitReached) {
-                toast.error("Batas tiket mingguan tercapai.");
-                return;
-              }
-              if (!isShakeSupported()) {
-                toast.error("Perangkat tidak mendukung. Coba di ponsel.");
-                return;
-              }
-              const granted = await requestShakePermission();
-              if (!granted) {
-                toast.error("Izin sensor diperlukan untuk Lucky Shake.");
-                return;
-              }
-              setShakeWonTickets(null);
-              setShakeModalOpen(true);
             }}
-            disabled={isWeeklyLimitReached || (countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0)}
+            disabled={isWeeklyLimitReached || ((countdown?.days ?? 0) === 0 && (countdown?.hours ?? 0) === 0 && (countdown?.minutes ?? 0) === 0 && (countdown?.seconds ?? 0) === 0)}
             className="w-full py-3 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_18px_rgba(168,85,247,0.4)]"
           >
             Shake
@@ -367,7 +382,7 @@ export default function Earn() {
 
       {selectedSurvey && (
         <SurveyModal
-          clickUrl={selectedSurvey.clickUrl}
+          clickUrl={selectedSurvey?.clickUrl ?? ""}
           onClose={() => setSelectedSurvey(null)}
           userId={user?.id}
         />
