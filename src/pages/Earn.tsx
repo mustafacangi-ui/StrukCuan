@@ -5,11 +5,9 @@ import {
   ClipboardList,
   Video,
   Gamepad2,
-  RefreshCw,
   Smartphone,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import {
   useTodayRewardedTickets,
@@ -19,13 +17,11 @@ import {
 import { useBitLabsSurveys, type SurveyDisplay } from "@/hooks/useBitLabsSurveys";
 import { useQueryClient } from "@tanstack/react-query";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
-import { convertCuanToTicket } from "@/hooks/useConvertCuan";
 import { shakeToWin } from "@/hooks/useShakeToWin";
 import { useShakeDetection, requestShakePermission, isShakeSupported } from "@/hooks/useShakeDetection";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { AD_NETWORKS } from "@/config/adNetworks";
-import { formatCurrency } from "@/config/locale";
 import { StatsBar } from "@/components/StatsBar";
 import BottomNav from "@/components/BottomNav";
 import RewardedAdModal from "@/components/RewardedAdModal";
@@ -55,13 +51,11 @@ export default function Earn() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
-  const { data: stats } = useUserStats(user?.id);
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
   const { adsWatched, refetch } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
-  const [convertLoading, setConvertLoading] = useState(false);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
   const [shakeLoading, setShakeLoading] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0 });
@@ -120,8 +114,6 @@ export default function Earn() {
     enabled: shakeModalOpen,
   });
 
-  const cuan = stats?.cuan ?? 0;
-  const countryCode = user?.countryCode ?? "ID";
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
   const isWeeklyLimitReached = weeklyTickets >= MAX_TICKETS_PER_WEEK;
 
@@ -239,9 +231,10 @@ export default function Earn() {
               <p className="text-xs text-white/80 mt-0.5">Earn tickets instantly</p>
             </div>
           </div>
+          <p className="text-xs text-[#4ade80] mb-2 font-medium">Watch 5 videos to earn 1 Ticket</p>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-white/90">Progress</span>
-            <span className="font-display font-bold text-white">{adsWatched} / {MAX_ADS_PER_DAY}</span>
+            <span className="font-display font-bold text-white">{adsWatched} / 5</span>
           </div>
           <button
             type="button"
@@ -261,60 +254,9 @@ export default function Earn() {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display font-bold text-white">Complete Surveys</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn cuan and convert to tickets</p>
+              <p className="text-xs text-white/80 mt-0.5">Earn tickets directly</p>
             </div>
           </div>
-          <div className="mb-3">
-            <span className="text-xs text-white/80">Cuan balance</span>
-            <p className="font-display font-bold text-2xl text-[#ff4ecd] drop-shadow-[0_0_12px_rgba(255,78,205,0.6)]">
-              {formatCurrency(cuan, countryCode)}
-            </p>
-          </div>
-          <p className="text-xs text-white/80 mb-3">100 cuan = 1 ticket</p>
-          <button
-            type="button"
-            onClick={async () => {
-              if (!user?.id) {
-                toast.error("Masuk untuk mengonversi");
-                return;
-              }
-              if (cuan < 100) {
-                toast.error("Minimal 100 Cuan untuk ditukar");
-                return;
-              }
-              if (isWeeklyLimitReached) {
-                toast.error("Batas tiket mingguan tercapai.");
-                return;
-              }
-              setConvertLoading(true);
-              try {
-                const { ticketsAdded } = await convertCuanToTicket();
-                queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-                queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-                toast.success(`+${ticketsAdded} Bilet! 🎟️`);
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : "Gagal";
-                if (msg === "INSUFFICIENT_CUAN") {
-                  toast.error("Minimal 100 Cuan untuk ditukar");
-                } else {
-                  toast.error(msg);
-                }
-              } finally {
-                setConvertLoading(false);
-              }
-            }}
-            disabled={convertLoading || cuan < 100 || isWeeklyLimitReached}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg mb-4"
-          >
-            {convertLoading ? (
-              <RefreshCw size={18} className="animate-spin" />
-            ) : (
-              <>
-                <RefreshCw size={18} />
-                Convert 100 Cuan → 1 Ticket
-              </>
-            )}
-          </button>
           <div className="space-y-3">
             <span className="text-xs font-bold text-white/90">Survey List</span>
             {surveysLoading ? (
@@ -348,10 +290,10 @@ export default function Earn() {
                       <h4 className="font-display font-bold text-white text-sm truncate">
                         {survey.title || "BitLabs Survey"}
                       </h4>
-                      <p className="text-sm font-bold text-[#4ade80] mt-1">{ticketLabel}</p>
+                      <p className="text-sm font-bold text-[#4ade80] mt-1 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">{ticketLabel}</p>
                     </div>
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-[#001a09] bg-[#4ade80] shadow-[0_0_12px_rgba(74,222,128,0.5)] hover:bg-[#4ade80]/90 transition-colors">
-                      MULAI
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-[#001a09] bg-[#4ade80] shadow-[0_0_16px_rgba(74,222,128,0.6)] hover:bg-[#4ade80]/90 transition-colors">
+                      START
                     </span>
                   </button>
                 );

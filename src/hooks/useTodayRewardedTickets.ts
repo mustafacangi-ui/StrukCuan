@@ -6,10 +6,10 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Ad reward system: 5→1, 10→1, 17→1. Total 3 tickets. Max 17 ads/day. */
+/** Ad reward system: 5 videos = 1 ticket. Max 5 ads/day. */
 export const ADS_PER_TICKET = 5;
-export const MAX_ADS_PER_DAY = 17;
-export const MAX_TICKETS_PER_DAY = 3;
+export const MAX_ADS_PER_DAY = 5;
+export const MAX_TICKETS_PER_DAY = 1;
 export const FIRST_TICKET_AT = 5;
 export const SECOND_TICKET_AT = 10;
 export const THIRD_TICKET_AT = 17;
@@ -25,12 +25,10 @@ export function ticketsFromAds(adsWatched: number): number {
   return 0;
 }
 
-/** Next ticket threshold - derived ONLY from adsWatched. */
+/** Next ticket threshold - 5 videos = 1 ticket. */
 export function getNextTicketAt(adsWatched: number): number | null {
   const n = Number(adsWatched) || 0;
   if (n < 5) return 5;
-  if (n < 10) return 10;
-  if (n < 17) return 17;
   return null;
 }
 
@@ -124,8 +122,8 @@ export async function fetchTodayAdEvents(userId: string): Promise<TodayTicket[]>
   return (data ?? []) as TodayTicket[];
 }
 
-/** Get progress segment for UI: X/5, NEXT TICKET AT Y ADS */
-export function getAdProgressSegment(adsWatched: number, bonusUnlocked: boolean): {
+/** Get progress segment for UI: X/5, 5 videos = 1 ticket */
+export function getAdProgressSegment(adsWatched: number, _bonusUnlocked: boolean): {
   segmentProgress: number;
   segmentTarget: number;
   nextTicketAt: number | null;
@@ -133,19 +131,6 @@ export function getAdProgressSegment(adsWatched: number, bonusUnlocked: boolean)
 } {
   if (adsWatched < FIRST_TICKET_AT) {
     return { segmentProgress: adsWatched, segmentTarget: ADS_PER_TICKET, nextTicketAt: FIRST_TICKET_AT, phase: "first" };
-  }
-  if (adsWatched < SECOND_TICKET_AT) {
-    return { segmentProgress: adsWatched - FIRST_TICKET_AT, segmentTarget: ADS_PER_TICKET, nextTicketAt: SECOND_TICKET_AT, phase: "second" };
-  }
-  if (adsWatched === SECOND_TICKET_AT && !bonusUnlocked) {
-    return { segmentProgress: 5, segmentTarget: ADS_PER_TICKET, nextTicketAt: null, phase: "bonus_modal" };
-  }
-  if (adsWatched >= SECOND_TICKET_AT && adsWatched < SECOND_TICKET_AT + BONUS_UNLOCK_ADS) {
-    return { segmentProgress: adsWatched - SECOND_TICKET_AT, segmentTarget: BONUS_UNLOCK_ADS, nextTicketAt: null, phase: "bonus_unlock" };
-  }
-  if (adsWatched < THIRD_TICKET_AT) {
-    const progress = adsWatched - (SECOND_TICKET_AT + BONUS_UNLOCK_ADS);
-    return { segmentProgress: progress, segmentTarget: ADS_PER_TICKET, nextTicketAt: THIRD_TICKET_AT, phase: "third" };
   }
   return { segmentProgress: ADS_PER_TICKET, segmentTarget: ADS_PER_TICKET, nextTicketAt: null, phase: "final" };
 }
