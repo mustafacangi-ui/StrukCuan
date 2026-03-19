@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import { Smartphone, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { shakeToWin } from "@/hooks/useShakeToWin";
@@ -127,6 +128,13 @@ export default function LuckyShakeCard({
     }
   };
 
+  // Icon cycling: smartphone ↔ golden ticket every 4 s
+  const [isTicketPreview, setIsTicketPreview] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setIsTicketPreview((p) => !p), 4000);
+    return () => clearInterval(id);
+  }, []);
+
   const countdownBlocks = [
     { val: pad(countdown?.days ?? 0), label: "DD" },
     { val: pad(countdown?.hours ?? 0), label: "HH" },
@@ -134,8 +142,8 @@ export default function LuckyShakeCard({
     { val: pad(countdown?.seconds ?? 0), label: "SS" },
   ];
 
-  // Compute card animation via inline style to avoid Tailwind class conflict
-  const cardAnimStyle: React.CSSProperties = isShaking
+  // Card shake via inline style to avoid Tailwind animation class conflict
+  const cardAnimStyle: CSSProperties = isShaking
     ? { animation: "card-shake 0.55s ease-in-out forwards" }
     : {};
 
@@ -159,14 +167,102 @@ export default function LuckyShakeCard({
 
         {/* Header row */}
         <div className="flex items-start gap-3 mb-4 relative z-10">
-          {/* Icon — glow limited to icon container only */}
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 border border-white/15 shadow-[0_0_14px_rgba(168,85,247,0.5)]">
-            <Smartphone
-              size={24}
-              className="text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
-              strokeWidth={1.5}
-            />
+
+          {/* ── Premium layered icon container ── */}
+          <div
+            className="relative w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 animate-breathing-glow"
+            style={{ background: "#0a0a0c", border: "1px solid rgba(168,85,247,0.3)" }}
+          >
+            {/* Plasma nebula inner glow rings */}
+            <div className="absolute inset-0 rounded-2xl opacity-60"
+              style={{ background: "radial-gradient(ellipse at 30% 30%, rgba(168,85,247,0.35) 0%, transparent 70%)" }} />
+            <div className="absolute inset-0 rounded-2xl opacity-40"
+              style={{ background: "radial-gradient(ellipse at 70% 70%, rgba(236,72,153,0.3) 0%, transparent 65%)" }} />
+
+            {/* Layer 1 — Wireframe Smartphone (shown when !isTicketPreview) */}
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700"
+              style={{ opacity: isTicketPreview ? 0 : 1 }}
+            >
+              <svg
+                viewBox="0 0 36 60"
+                width="26"
+                height="26"
+                fill="none"
+                stroke="rgba(255,255,255,0.9)"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ filter: "drop-shadow(0 0 5px rgba(255,255,255,0.7))" }}
+              >
+                {/* Phone body */}
+                <rect x="3" y="1" width="30" height="58" rx="5" />
+                {/* Speaker notch */}
+                <line x1="13" y1="6" x2="23" y2="6" strokeWidth="2" />
+                {/* Screen */}
+                <rect x="6" y="10" width="24" height="38" rx="1.5" strokeWidth="1" stroke="rgba(255,255,255,0.5)" />
+                {/* Home button */}
+                <circle cx="18" cy="54" r="2.5" />
+              </svg>
+            </div>
+
+            {/* Layer 2 — Golden Ticket wireframe (shown when isTicketPreview) */}
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-700"
+              style={{
+                opacity: isTicketPreview ? 1 : 0,
+                animation: isTicketPreview ? "ticket-breathe 3s ease-in-out infinite" : "none",
+              }}
+            >
+              <svg
+                viewBox="0 0 80 46"
+                width="44"
+                height="44"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ filter: "drop-shadow(0 0 6px rgba(168,85,247,0.9)) drop-shadow(0 0 12px rgba(236,72,153,0.6))" }}
+              >
+                {/* Outer ticket body */}
+                <rect x="2" y="3" width="76" height="40" rx="3" stroke="rgba(216,180,254,0.9)" strokeWidth="1.2" />
+                {/* Corner accent braces — top-left */}
+                <path d="M2 12 Q2 3 11 3" stroke="rgba(236,72,153,0.9)" strokeWidth="1.5" fill="none" />
+                {/* Corner accent braces — top-right */}
+                <path d="M78 12 Q78 3 69 3" stroke="rgba(236,72,153,0.9)" strokeWidth="1.5" fill="none" />
+                {/* Corner accent braces — bottom-left */}
+                <path d="M2 34 Q2 43 11 43" stroke="rgba(236,72,153,0.9)" strokeWidth="1.5" fill="none" />
+                {/* Corner accent braces — bottom-right */}
+                <path d="M78 34 Q78 43 69 43" stroke="rgba(236,72,153,0.9)" strokeWidth="1.5" fill="none" />
+                {/* Semi-circular notch left */}
+                <path d="M2 19 Q-4 23 2 27" stroke="rgba(216,180,254,0.9)" strokeWidth="1.2" fill="none" />
+                {/* Semi-circular notch right */}
+                <path d="M78 19 Q84 23 78 27" stroke="rgba(216,180,254,0.9)" strokeWidth="1.2" fill="none" />
+                {/* Perforation line */}
+                <line x1="26" y1="3" x2="26" y2="43" stroke="rgba(168,85,247,0.6)" strokeWidth="0.8" strokeDasharray="2.5 2.5" />
+                {/* Small ticket stub lines */}
+                <line x1="6" y1="15" x2="22" y2="15" stroke="rgba(216,180,254,0.5)" strokeWidth="0.8" />
+                <line x1="6" y1="23" x2="22" y2="23" stroke="rgba(216,180,254,0.5)" strokeWidth="0.8" />
+                <line x1="6" y1="31" x2="22" y2="31" stroke="rgba(216,180,254,0.5)" strokeWidth="0.8" />
+                {/* T letter — horizontal bar */}
+                <line x1="38" y1="14" x2="72" y2="14" stroke="rgba(255,255,255,0.95)" strokeWidth="2.2" />
+                {/* T letter — vertical stem */}
+                <line x1="55" y1="14" x2="55" y2="36" stroke="rgba(255,255,255,0.95)" strokeWidth="2.2" />
+                {/* Inner decorative diamond at T intersection */}
+                <polygon points="55,11 58,14 55,17 52,14" fill="none" stroke="rgba(236,72,153,0.85)" strokeWidth="0.8" />
+                {/* Small ornamental dots at T tips */}
+                <circle cx="38" cy="14" r="1.2" fill="rgba(168,85,247,0.9)" />
+                <circle cx="72" cy="14" r="1.2" fill="rgba(168,85,247,0.9)" />
+                <circle cx="55" cy="36" r="1.2" fill="rgba(168,85,247,0.9)" />
+              </svg>
+            </div>
+
+            {/* Tiny indicator dot showing which icon is active */}
+            <div className="absolute bottom-1 right-1 flex gap-0.5">
+              <div className={`w-1 h-1 rounded-full transition-all duration-500 ${!isTicketPreview ? "bg-white/80" : "bg-white/25"}`} />
+              <div className={`w-1 h-1 rounded-full transition-all duration-500 ${isTicketPreview ? "bg-[#a855f7]" : "bg-white/25"}`} />
+            </div>
           </div>
+
           <div className="flex-1 min-w-0">
             <h3 className="font-display font-bold text-white text-base leading-tight tracking-tight">
               Lucky Shake

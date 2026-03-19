@@ -158,6 +158,18 @@ export default {
           "50%": { boxShadow: "0 0 24px 6px rgba(74,222,128,0.5)" },
           "100%": { boxShadow: "0 0 12px 2px rgba(74,222,128,0.25)" },
         },
+        "breathing-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 18px rgba(168,85,247,0.55), 0 0 36px rgba(236,72,153,0.3), inset 0 0 14px rgba(168,85,247,0.08)",
+          },
+          "50%": {
+            boxShadow: "0 0 36px rgba(168,85,247,0.85), 0 0 72px rgba(236,72,153,0.55), inset 0 0 28px rgba(168,85,247,0.18)",
+          },
+        },
+        "ticket-breathe": {
+          "0%, 100%": { transform: "scale(1)", opacity: "0.85" },
+          "50%": { transform: "scale(1.06)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -176,6 +188,8 @@ export default {
         "shake-mount": "shake-mount 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
         "pulse-border": "pulse-border 2s ease-in-out infinite",
         "glow-pop": "glow-pop 0.6s ease-out forwards",
+        "breathing-glow": "breathing-glow 3s ease-in-out infinite",
+        "ticket-breathe": "ticket-breathe 3s ease-in-out infinite",
       },
     },
   },
