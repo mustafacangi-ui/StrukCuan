@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ClipboardList,
-  Video,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -21,6 +20,7 @@ import { AD_NETWORKS } from "@/config/adNetworks";
 import { StatsBar } from "@/components/StatsBar";
 import BottomNav from "@/components/BottomNav";
 import LuckyShakeCard from "@/components/LuckyShakeCard";
+import WatchAdsCard from "@/components/WatchAdsCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
@@ -189,30 +189,13 @@ export default function Earn() {
         </div>
 
         {/* Bölüm 1: WATCH ADS (Üst) */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/30 border border-green-400/40">
-              <Video size={24} className="text-emerald-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white">Watch Ads</h3>
-              <p className="text-xs text-white/80 mt-0.5">Earn tickets instantly</p>
-            </div>
-          </div>
-          <p className="text-xs text-[#4ade80] mb-2 font-medium">Watch 5 videos to earn 1 Ticket</p>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-white/90">Progress</span>
-            <span className="font-display font-bold text-white">{adsWatched ?? 0} / 5</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleWatchAd}
-            disabled={(adsWatched ?? 0) >= MAX_ADS_PER_DAY || isWeeklyLimitReached || showModal}
-            className="w-full py-3 rounded-xl font-display font-bold text-sm text-[#001a09] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-theme-green shadow-[0_0_18px_rgba(0,230,118,0.55)]"
-          >
-            {showModal ? "Watching..." : "Watch Ad"}
-          </button>
-        </div>
+        <WatchAdsCard
+          adsWatched={adsWatched ?? 0}
+          maxAds={MAX_ADS_PER_DAY}
+          isWeeklyLimitReached={isWeeklyLimitReached}
+          showModal={showModal}
+          onWatchAd={handleWatchAd}
+        />
 
         {/* Bölüm 2: SURVEYS (Orta) */}
         <div className={CARD_BASE}>
