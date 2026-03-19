@@ -141,15 +141,16 @@ export default function Map() {
                 style={
                   isActive
                     ? {
-                        background: "linear-gradient(135deg,#ec4899 0%,#c026d3 50%,#7c3aed 100%)",
-                        border: "1px solid rgba(236,72,153,0.4)",
-                        color: "#fff",
-                        animation: "neon-pulse-glow 1.4s ease-in-out infinite",
+                        background: "rgba(0,230,118,0.15)",
+                        border: "1px solid rgba(0,230,118,0.45)",
+                        color: "#00E676",
+                        boxShadow: "0 0 14px rgba(0,230,118,0.45)",
+                        transform: "scale(1.05)",
                       }
                     : {
-                        background: "rgba(255,255,255,0.07)",
-                        border: "1px solid rgba(255,255,255,0.15)",
-                        color: "rgba(255,255,255,0.65)",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.6)",
                       }
                 }
               >
@@ -162,9 +163,15 @@ export default function Map() {
 
         {/* ── Flash Deals ─────────────────────────────────────────────── */}
         <section>
-          <h3 className="flex items-center gap-2 text-[15px] font-bold text-white mb-3">
-            <span>🔥</span> Flash Deals
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="flex items-center gap-2 text-[15px] font-bold text-white">
+              <span>🔥</span> Flash Deals
+            </h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider"
+              style={{ color: "#00E676", textShadow: "0 0 8px rgba(0,230,118,0.6)" }}>
+              Within {radius} km
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-2.5">
             {FLASH_DEALS.map((deal) => (
               <FlashDealCard key={deal.id} deal={deal} />
@@ -197,13 +204,17 @@ export default function Map() {
         </section>
       </div>
 
-      {/* FAB */}
+      {/* FAB — green neon scanner button */}
       <button
         onClick={handleFabClick}
-        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-theme-green text-[#001a09] shadow-[0_0_18px_rgba(0,230,118,0.55)] transition-all hover:scale-105 active:scale-95"
-        aria-label="Share discount"
+        className="fixed bottom-24 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95"
+        aria-label="Scan Red Label"
+        style={{
+          background: "linear-gradient(135deg, #00E676 0%, #00c853 100%)",
+          animation: "fab-glow-pulse 2s ease-in-out infinite",
+        }}
       >
-        <Radar size={24} className="text-[#001a09]" />
+        <Radar size={26} className="text-[#001a09]" />
       </button>
 
       <BottomNav />
@@ -304,26 +315,34 @@ function NearbyRow({ opp }: { opp: typeof NEARBY_OPPORTUNITIES[number] }) {
       </div>
 
       {/* Right: distance badge */}
-      <div className="relative shrink-0 ml-3">
-        {/* Pulsing red ring for very-close red-label stores */}
+      <div className="relative shrink-0 ml-3 flex items-center justify-center">
+        {/* Outer pulsing ring — only for very-close red label stores */}
         {showPulseRing && (
-          <span className="absolute -inset-1.5 rounded-xl border border-[#ef4444] animate-pulse opacity-60" />
+          <span
+            className="absolute rounded-xl animate-pulse"
+            style={{
+              inset: "-4px",
+              border: "1.5px dashed rgba(239,68,68,0.65)",
+              boxShadow: "0 0 8px rgba(239,68,68,0.35)",
+            }}
+          />
         )}
         <span
-          className="relative rounded-[10px] px-2.5 py-1 text-[11px] font-bold block"
+          className="relative rounded-xl px-3 py-1.5 text-[11px] font-bold block whitespace-nowrap"
           style={
             opp.hasRedLabel
               ? {
-                  background: "rgba(239,68,68,0.15)",
-                  border: "1px solid rgba(239,68,68,0.35)",
+                  background: "rgba(239,68,68,0.12)",
+                  border: "1.5px dashed rgba(239,68,68,0.5)",
                   color: "#ef4444",
-                  textShadow: "0 0 8px rgba(239,68,68,0.7)",
+                  textShadow: "0 0 8px rgba(239,68,68,0.8)",
+                  boxShadow: "0 0 10px rgba(239,68,68,0.2)",
                 }
               : {
-                  background: "rgba(74,222,128,0.12)",
-                  border: "1px solid rgba(74,222,128,0.3)",
-                  color: "#4ade80",
-                  textShadow: "0 0 6px rgba(74,222,128,0.6)",
+                  background: "rgba(0,230,118,0.1)",
+                  border: "1px solid rgba(0,230,118,0.35)",
+                  color: "#00E676",
+                  textShadow: "0 0 6px rgba(0,230,118,0.6)",
                 }
           }
         >

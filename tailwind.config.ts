@@ -200,6 +200,18 @@ export default {
           "0%, 100%": { boxShadow: "0 0 14px rgba(251,191,36,0.6), 0 4px 12px rgba(0,0,0,0.4)" },
           "50%": { boxShadow: "0 0 28px rgba(251,191,36,0.9), 0 4px 16px rgba(0,0,0,0.5)" },
         },
+        "radar-sweep": {
+          "0%":   { transform: "rotate(0deg)"   },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "radar-ring-expand": {
+          "0%":   { transform: "scale(1)",   opacity: "0.7" },
+          "100%": { transform: "scale(2.2)", opacity: "0"   },
+        },
+        "fab-glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(0,230,118,0.6), 0 0 40px rgba(0,230,118,0.3)" },
+          "50%":      { boxShadow: "0 0 32px rgba(0,230,118,0.9), 0 0 64px rgba(0,230,118,0.5)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -225,6 +237,9 @@ export default {
         "neon-pulse-glow": "neon-pulse-glow 1.4s ease-in-out infinite",
         "gold-breathing-glow": "gold-breathing-glow 3s ease-in-out infinite",
         "gold-pulse-btn": "gold-pulse-btn 1.6s ease-in-out infinite",
+        "radar-sweep": "radar-sweep 4s linear infinite",
+        "radar-ring-expand": "radar-ring-expand 2.5s ease-out infinite",
+        "fab-glow-pulse": "fab-glow-pulse 2s ease-in-out infinite",
       },
     },
   },

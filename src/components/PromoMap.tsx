@@ -242,29 +242,47 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
   }
 
   return (
-    <div className="rounded-xl border border-white/20 overflow-hidden">
-      {/* Header - HTML glass style */}
-      <div className="flex items-center justify-between px-3 py-2.5 bg-[rgba(180,40,140,0.22)] backdrop-blur-md border-b border-white/12">
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(0,230,118,0.15)", boxShadow: "0 0 24px rgba(0,230,118,0.08)" }}>
+      {/* Header — dark glass */}
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8"
+        style={{ background: "rgba(5,3,15,0.80)", backdropFilter: "blur(16px)" }}
+      >
         <div className="flex items-center gap-1.5">
-          <span className="relative flex h-[7px] w-[7px]">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#ff4444] opacity-75 animate-pulse" style={{ boxShadow: "0 0 8px #ff4444" }} />
-            <span className="relative inline-flex h-full w-full rounded-full bg-[#ff4444]" style={{ boxShadow: "0 0 8px #ff4444" }} />
+          {/* Live dot */}
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#ef4444] animate-ping opacity-70"
+              style={{ boxShadow: "0 0 6px #ef4444" }} />
+            <span className="relative inline-flex h-full w-full rounded-full bg-[#ef4444]"
+              style={{ boxShadow: "0 0 6px #ef4444" }} />
           </span>
-          <span className="text-[11px] font-bold text-white font-display">
-            Active Promos Nearby – LIVE
+          <span className="text-[11px] font-bold text-white/90 font-display tracking-wide">
+            Active Promos Nearby –{" "}
+            <span className="text-[#ef4444]" style={{ textShadow: "0 0 6px rgba(239,68,68,0.7)" }}>
+              LIVE
+            </span>
           </span>
         </div>
-        {/* Radius filters */}
+        {/* Radius pills */}
         <div className="flex gap-1">
           {RADIUS_OPTIONS.map((r) => (
             <button
               key={r}
               onClick={() => setRadius(r)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all border ${
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-200"
+              style={
                 radius === r
-                  ? "bg-white/22 text-white border-white/35"
-                  : "bg-white/8 text-white/65 border-white/18 hover:bg-white/12"
-              }`}
+                  ? {
+                      background: "rgba(0,230,118,0.18)",
+                      border: "1px solid rgba(0,230,118,0.45)",
+                      color: "#00E676",
+                      boxShadow: "0 0 8px rgba(0,230,118,0.4)",
+                    }
+                  : {
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.5)",
+                    }
+              }
             >
               {r}km
             </button>
@@ -304,24 +322,28 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
               type="line"
               paint={{
                 "line-color": "#00E676",
-                "line-width": 2,
-                "line-opacity": 0.4,
+                "line-width": 1.5,
+                "line-opacity": 0.55,
+                "line-dasharray": [4, 3],
               }}
             />
           </Source>
 
-          {/* User location */}
-          <Marker
-            latitude={userLocation.lat}
-            longitude={userLocation.lng}
-            anchor="center"
-          >
-            <div
-              className="w-5 h-5 rounded-full bg-primary border-2 border-primary-foreground"
-              style={{
-                boxShadow: "0 0 18px rgba(0,230,118,0.55)",
-              }}
-            />
+          {/* User location — glowing dot + concentric rings */}
+          <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
+            <div className="relative flex items-center justify-center w-16 h-16">
+              {/* Expanding ring 1 */}
+              <div className="absolute w-10 h-10 rounded-full border border-[#00E676]/40"
+                style={{ animation: "radar-ring-expand 2.5s ease-out infinite" }} />
+              {/* Expanding ring 2 — offset */}
+              <div className="absolute w-10 h-10 rounded-full border border-[#00E676]/30"
+                style={{ animation: "radar-ring-expand 2.5s ease-out 1.25s infinite" }} />
+              {/* Static inner ring */}
+              <div className="absolute w-6 h-6 rounded-full border border-[#00E676]/50" />
+              {/* Core dot */}
+              <div className="w-3.5 h-3.5 rounded-full bg-[#00E676] relative z-10"
+                style={{ boxShadow: "0 0 10px rgba(0,230,118,0.9), 0 0 20px rgba(0,230,118,0.5)" }} />
+            </div>
           </Marker>
 
           {/* Heatmap circles for clustered promos (render behind markers) */}
@@ -357,8 +379,37 @@ export default function PromoMap({ height = 260 }: PromoMapProps) {
           ))}
         </Map>
 
-        {/* Dark overlay - makes user pin and store names stand out */}
-        <div className="absolute inset-0 bg-black/25 pointer-events-none z-[5] rounded-b-xl" aria-hidden />
+        {/* Dark tint — makes markers and names pop */}
+        <div className="absolute inset-0 bg-black/20 pointer-events-none z-[5] rounded-b-2xl" aria-hidden />
+
+        {/* ── Radar sweep CSS overlay (centered on user location ≈ map center) ── */}
+        <div className="absolute inset-0 pointer-events-none z-[6] flex items-center justify-center overflow-hidden rounded-b-2xl">
+          {/* Rotating sweep beam */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              width:  `${height * 0.72}px`,
+              height: `${height * 0.72}px`,
+              background: "conic-gradient(from 0deg, transparent 0deg, rgba(0,230,118,0.18) 35deg, rgba(0,230,118,0.04) 60deg, transparent 65deg)",
+              animation: "radar-sweep 4s linear infinite",
+            }}
+          />
+          {/* Static concentric rings */}
+          <div className="absolute rounded-full border border-[#00E676]/20"
+            style={{ width: `${height * 0.24}px`, height: `${height * 0.24}px` }} />
+          <div className="absolute rounded-full border border-[#00E676]/14"
+            style={{ width: `${height * 0.48}px`, height: `${height * 0.48}px` }} />
+          <div className="absolute rounded-full border border-[#00E676]/10"
+            style={{ width: `${height * 0.72}px`, height: `${height * 0.72}px` }} />
+          {/* Radius label — floats above center */}
+          <div className="absolute"
+            style={{ top: `calc(50% - ${height * 0.16}px)` }}>
+            <span className="text-[9px] font-bold text-[#00E676]/80 px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(0,230,118,0.25)" }}>
+              {radius} km radius
+            </span>
+          </div>
+        </div>
 
         {isLoading && (
           <div className="absolute top-2 left-2 z-20 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-white">
