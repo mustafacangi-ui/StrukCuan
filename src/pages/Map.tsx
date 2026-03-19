@@ -13,6 +13,7 @@ import { Radar } from "lucide-react";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useRadar } from "@/contexts/RadarContext";
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
+import { CARD_GLASS, BTN_GLASS } from "@/lib/designTokens";
 
 // ─── Category filters ────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ export default function Map() {
       >
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors"
+          className={`w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 ${BTN_GLASS}`}
         >
           <ArrowLeft size={18} />
         </button>
@@ -206,13 +207,7 @@ export default function Map() {
           </h3>
 
           {nearbyDeals.length === 0 ? (
-            <div
-              className="rounded-2xl py-8 text-center"
-              style={{
-                background: "rgba(10,8,14,0.6)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
+            <div className={`rounded-2xl py-8 text-center ${CARD_GLASS}`}>
               <p className="text-sm text-white/40">
                 No opportunities within {radius} km
               </p>

@@ -37,11 +37,11 @@ export default function WatchAdsCard({
     ? { animation: "card-ready-pulse 1.8s ease-in-out infinite" }
     : {};
 
-  // Progress fill shake on click
+  // Progress fill — green = system/progress (unified with Radar)
   const progressFillStyle: CSSProperties = {
     width: `${progressPct}%`,
     transition: "width 0.55s cubic-bezier(0.4,0,0.2,1)",
-    background: "linear-gradient(90deg, #ec4899 0%, #c026d3 50%, #7c3aed 100%)",
+    background: "linear-gradient(90deg, #00E676 0%, #00c853 100%)",
     borderRadius: "9999px",
     position: "relative",
     height: "100%",
@@ -49,8 +49,8 @@ export default function WatchAdsCard({
       ? { animation: "progress-liquid-shake 0.4s ease-in-out forwards" }
       : {}),
     boxShadow: isFull
-      ? "0 0 16px rgba(236,72,153,0.85), 0 0 32px rgba(168,85,247,0.5)"
-      : "0 0 8px rgba(236,72,153,0.5), 0 0 16px rgba(168,85,247,0.25)",
+      ? "0 0 16px rgba(0,230,118,0.6), 0 0 24px rgba(0,230,118,0.4)"
+      : "0 0 12px rgba(0,230,118,0.5)",
   };
 
   // Dot segment markers (every 1 ad)
@@ -214,7 +214,7 @@ export default function WatchAdsCard({
           !isDisabled
             ? {
                 boxShadow: "0 0 24px rgba(236,72,153,0.55), 0 4px 12px rgba(0,0,0,0.4)",
-                animation: "neon-pulse-glow 1.4s ease-in-out infinite",
+                animation: "unified-pulse 2s ease-in-out infinite",
               }
             : {
                 boxShadow: "none",

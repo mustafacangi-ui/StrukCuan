@@ -1,6 +1,7 @@
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
 import { isOlderThan24h } from "@/lib/formatRelativeTime";
+import { CARD_GLASS } from "@/lib/designTokens";
 
 function formatPrice(price?: number | null): string {
   if (price == null || price <= 0) return "Promo";
@@ -27,13 +28,11 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => e.key === "Enter" && onClick()}
-      className="rounded-2xl p-3.5 cursor-pointer transition-all duration-200 hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E676]/50"
+      className={`rounded-2xl p-3.5 cursor-pointer transition-all duration-200 hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E676]/50 ${CARD_GLASS}`}
       style={{
-        background: "rgba(10,8,14,0.7)",
         border: deal.isRedLabel
           ? "1px solid rgba(239,68,68,0.3)"
-          : "1px solid rgba(255,255,255,0.1)",
-        backdropFilter: "blur(16px)",
+          : undefined,
         boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         opacity: isOld ? 0.65 : 1,
       }}

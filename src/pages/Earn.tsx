@@ -23,11 +23,9 @@ import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
 import { getCountdownParts } from "@/lib/weeklyCountdown";
+import { CARD_BASE, BTN_GLASS } from "@/lib/designTokens";
 
 const WEEKLY_MAX = 42;
-
-const CARD_BASE =
-  "rounded-2xl p-4 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10 transition-all";
 
 const DEFAULT_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
@@ -158,7 +156,7 @@ export default function Earn() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-xl bg-white/20 border border-white/20 p-2 hover:bg-white/30 transition-colors shrink-0"
+              className={`rounded-xl p-2 shrink-0 ${BTN_GLASS}`}
             >
               <ArrowLeft size={18} className="text-white" />
             </button>
@@ -172,16 +170,20 @@ export default function Earn() {
       </div>
 
       <div className="relative z-10 px-4 mt-4 space-y-4">
-        {/* Progress Section */}
+        {/* Progress Section — green = system/progress */}
         <div className={CARD_BASE}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-white">Your Progress</span>
             <span className="text-sm font-bold text-white">{weeklyTickets} / {WEEKLY_MAX} tickets</span>
           </div>
-          <div className="h-3 rounded-full overflow-hidden bg-white/20">
+          <div className="h-3 rounded-full overflow-hidden bg-white/10">
             <div
-              className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-green-400 to-emerald-600"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${progressPercent}%`,
+                background: "linear-gradient(90deg, #00E676 0%, #00c853 100%)",
+                boxShadow: "0 0 12px rgba(0,230,118,0.5)",
+              }}
             />
           </div>
         </div>

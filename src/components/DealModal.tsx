@@ -170,14 +170,14 @@ export default function DealModal({ deal, onClose }: DealModalProps) {
             )}
           </div>
 
-          {/* Navigate button */}
+          {/* Navigate button — Primary CTA = pink gradient (unified with Earn) */}
           <button
             onClick={handleNavigate}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-display font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-display font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{
-              background: "linear-gradient(135deg, #00E676 0%, #00c853 100%)",
-              color: "#001a09",
-              boxShadow: "0 0 20px rgba(0,230,118,0.4)",
+              background: "linear-gradient(135deg, #ec4899 0%, #c026d3 50%, #7c3aed 100%)",
+              boxShadow: "0 0 24px rgba(236,72,153,0.55), 0 4px 12px rgba(0,0,0,0.4)",
+              animation: "unified-pulse 2s ease-in-out infinite",
             }}
           >
             <Navigation size={18} />

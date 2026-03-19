@@ -1,3 +1,5 @@
+import { CARD_GLASS, BTN_GLASS } from "@/lib/designTokens";
+
 /** Hata Koruması — Safe loading state for Radar screen */
 export default function RadarSkeleton() {
   return (
@@ -9,13 +11,13 @@ export default function RadarSkeleton() {
     >
       {/* Topbar skeleton */}
       <div className="sticky top-0 z-50 border-b border-white/10 px-4 py-3.5 flex items-center gap-3 bg-[rgba(15,7,38,0.75)]">
-        <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse" />
+        <div className={`w-9 h-9 rounded-full animate-pulse ${BTN_GLASS}`} />
         <div className="h-6 w-24 rounded bg-white/10 animate-pulse flex-1" />
-        <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse" />
+        <div className={`w-9 h-9 rounded-full animate-pulse ${BTN_GLASS}`} />
       </div>
 
       {/* Map placeholder */}
-      <div className="mx-3.5 mt-3.5 rounded-[20px] overflow-hidden border border-white/15 h-[240px] flex items-center justify-center">
+      <div className="mx-3.5 mt-3.5 rounded-[20px] overflow-hidden border border-white/10 h-[240px] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div
             className="w-10 h-10 rounded-full border-2 border-[#00E676]/40 animate-spin"
@@ -41,7 +43,7 @@ export default function RadarSkeleton() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-24 rounded-2xl bg-white/5 animate-pulse"
+                className={`h-24 rounded-2xl animate-pulse ${CARD_GLASS}`}
               />
             ))}
           </div>
@@ -52,7 +54,7 @@ export default function RadarSkeleton() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 rounded-2xl bg-white/5 animate-pulse"
+                className={`h-16 rounded-2xl animate-pulse ${CARD_GLASS}`}
               />
             ))}
           </div>

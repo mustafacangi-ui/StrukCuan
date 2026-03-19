@@ -1,6 +1,7 @@
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
 import { isOlderThan24h } from "@/lib/formatRelativeTime";
+import { CARD_GLASS } from "@/lib/designTokens";
 
 function formatDist(km: number) {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
@@ -31,13 +32,11 @@ export default function NearbyRow({ deal, onClick }: NearbyRowProps) {
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => e.key === "Enter" && onClick()}
-      className="rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all duration-200 hover:scale-[1.015] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E676]/50"
+      className={`rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all duration-200 hover:scale-[1.015] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E676]/50 ${CARD_GLASS}`}
       style={{
-        background: "rgba(10,8,14,0.65)",
         border: deal.isRedLabel
           ? "1px solid rgba(239,68,68,0.2)"
-          : "1px solid rgba(255,255,255,0.1)",
-        backdropFilter: "blur(14px)",
+          : undefined,
         opacity: isOld ? 0.7 : 1,
       }}
       onMouseEnter={(e) => {
