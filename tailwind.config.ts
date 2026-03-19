@@ -248,6 +248,42 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(0,230,118,0)" },
           "50%":      { boxShadow: "0 0 18px 2px rgba(0,230,118,0.12)" },
         },
+        "nearby-enter": {
+          "0%":   { opacity: "0", transform: "translateY(-30px) scale(1.04)" },
+          "65%":  { opacity: "1", transform: "translateY(2px)   scale(0.99)" },
+          "100%": { opacity: "1", transform: "translateY(0)      scale(1)"   },
+        },
+        "scan-sweep": {
+          "0%":   { transform: "translateY(-8px)",    opacity: "0" },
+          "4%":   { opacity: "1" },
+          "96%":  { opacity: "1" },
+          "100%": { transform: "translateY(1200px)",  opacity: "0" },
+        },
+        "signal-close": {
+          "0%, 100%": { boxShadow: "0 0 12px rgba(0,230,118,0.12), 0 2px 10px rgba(0,0,0,0.3)" },
+          "50%":      { boxShadow: "0 0 22px rgba(0,230,118,0.24), 0 4px 14px rgba(0,0,0,0.4)" },
+        },
+        "signal-medium": {
+          "0%, 100%": { boxShadow: "0 0 7px rgba(0,230,118,0.07), 0 2px 8px rgba(0,0,0,0.28)" },
+          "50%":      { boxShadow: "0 0 14px rgba(0,230,118,0.14), 0 4px 12px rgba(0,0,0,0.35)" },
+        },
+        "signal-far": {
+          "0%, 100%": { boxShadow: "0 0 4px rgba(0,230,118,0.03), 0 2px 8px rgba(0,0,0,0.22)" },
+          "50%":      { boxShadow: "0 0 8px rgba(0,230,118,0.07), 0 4px 10px rgba(0,0,0,0.28)" },
+        },
+        "signal-red": {
+          "0%, 100%": { boxShadow: "0 0 16px rgba(239,68,68,0.2), 0 2px 10px rgba(0,0,0,0.35)" },
+          "50%":      { boxShadow: "0 0 28px rgba(239,68,68,0.38), 0 4px 16px rgba(0,0,0,0.45)" },
+        },
+        "red-ripple": {
+          "0%":   { transform: "scale(1)",    opacity: "0.35" },
+          "100%": { transform: "scale(1.55)", opacity: "0"    },
+        },
+        "entry-glow": {
+          "0%":   { opacity: "0.4" },
+          "50%":  { opacity: "0.15" },
+          "100%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -285,6 +321,13 @@ export default {
         "nearby-enter":      "nearby-enter 0.35s cubic-bezier(0.16,1,0.3,1) both",
         "nearby-float":      "nearby-float 4s ease-in-out infinite",
         "fresh-glow":        "fresh-glow 2s ease-in-out infinite",
+        "scan-sweep":        "scan-sweep 6s linear infinite",
+        "signal-close":      "signal-close 2s ease-in-out infinite",
+        "signal-medium":     "signal-medium 2.5s ease-in-out infinite",
+        "signal-far":        "signal-far 3s ease-in-out infinite",
+        "signal-red":        "signal-red 2s ease-in-out infinite",
+        "red-ripple":        "red-ripple 2.5s ease-out infinite",
+        "entry-glow":        "entry-glow 0.6s ease-out forwards",
       },
     },
   },

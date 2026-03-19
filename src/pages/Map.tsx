@@ -8,6 +8,7 @@ import CameraScanner from "@/components/CameraScanner";
 import DealModal from "@/components/DealModal";
 import DealCard from "@/components/DealCard";
 import NearbyRow from "@/components/NearbyRow";
+import NearbyList from "@/components/NearbyList";
 import RadarSkeleton from "@/components/RadarSkeleton";
 import { Radar } from "lucide-react";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -198,17 +199,7 @@ export default function Map() {
         </section>
 
         {/* ── Nearby Opportunities ─────────────────────────────────────── */}
-        <section className="relative">
-          {/* Ambient background — very subtle radial gradient depth layer */}
-          <div
-            className="pointer-events-none absolute inset-0 -z-10 rounded-3xl"
-            style={{
-              background:
-                "radial-gradient(ellipse at 50% 0%, rgba(0,230,118,0.03) 0%, transparent 70%)",
-              opacity: 0.8,
-            }}
-          />
-
+        <section>
           <h3 className="flex items-center gap-2 text-[15px] font-bold text-white mb-3">
             <span>📍</span> Nearby Opportunities
             <span className="ml-auto text-[10px] font-normal text-white/40 uppercase tracking-widest">
@@ -223,7 +214,7 @@ export default function Map() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <NearbyList>
               {nearbyDeals.map((deal, index) => (
                 <NearbyRow
                   key={deal.id}
@@ -232,7 +223,7 @@ export default function Map() {
                   onClick={() => setSelectedDeal(deal)}
                 />
               ))}
-            </div>
+            </NearbyList>
           )}
         </section>
       </div>
