@@ -34,6 +34,21 @@ export default function WeeklyRewardCard() {
 
   return (
     <>
+      <style>{`
+        @keyframes gift-aura {
+          0%,100% { opacity:.18; transform:scale(1);   }
+          50%      { opacity:.38; transform:scale(1.22); }
+        }
+        @keyframes gift-ring {
+          0%   { opacity:.5;  transform:scale(1);   }
+          100% { opacity:0;   transform:scale(1.75); }
+        }
+        @keyframes gift-float {
+          0%,100% { transform:translateY(0);    }
+          50%     { transform:translateY(-4px); }
+        }
+      `}</style>
+
       {showWinners && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md animate-fade-in">
           <div className="relative mx-4 w-full max-w-sm rounded-2xl p-6 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
@@ -74,9 +89,55 @@ export default function WeeklyRewardCard() {
 
       <div className="mx-4 rounded-2xl p-6 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/20">
-            <Gift size={18} className="text-[#00FF88]" />
+          {/* ── Animated gift icon ── */}
+          <div className="relative flex-shrink-0 w-9 h-9">
+
+            {/* Breathing aura — radial purple→pink glow */}
+            <div
+              className="absolute rounded-xl pointer-events-none"
+              style={{
+                inset: "-6px",
+                background:
+                  "radial-gradient(circle, rgba(155,92,255,0.35) 0%, rgba(255,78,205,0.18) 50%, transparent 75%)",
+                animation: "gift-aura 2.5s ease-in-out infinite",
+              }}
+            />
+
+            {/* Expanding ring 1 */}
+            <div
+              className="absolute rounded-xl pointer-events-none"
+              style={{
+                inset: "-2px",
+                border: "1px solid rgba(155,92,255,0.4)",
+                animation: "gift-ring 2.5s ease-out infinite",
+              }}
+            />
+
+            {/* Expanding ring 2 — staggered by half a cycle */}
+            <div
+              className="absolute rounded-xl pointer-events-none"
+              style={{
+                inset: "-2px",
+                border: "1px solid rgba(155,92,255,0.25)",
+                animation: "gift-ring 2.5s ease-out infinite 1.25s",
+              }}
+            />
+
+            {/* Icon container — floats + scales on hover */}
+            <div
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/20 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+              style={{ animation: "gift-float 3s ease-in-out infinite" }}
+            >
+              <Gift
+                size={18}
+                style={{
+                  color: "#00FF88",
+                  filter: "drop-shadow(0 0 8px rgba(0,230,118,0.5))",
+                }}
+              />
+            </div>
           </div>
+
           <h2 className="font-display text-sm font-bold text-white">Weekly Reward</h2>
         </div>
 
