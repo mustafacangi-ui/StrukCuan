@@ -6,7 +6,6 @@ import { useRadar } from "@/contexts/RadarContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
-import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { getHelloForCountry, getWelcomeForCountry } from "@/lib/greeting";
 
 import WeeklyRewardCard from "@/components/WeeklyRewardCard";
@@ -293,7 +292,7 @@ const Index = () => {
   const [onlineCount, setOnlineCount] = useState(341);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const progressPercent = Math.min(100, (ticketCount / MAX_TICKETS_PER_WEEK) * 100);
+  // Entry computation (10 tickets = 1 entry) — used in user header inline progress
 
   const nickname =
     user?.nickname ??
@@ -563,34 +562,47 @@ const Index = () => {
                 </div>
               )}
 
-              {/* ── Inline weekly progress ── */}
-              <div className="mt-2" style={{ width: "148px" }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[9px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    Weekly tickets
-                  </span>
-                  <span
-                    className="text-[10px] font-bold tabular-nums"
-                    style={{ color: "#00E676", textShadow: "0 0 8px rgba(0,230,118,0.6)" }}
-                  >
-                    {ticketCount}&thinsp;/&thinsp;{MAX_TICKETS_PER_WEEK}
-                  </span>
-                </div>
-                <div
-                  className="h-[5px] rounded-full overflow-hidden"
-                  style={{ background: "rgba(255,255,255,0.07)" }}
-                >
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${progressPercent}%`,
-                      background: "linear-gradient(90deg,#00E676,#00c853)",
-                      boxShadow: "0 0 6px rgba(0,230,118,0.5)",
-                      animation: "bar-grow-home 1.5s 0.6s ease both",
-                    }}
-                  />
-                </div>
-              </div>
+              {/* ── Inline weekly progress: entry view ── */}
+              {(() => {
+                const _entries   = Math.floor(ticketCount / 10);
+                const _remaining = ticketCount % 10;
+                const _needed    = 10 - _remaining;
+                return (
+                  <div className="mt-2" style={{ width: "155px" }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span
+                        className="text-[10px] font-extrabold tabular-nums"
+                        style={{ color: "#ffd600", textShadow: "0 0 8px rgba(255,214,0,0.55)" }}
+                      >
+                        {_entries}
+                      </span>
+                      <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.38)" }}>
+                        {_entries === 1 ? "entry" : "entries"}
+                      </span>
+                      <span className="text-[9px] ml-auto tabular-nums" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        {_remaining}/10 → next
+                      </span>
+                    </div>
+                    <div
+                      className="h-[5px] rounded-full overflow-hidden"
+                      style={{ background: "rgba(255,255,255,0.07)" }}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(_remaining / 10) * 100}%`,
+                          background: "linear-gradient(90deg,#00E676,#00c853)",
+                          boxShadow: "0 0 6px rgba(0,230,118,0.5)",
+                          animation: "bar-grow-home 1.5s 0.6s ease both",
+                        }}
+                      />
+                    </div>
+                    <p className="text-[8px] mt-0.5" style={{ color: "rgba(255,255,255,0.22)" }}>
+                      {ticketCount} tickets · {_needed} more for next entry
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

@@ -4,7 +4,6 @@ import { Award, X, Gift } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
-import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { getCountdownParts, pad } from "@/lib/weeklyCountdown";
 
 export default function WeeklyRewardCard() {
@@ -15,7 +14,11 @@ export default function WeeklyRewardCard() {
   const [showWinners, setShowWinners] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  const progressPercent = Math.min(100, (ticketCount / MAX_TICKETS_PER_WEEK) * 100);
+  // ── Ticket → Entry conversion (10 tickets = 1 entry) ──
+  const entries          = Math.floor(ticketCount / 10);
+  const remainingTickets = ticketCount % 10;
+  const nextEntryPct     = (remainingTickets / 10) * 100;
+  const ticketsNeeded    = 10 - remainingTickets;
 
   useEffect(() => {
     const tick = () => setTimeLeft(getCountdownParts());
@@ -85,18 +88,92 @@ export default function WeeklyRewardCard() {
           <p className="font-display text-sm font-bold text-[#00FF88]">5 × Rp100,000 vouchers</p>
         </div>
 
-        <div className="mt-4">
-          <p className="text-[10px] text-white/80 mb-1">Your Weekly Tickets</p>
-          <p className="font-display text-sm font-bold text-white">
-            {ticketCount} / {MAX_TICKETS_PER_WEEK} tickets
+        {/* ── Ticket → Entry system ────────────────────────────── */}
+        <div
+          className="mt-4 rounded-xl p-4 relative overflow-hidden"
+          style={{
+            background: "rgba(0,0,0,0.28)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          {/* Rule — subtle helper text */}
+          <p
+            className="text-[10px] mb-3 font-medium"
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
+            Each 10 tickets = 1 entry in the weekly draw
           </p>
-          <div className="mt-2 h-2 rounded-full bg-black/40 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
+
+          {/* Ticket count */}
+          <div className="flex items-baseline gap-1.5 mb-1">
+            <span className="font-display text-[12px] text-white/55">You have</span>
+            <span className="font-display text-[20px] font-extrabold text-white tabular-nums">
+              {ticketCount}
+            </span>
+            <span className="font-display text-[12px] text-white/55">tickets</span>
           </div>
-          <p className="text-[9px] text-white/90 mt-1">Max {MAX_TICKETS_PER_WEEK} tickets per week</p>
+
+          {/* Entries — the number that matters */}
+          <div className="flex items-center gap-2.5 mb-4">
+            <span className="text-[13px] text-white/30">=</span>
+            <span
+              className="font-display text-[32px] font-extrabold leading-none tabular-nums"
+              style={{
+                color: "#ffd600",
+                textShadow: "0 0 20px rgba(255,214,0,0.55), 0 0 40px rgba(255,214,0,0.2)",
+              }}
+            >
+              {entries}
+            </span>
+            <div>
+              <p className="font-display text-[14px] font-bold text-white leading-tight">
+                entries
+              </p>
+              <p className="text-[10px] leading-tight" style={{ color: "rgba(255,255,255,0.42)" }}>
+                lottery chances
+              </p>
+            </div>
+          </div>
+
+          {/* Progress to next entry */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {remainingTickets === 0
+                  ? "Entry threshold reached!"
+                  : `${ticketsNeeded} more ticket${ticketsNeeded !== 1 ? "s" : ""} for next entry`}
+              </span>
+              <span
+                className="text-[11px] font-bold tabular-nums"
+                style={{ color: "#00E676" }}
+              >
+                {remainingTickets}&thinsp;/&thinsp;10
+              </span>
+            </div>
+
+            <div
+              className="h-2 rounded-full overflow-hidden"
+              style={{ background: "rgba(255,255,255,0.07)" }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{
+                  width: `${nextEntryPct}%`,
+                  background: "linear-gradient(90deg,#00E676,#00c853)",
+                  boxShadow: "0 0 8px rgba(0,230,118,0.5)",
+                }}
+              />
+            </div>
+
+            {remainingTickets > 0 && (
+              <p
+                className="text-[9px] mt-1.5"
+                style={{ color: "rgba(255,255,255,0.3)" }}
+              >
+                Earn {ticketsNeeded} more ticket{ticketsNeeded !== 1 ? "s" : ""} to unlock 1 more entry
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="mt-4">
