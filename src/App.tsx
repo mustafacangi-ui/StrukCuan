@@ -9,6 +9,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";   // ⭐ BUNU EKLE
 
 import Index from "./pages/Index";
+import Home from "./pages/Home";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
 import Promo from "./pages/Promo";
@@ -45,9 +46,10 @@ const App = () => (
             <ReferralCapture />
             <PostLoginRedirect />
             <Routes>
-              <Route path="/" element={<Map />} />
-              <Route path="/home" element={<Index />} />
-              <Route path="/map" element={<Navigate to="/" replace />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/old-index" element={<Index />} />
+              <Route path="/map" element={<Map />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
               <Route path="/earn" element={<EarnErrorBoundary><Earn /></EarnErrorBoundary>} />
