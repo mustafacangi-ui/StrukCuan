@@ -96,6 +96,30 @@ const HOME_STYLES = `
     70%  { box-shadow: 0 0 0 7px rgba(255,68,68,0); }
     100% { box-shadow: 0 0 0 0 rgba(255,68,68,0); }
   }
+  @keyframes scan-btn-breathe {
+    0%,100% {
+      box-shadow:
+        0 0 0 0   rgba(155,92,255,0.55),
+        0 0 30px  rgba(155,92,255,0.3),
+        0 0 60px  rgba(255,78,205,0.12),
+        0 8px 24px rgba(0,0,0,0.45);
+    }
+    50% {
+      box-shadow:
+        0 0 0 20px rgba(155,92,255,0),
+        0 0 55px  rgba(155,92,255,0.55),
+        0 0 110px rgba(255,78,205,0.22),
+        0 8px 28px rgba(0,0,0,0.5);
+    }
+  }
+  @keyframes rl-glow-pulse {
+    0%,100% {
+      box-shadow: 0 0 0 0 rgba(255,68,68,0.4), 0 4px 20px rgba(255,68,68,0.1);
+    }
+    50% {
+      box-shadow: 0 0 0 12px rgba(255,68,68,0), 0 4px 44px rgba(255,68,68,0.28);
+    }
+  }
 `;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -251,54 +275,7 @@ function PhoneHero() {
   );
 }
 
-function StepCard({
-  icon,
-  title,
-  sub,
-  delay,
-}: {
-  icon: string;
-  title: string;
-  sub: string;
-  delay: string;
-}) {
-  return (
-    <div
-      className="rounded-2xl p-3.5 text-center relative overflow-hidden"
-      style={{
-        background: "rgba(255,255,255,0.045)",
-        border: "1px solid rgba(155,92,255,0.15)",
-        animation: `home-card-in 0.4s ${delay} ease both`,
-      }}
-    >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse at 50% 0%,rgba(155,92,255,0.07),transparent 70%)",
-        }}
-      />
-      <div
-        className="w-11 h-11 rounded-full flex items-center justify-center text-xl mx-auto mb-2 relative z-10"
-        style={{
-          background: "rgba(155,92,255,0.12)",
-          border: "1px solid rgba(155,92,255,0.28)",
-          animation: "icon-bob 2.5s ease-in-out infinite",
-        }}
-      >
-        {icon}
-      </div>
-      <p
-        className="text-[11px] font-bold text-white mb-0.5 relative z-10"
-        style={{ fontFamily: "'Syne', sans-serif" }}
-      >
-        {title}
-      </p>
-      <p className="text-[9px] leading-[1.4] relative z-10" style={{ color: "rgba(255,255,255,0.45)" }}>
-        {sub}
-      </p>
-    </div>
-  );
-}
+// StepCard removed — non-functional decorative cards eliminated for clarity
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -585,6 +562,35 @@ const Index = () => {
                   Level {level} · Receipt Hunter
                 </div>
               )}
+
+              {/* ── Inline weekly progress ── */}
+              <div className="mt-2" style={{ width: "148px" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[9px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    Weekly tickets
+                  </span>
+                  <span
+                    className="text-[10px] font-bold tabular-nums"
+                    style={{ color: "#00E676", textShadow: "0 0 8px rgba(0,230,118,0.6)" }}
+                  >
+                    {ticketCount}&thinsp;/&thinsp;{MAX_TICKETS_PER_WEEK}
+                  </span>
+                </div>
+                <div
+                  className="h-[5px] rounded-full overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.07)" }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${progressPercent}%`,
+                      background: "linear-gradient(90deg,#00E676,#00c853)",
+                      boxShadow: "0 0 6px rgba(0,230,118,0.5)",
+                      animation: "bar-grow-home 1.5s 0.6s ease both",
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -632,16 +638,17 @@ const Index = () => {
               </span>
             </div>
 
-            {/* Headline */}
+            {/* Headline — 3-line hierarchy */}
             <h1
-              className="font-extrabold leading-[1.1] text-white mb-2"
+              className="font-extrabold leading-[1.12] mb-2"
               style={{
                 fontFamily: "'Syne', sans-serif",
-                fontSize: "33px",
-                letterSpacing: "-0.5px",
+                fontSize: "28px",
+                letterSpacing: "-0.4px",
               }}
             >
-              Scan Deals &{" "}
+              <span className="text-white block">Scan Receipts</span>
+              <span className="text-white block">Find Red Labels</span>
               <span
                 className="block"
                 style={{
@@ -657,70 +664,16 @@ const Index = () => {
             </h1>
 
             <p
-              className="text-[13px] leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.45)", maxWidth: "200px" }}
+              className="text-[12px] leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.4)", maxWidth: "190px" }}
             >
-              Capture receipts and red-label discounts to earn tickets for the weekly draw.
+              Upload receipts &amp; red-label deals to earn tickets for the weekly draw.
             </p>
           </div>
 
           {/* 3D phone — absolutely positioned right */}
           <PhoneHero />
         </section>
-
-        {/* ── Progress Card ── */}
-        <div
-          className="mx-4 mt-5 rounded-2xl p-4 relative overflow-hidden"
-          style={{
-            background: "#1a1535",
-            border: "1px solid rgba(155,92,255,0.18)",
-            animation: "home-card-in 0.5s 0.2s ease both",
-          }}
-        >
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              top: "-30px",
-              right: "-30px",
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              background: "radial-gradient(circle,rgba(155,92,255,0.1),transparent 70%)",
-            }}
-          />
-          <div className="flex items-center justify-between mb-2.5">
-            <span
-              className="text-[13px] font-bold text-white"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              Your Progress
-            </span>
-            <span
-              className="text-[13px] font-bold text-white"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              {ticketCount} / {MAX_TICKETS_PER_WEEK} tickets
-            </span>
-          </div>
-          <div
-            className="h-2 rounded-full overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.07)" }}
-          >
-            <div
-              className="h-full rounded-full relative"
-              style={{
-                width: `${progressPercent}%`,
-                background: "linear-gradient(90deg,#7c3aed,#9b5cff,#ff4ecd)",
-                animation: "bar-grow-home 1.5s 0.5s ease both",
-              }}
-            >
-              <span
-                className="absolute right-0 top-0 bottom-0 w-[3px] rounded-full bg-white"
-                style={{ opacity: 0.8, animation: "prog-cursor 0.8s ease-in-out infinite alternate" }}
-              />
-            </div>
-          </div>
-        </div>
 
         {/* ── Scan CTA ── */}
         <div
@@ -729,59 +682,77 @@ const Index = () => {
         >
           <button
             onClick={handleScanReceipt}
-            className="w-full py-4 rounded-2xl relative overflow-hidden flex items-center justify-center gap-2.5 transition-transform active:scale-[0.98] hover:scale-[1.01]"
+            className="w-full py-[18px] rounded-2xl relative overflow-hidden flex items-center justify-center gap-3 transition-transform active:scale-[0.97] hover:scale-[1.01]"
             style={{
               background: "linear-gradient(90deg,#6b21d6,#9b5cff,#ff4ecd)",
               backgroundSize: "200% 100%",
-              animation: "scan-cta-glow 2.5s ease infinite, grad-flow 4s ease infinite",
-              border: "none",
+              border: "1px solid rgba(255,255,255,0.12)",
+              animation: "scan-btn-breathe 2.5s ease-in-out infinite, grad-flow 4s ease infinite",
             }}
           >
-            {/* Shimmer */}
+            {/* Moving scan-line beam */}
             <span
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)",
-                transform: "translateX(-100%)",
-                animation: "home-shimmer 2.5s ease infinite",
-              }}
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+              aria-hidden
+            >
+              <span
+                className="absolute top-0 bottom-0 w-[30%]"
+                style={{
+                  background:
+                    "linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent)",
+                  animation: "home-shimmer 1.8s ease-in-out infinite",
+                }}
+              />
+            </span>
+            {/* Inner top highlight */}
+            <span
+              className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl"
+              style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)" }}
+              aria-hidden
             />
-            <span className="text-xl relative z-10" style={{ animation: "icon-bob 1.5s ease-in-out infinite" }}>
-              ⊡
+            <span
+              className="text-[22px] relative z-10"
+              style={{ animation: "icon-bob 1.5s ease-in-out infinite" }}
+            >
+              📷
             </span>
             <span
-              className="font-extrabold text-[16px] text-white relative z-10"
+              className="font-extrabold text-[17px] text-white relative z-10 tracking-wide"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
               Scan Now
             </span>
           </button>
 
-          {/* Sub-label */}
-          <div className="flex items-center justify-center gap-1.5 mt-2">
-            <span
-              className="w-[5px] h-[5px] rounded-full"
-              style={{
-                background: "#ffd600",
-                boxShadow: "0 0 6px #ffd600",
-                display: "inline-block",
-              }}
-            />
-            <span className="text-[11px] font-semibold" style={{ color: "#ffd600" }}>
-              Bagikan struk label merah &amp; dapatkan 3 tiket!
-            </span>
-          </div>
-        </div>
-
-        {/* ── How it works ── */}
-        <div
-          className="px-4 mt-5"
-          style={{ animation: "home-card-in 0.5s 0.24s ease both" }}
-        >
-          <div className="grid grid-cols-3 gap-2.5">
-            <StepCard icon="🧾" title="Scan Struk" sub="Upload struk belanja untuk tiket" delay="0.4s" />
-            <StepCard icon="🎫" title="Kumpulkan" sub="Dapatkan tiket ke undian mingguan" delay="0.48s" />
-            <StepCard icon="🛒" title="Menangkan" sub="Voucher belanja menarik!" delay="0.56s" />
+          {/* ── Value message: what you earn ── */}
+          <div
+            className="mt-3 rounded-xl overflow-hidden"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center gap-2.5 px-4 py-2.5">
+              <span className="text-[15px]">📸</span>
+              <span className="text-[12px] text-white/65 flex-1">Scan receipt</span>
+              <span
+                className="font-bold text-[13px] tabular-nums"
+                style={{ color: "#00E676", textShadow: "0 0 10px rgba(0,230,118,0.55)" }}
+              >
+                +1 ticket
+              </span>
+            </div>
+            <div style={{ height: "1px", background: "rgba(255,255,255,0.05)" }} />
+            <div className="flex items-center gap-2.5 px-4 py-2.5">
+              <span className="text-[15px]">🔴</span>
+              <span className="text-[12px] text-white/65 flex-1">Scan red label</span>
+              <span
+                className="font-extrabold text-[13px] tabular-nums"
+                style={{ color: "#00E676", textShadow: "0 0 12px rgba(0,230,118,0.65)" }}
+              >
+                +3 tickets
+              </span>
+            </div>
           </div>
         </div>
 
@@ -908,60 +879,70 @@ const Index = () => {
           )}
         </section>
 
-        {/* ── Red Label Banner ── */}
+        {/* ── Red Label Banner ── HIGH VALUE ACTION ── */}
         <button
           onClick={handleScanRedLabel}
-          className="mx-4 mt-5 w-[calc(100%-32px)] flex items-center gap-3.5 rounded-2xl p-4 text-left relative overflow-hidden transition-all active:scale-[0.98] hover:scale-[1.01]"
+          className="mx-4 mt-5 w-[calc(100%-32px)] flex items-center gap-4 rounded-2xl p-5 text-left relative overflow-hidden transition-all active:scale-[0.98] hover:scale-[1.01]"
           style={{
-            background: "linear-gradient(135deg,rgba(255,68,68,0.1),rgba(155,30,30,0.06))",
-            border: "1px solid rgba(255,68,68,0.22)",
-            animation: "home-card-in 0.5s 0.28s ease both",
-          }}
-          onPointerEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,68,68,0.42)";
-          }}
-          onPointerLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,68,68,0.22)";
+            background: "linear-gradient(135deg,rgba(255,68,68,0.13),rgba(180,20,20,0.07))",
+            border: "1px solid rgba(255,68,68,0.3)",
+            animation: "home-card-in 0.5s 0.28s ease both, rl-glow-pulse 2.8s ease-in-out 1s infinite",
           }}
         >
-          {/* Shimmer */}
+          {/* Shimmer sweep */}
           <span
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: "linear-gradient(90deg,transparent,rgba(255,68,68,0.05),transparent)",
-              transform: "translateX(-100%)",
-              animation: "home-shimmer 3s ease infinite",
-            }}
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+            aria-hidden
+          >
+            <span
+              className="absolute top-0 bottom-0 w-[35%]"
+              style={{
+                background: "linear-gradient(90deg,transparent,rgba(255,68,68,0.08),transparent)",
+                animation: "home-shimmer 3s ease-in-out 1.2s infinite",
+              }}
+            />
+          </span>
+          {/* Top highlight edge */}
+          <span
+            className="pointer-events-none absolute inset-x-0 top-0 h-px"
+            style={{ background: "linear-gradient(90deg,transparent,rgba(255,100,100,0.4),transparent)" }}
+            aria-hidden
           />
+
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-[28px] shrink-0"
             style={{
-              background: "rgba(255,68,68,0.12)",
-              border: "1px solid rgba(255,68,68,0.28)",
+              background: "rgba(255,68,68,0.14)",
+              border: "1px solid rgba(255,68,68,0.32)",
+              boxShadow: "0 0 18px rgba(255,68,68,0.15)",
               animation: "icon-bob 2.5s ease-in-out infinite",
             }}
           >
             🏷️
           </div>
-          <div className="relative z-10">
+          <div className="relative z-10 flex-1 min-w-0">
             <p
-              className="text-[14px] font-extrabold text-white mb-0.5"
+              className="text-[15px] font-extrabold text-white mb-1 leading-tight"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
               Share Struk Label Merah
             </p>
-            <p className="text-[11px] leading-snug mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <p className="text-[11.5px] leading-snug mb-2.5" style={{ color: "rgba(255,255,255,0.52)" }}>
               Upload struk diskon label merah untuk mendapatkan 3 tiket bonus!
             </p>
+            {/* Reward badge — green to emphasise high value */}
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold"
+              className="inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-[12px] font-extrabold"
               style={{
-                background: "rgba(255,214,0,0.12)",
-                border: "1px solid rgba(255,214,0,0.28)",
-                color: "#ffd600",
+                background: "rgba(0,230,118,0.1)",
+                border: "1px solid rgba(0,230,118,0.3)",
+                color: "#00E676",
+                boxShadow: "0 0 14px rgba(0,230,118,0.2)",
+                textShadow: "0 0 10px rgba(0,230,118,0.5)",
+                fontFamily: "'Syne', sans-serif",
               }}
             >
-              🪙 +3 Tiket Bonus
+              🎫 +3 Tickets
             </span>
           </div>
         </button>
