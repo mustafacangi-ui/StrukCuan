@@ -53,6 +53,8 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   // Holds the SHA-256 hash of the last captured blob so we can register
   // it in localStorage only after a *successful* upload (not on capture).
   const [pendingHash, setPendingHash] = useState<string | null>(null);
+  // Counts successful uploads in this session for the streak display.
+  const [scanStreak, setScanStreak] = useState(0);
 
   const userId = user?.id;
 
@@ -149,6 +151,17 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     setStep("camera");
   }, [previewUrl, mode]);
 
+  // "Scan Again" on the success screen — keeps streak alive.
+  const handleScanAgain = useCallback(() => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setCapturedBlob(null);
+    setPendingHash(null);
+    setSelectedType(mode);
+    setError(null);
+    setStep("camera");
+  }, [previewUrl, mode]);
+
   const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
 
@@ -196,6 +209,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setPreviewUrl(null);
       setCapturedBlob(null);
       toast.success("You earned +1 ticket 🎉");
+      setScanStreak((s) => s + 1);
       setStep("success");
     } catch (e) {
       const err = e as Error & { message?: string; code?: string };
@@ -290,6 +304,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setPreviewUrl(null);
       setCapturedBlob(null);
       setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
+      setScanStreak((s) => s + 1);
       setStep("success");
     } catch (e) {
       console.log("Storage Error Detayı:", e);
@@ -568,7 +583,12 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
 
       {/* Success with celebration */}
       {step === "success" && (
-        <SuccessCelebration onClose={handleClose} isRedLabel={isRedLabel} />
+        <SuccessCelebration
+          onClose={handleClose}
+          onScanAgain={handleScanAgain}
+          isRedLabel={isRedLabel}
+          streak={scanStreak}
+        />
       )}
 
       {/* Error */}
@@ -595,63 +615,130 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   );
 }
 
-function SuccessCelebration({ onClose, isRedLabel }: { onClose: () => void; isRedLabel?: boolean }) {
+interface SuccessCelebrationProps {
+  onClose: () => void;
+  onScanAgain: () => void;
+  isRedLabel?: boolean;
+  streak: number;
+}
+
+function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: SuccessCelebrationProps) {
+  const [visible, setVisible] = useState(false);
+  const tickets = isRedLabel ? 3 : 1;
+
+  const accentColor  = isRedLabel ? "#ff7070"            : "#00E676";
+  const accentGlow   = isRedLabel ? "rgba(255,68,68,0.5)"  : "rgba(0,230,118,0.5)";
+  const btnGradient  = isRedLabel
+    ? "linear-gradient(90deg,#e53935,#ff4ecd)"
+    : "linear-gradient(90deg,#00c853,#00E676)";
+  const btnGlow      = isRedLabel
+    ? "0 0 30px rgba(229,57,53,0.4), 0 4px 20px rgba(0,0,0,0.5)"
+    : "0 0 30px rgba(0,200,83,0.4), 0 4px 20px rgba(0,0,0,0.5)";
+  const bgGlow       = isRedLabel
+    ? "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(255,68,68,0.13), transparent)"
+    : "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(0,230,118,0.11), transparent)";
+
   useEffect(() => {
-    if (isRedLabel) {
-      const colors = ["#FF3B3B", "#FF6B6B", "#FFD166", "#FFE066", "#FFFFFF"];
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors,
-      });
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors,
-        });
-        confetti({
-          particleCount: 50,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors,
-        });
-      }, 200);
-    }
-    const id = setTimeout(onClose, 2500);
-    return () => clearTimeout(id);
-  }, [onClose, isRedLabel]);
+    // Step 1 — fade + scale in after a short pause
+    const showTimer = setTimeout(() => setVisible(true), 120);
+
+    // Step 2 — confetti after content is visible
+    const confettiTimer = setTimeout(() => {
+      const colors = isRedLabel
+        ? ["#FF3B3B", "#FF6B6B", "#FFD166", "#FFE066", "#FFFFFF"]
+        : ["#00E676", "#00c853", "#FFD600", "#FFFFFF", "#9b5cff"];
+
+      confetti({ particleCount: isRedLabel ? 90 : 65, spread: 70, origin: { y: 0.55 }, colors });
+
+      if (isRedLabel) {
+        setTimeout(() => {
+          confetti({ particleCount: 50, angle: 60,  spread: 55, origin: { x: 0 }, colors });
+          confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 }, colors });
+        }, 200);
+      }
+    }, 480);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(confettiTimer);
+    };
+  }, [isRedLabel]);
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 p-6 overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07050f] p-6 overflow-hidden">
+      <style>{`
+        @keyframes scan-again-glow {
+          0%,100% { box-shadow: ${btnGlow}; }
+          50%      { box-shadow: ${btnGlow.replace("0.4", "0.65")}; }
+        }
+      `}</style>
+
+      {/* Ambient background glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: bgGlow }} />
+
+      {/* Animated content */}
+      <div
+        className="relative z-10 w-full max-w-xs text-center"
+        style={{
+          opacity:   visible ? 1 : 0,
+          transform: visible ? "scale(1) translateY(0)" : "scale(0.88) translateY(14px)",
+          transition: "opacity 0.45s ease, transform 0.45s ease",
+        }}
+      >
+        {/* Big emoji */}
+        <p className="text-6xl mb-5" style={{ filter: `drop-shadow(0 0 18px ${accentGlow})` }}>
+          {isRedLabel ? "🏷️" : "🎉"}
+        </p>
+
+        {/* Headline */}
+        <p className="text-3xl font-extrabold text-white mb-2" style={{ letterSpacing: "-0.5px" }}>
+          Nice! 🎉
+        </p>
+
+        {/* Ticket reward */}
+        <p
+          className="text-xl font-bold mb-2"
+          style={{ color: accentColor, textShadow: `0 0 16px ${accentGlow}` }}
+        >
+          +{tickets} ticket{tickets > 1 ? "s" : ""} added
+        </p>
+
+        {/* Streak badge — appears from 2nd scan onward */}
+        {streak >= 2 && (
           <div
-            key={i}
-            className="absolute w-2 h-2 rounded-full bg-yellow-300 animate-fall"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-4 text-sm font-bold text-amber-300"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: "-10px",
-              animationDelay: `${Math.random() * 0.5}s`,
-              animationDuration: `${1.5 + Math.random()}s`,
+              background: "rgba(255,183,0,0.12)",
+              border: "1px solid rgba(255,183,0,0.25)",
+              textShadow: "0 0 10px rgba(255,183,0,0.5)",
             }}
-          />
-        ))}
-      </div>
-      <div className="relative z-10 text-center max-w-sm">
-        <p className="text-2xl mb-2">{isRedLabel ? "🏷️" : "✨"}</p>
-        <p className="text-lg font-bold text-white mb-2">
-          {isRedLabel ? "You earned +3 tickets! 🔥" : "Receipt submitted! 🎉"}
-        </p>
-        <p className="text-sm text-white/90">
-          {isRedLabel
-            ? "Red label posted to map. Tickets added instantly!"
-            : "You earned +1 ticket 🎉"}
-        </p>
+          >
+            🔥 Streak ×{streak}
+          </div>
+        )}
+
+        <div className={streak >= 2 ? "" : "mt-4"} />
+
+        {/* Primary CTA — Scan Again */}
+        <button
+          onClick={onScanAgain}
+          className="w-full py-[17px] rounded-2xl font-bold text-base text-white mb-3"
+          style={{
+            background: btnGradient,
+            animation: "scan-again-glow 2.2s ease-in-out infinite",
+          }}
+        >
+          Scan Again
+        </button>
+
+        {/* Secondary — Done */}
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 text-sm font-medium rounded-xl"
+          style={{ color: "rgba(255,255,255,0.32)" }}
+        >
+          Done
+        </button>
       </div>
     </div>
   );
