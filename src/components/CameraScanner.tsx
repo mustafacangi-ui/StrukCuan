@@ -11,15 +11,20 @@ import { grantDealTickets } from "@/hooks/useGrantDealTickets";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { toast } from "sonner";
-
-const MAX_RECEIPTS_PER_DAY = 3;
+import { hashBlob, wasDuplicateToday, markHashUsed } from "@/lib/imageHash";
+import {
+  useRedLabelsToday,
+  MAX_RECEIPTS_PER_DAY,
+  MAX_RED_LABELS_PER_DAY,
+  RED_LABELS_TODAY_KEY,
+} from "@/hooks/useUploadLimits";
 
 const USER_FACING_ERROR = "Upload failed. Please try again.";
 
 const RECEIPT_RULES = `Rules:
 • Only supermarket receipts
 • Receipt must be from today
-• Maximum 3 receipts per day`;
+• Maximum ${MAX_RECEIPTS_PER_DAY} receipts per day`;
 
 const RED_LABEL_RULES = `Kırmızı Etiket (Red Label):
 • Photo of discounted product
@@ -41,7 +46,8 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   const createDeal = useCreateDeal();
   const queryClient = useQueryClient();
   const { location, error: locationError } = useUserLocation();
-  const { data: todayCount = 0 } = useReceiptsToday(user?.id ?? undefined);
+  const { data: todayCount = 0 }        = useReceiptsToday(user?.id ?? undefined);
+  const { data: redLabelTodayCount = 0 } = useRedLabelsToday(user?.id ?? undefined);
 
   const isRedLabel = mode === "red_label";
 
@@ -54,6 +60,9 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [redLabelForm, setRedLabelForm] = useState({ product_name: "", price: "", store: "", discount: "" });
+  // Holds the SHA-256 hash of the last captured blob so we can register
+  // it in localStorage only after a *successful* upload (not on capture).
+  const [pendingHash, setPendingHash] = useState<string | null>(null);
 
   const userId = user?.id;
 
@@ -100,8 +109,14 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     const canvas = canvasRef.current;
     if (!video || !canvas || !userId) return;
 
+    // ── Daily limit checks ────────────────────────────────────────────────
     if (!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day.`);
+      setError(`Daily receipt limit reached (max ${MAX_RECEIPTS_PER_DAY} per day).`);
+      setStep("error");
+      return;
+    }
+    if (isRedLabel && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
+      setError(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day).`);
       setStep("error");
       return;
     }
@@ -113,14 +128,24 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    canvas.toBlob((blob) => {
+    // ── Hash + duplicate check (async callback is intentional) ────────────
+    canvas.toBlob(async (blob) => {
       if (!blob) return;
+
+      const hash = await hashBlob(blob);
+      if (wasDuplicateToday(String(userId), hash)) {
+        setError("This image was already uploaded today.");
+        setStep("error");
+        return;
+      }
+
+      setPendingHash(hash);
       setCapturedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       stopCamera();
       setStep(isRedLabel ? "form" : "preview");
     }, "image/jpeg", 0.9);
-  }, [userId, todayCount, stopCamera, isRedLabel]);
+  }, [userId, todayCount, redLabelTodayCount, stopCamera, isRedLabel]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -169,9 +194,14 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         console.error("[CameraScanner] Receipt DB insert failed:", dbErr);
       }
 
+      // Register hash so the same image cannot be re-submitted today
+      if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
+      setPendingHash(null);
+
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setCapturedBlob(null);
+      toast.success("You earned +1 ticket 🎉");
       setStep("success");
     } catch (e) {
       const err = e as Error & { message?: string; code?: string };
@@ -183,7 +213,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setError(USER_FACING_ERROR);
       setStep("error");
     }
-  }, [capturedBlob, userId, todayCount, createReceipt, previewUrl]);
+  }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl]);
 
   const handleSubmitRedLabel = useCallback(async () => {
     if (!capturedBlob || !userId) return;
@@ -255,7 +285,12 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       console.log("[RedLabel] 9. grantDealTickets OK - tamamlandı");
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      toast.success("Tebrikler! 2 bilet kazandınız.");
+      queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
+      toast.success("You earned +3 tickets 🔥");
+
+      // Register hash so the same image cannot be re-submitted today
+      if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
+      setPendingHash(null);
 
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -275,7 +310,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setError(USER_FACING_ERROR);
       setStep("error");
     }
-  }, [capturedBlob, userId, redLabelForm, createDeal, location, previewUrl, queryClient]);
+  }, [capturedBlob, userId, pendingHash, redLabelForm, createDeal, location, previewUrl, queryClient]);
 
   const handleSubmit = isRedLabel ? handleSubmitRedLabel : handleSubmitReceipt;
 
@@ -326,7 +361,10 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
             </div>
             <button
               onClick={handleCapture}
-              disabled={!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY}
+              disabled={
+                (!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY) ||
+                (isRedLabel && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY)
+              }
               className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-white disabled:opacity-50"
             >
               <Camera size={32} className="text-black" />
@@ -401,7 +439,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               onClick={handleSubmitRedLabel}
               className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white"
             >
-              Haritaya Ekle (+2 Bilet)
+              Post to Map (+3 Tickets)
             </button>
           </div>
         </div>
@@ -548,12 +586,12 @@ function SuccessCelebration({ onClose, isRedLabel }: { onClose: () => void; isRe
       <div className="relative z-10 text-center max-w-sm">
         <p className="text-2xl mb-2">{isRedLabel ? "🏷️" : "✨"}</p>
         <p className="text-lg font-bold text-white mb-2">
-          {isRedLabel ? "Kırmızı Etiket paylaşıldı!" : "Receipt received!"}
+          {isRedLabel ? "You earned +3 tickets! 🔥" : "Receipt submitted! 🎉"}
         </p>
         <p className="text-sm text-white/90">
           {isRedLabel
-            ? "Haritada görünecek. +2 bilet kazandınız!"
-            : "It is being reviewed. Your ticket and cuan will be added soon."}
+            ? "Red label posted to map. Tickets added instantly!"
+            : "You earned +1 ticket 🎉"}
         </p>
       </div>
     </div>
