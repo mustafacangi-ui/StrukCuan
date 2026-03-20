@@ -284,6 +284,22 @@ export default {
           "50%":  { opacity: "0.15" },
           "100%": { opacity: "0" },
         },
+        "shimmer-ltr": {
+          "0%":   { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(350%)" },
+        },
+        "hero-pulse": {
+          "0%, 100%": { opacity: "0.55", transform: "scale(1)"    },
+          "50%":      { opacity: "0.85", transform: "scale(1.04)" },
+        },
+        "scan-btn-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 0 36px rgba(0,230,118,0.55), 0 0 72px rgba(0,230,118,0.2), 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
+          },
+          "50%": {
+            boxShadow: "0 0 52px rgba(0,230,118,0.75), 0 0 100px rgba(0,230,118,0.3), 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -328,6 +344,9 @@ export default {
         "signal-red":        "signal-red 2s ease-in-out infinite",
         "red-ripple":        "red-ripple 2.5s ease-out infinite",
         "entry-glow":        "entry-glow 0.6s ease-out forwards",
+        "shimmer-ltr":       "shimmer-ltr 2.4s ease-in-out infinite",
+        "hero-pulse":        "hero-pulse 4s ease-in-out infinite",
+        "scan-btn-pulse":    "scan-btn-pulse 2.5s ease-in-out infinite",
       },
     },
   },

@@ -39,53 +39,59 @@ function NearbyDealRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between rounded-2xl p-3.5 text-left transition-all active:scale-[0.97]"
+      className="w-full flex items-center justify-between rounded-2xl p-3.5 text-left transition-all duration-200 active:scale-[0.97]"
       style={{
-        background: "rgba(255,255,255,0.04)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        background: isRed
+          ? "rgba(239,68,68,0.05)"
+          : "rgba(255,255,255,0.032)",
+        backdropFilter: "blur(28px)",
+        WebkitBackdropFilter: "blur(28px)",
         border: isRed
-          ? "1px solid rgba(239,68,68,0.22)"
-          : "1px solid rgba(255,255,255,0.08)",
+          ? "1px solid rgba(239,68,68,0.2)"
+          : "1px solid rgba(255,255,255,0.07)",
         boxShadow: isRed
-          ? "0 4px 24px rgba(239,68,68,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
+          ? "0 2px 16px rgba(239,68,68,0.07), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.15)"
+          : "0 2px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.15)",
       }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = isRed
-          ? "0 8px 32px rgba(239,68,68,0.14), inset 0 1px 0 rgba(255,255,255,0.06)"
-          : "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.07)";
+      onPointerEnter={(e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        el.style.background = isRed ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.055)";
+        el.style.boxShadow = isRed
+          ? "0 6px 28px rgba(239,68,68,0.12), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1px rgba(239,68,68,0.12)"
+          : "0 6px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.07)";
       }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = isRed
-          ? "0 4px 24px rgba(239,68,68,0.08), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)";
+      onPointerLeave={(e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        el.style.background = isRed ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.032)";
+        el.style.boxShadow = isRed
+          ? "0 2px 16px rgba(239,68,68,0.07), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.15)"
+          : "0 2px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.15)";
       }}
     >
-      <div className="flex items-center gap-3">
-        {/* Category icon */}
+      {/* Icon */}
+      <div className="flex items-center gap-3 min-w-0">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl text-lg shrink-0"
+          className="flex h-11 w-11 items-center justify-center rounded-xl text-[17px] shrink-0"
           style={{
             background: isRed
               ? "rgba(239,68,68,0.1)"
               : "rgba(0,230,118,0.08)",
             border: isRed
-              ? "1px solid rgba(239,68,68,0.2)"
-              : "1px solid rgba(0,230,118,0.18)",
+              ? "1px solid rgba(239,68,68,0.18)"
+              : "1px solid rgba(0,230,118,0.15)",
             boxShadow: isRed
-              ? "0 0 12px rgba(239,68,68,0.1)"
-              : "0 0 10px rgba(0,230,118,0.08)",
+              ? "0 0 12px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.08)"
+              : "0 0 10px rgba(0,230,118,0.08), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
         >
           {icon}
         </div>
 
         <div className="min-w-0">
-          <p className="font-display font-semibold text-sm text-white leading-tight">
+          <p className="font-display font-semibold text-[13.5px] text-white leading-tight">
             {deal.store ?? "Store"}
           </p>
-          <p className="text-[11px] text-white/45 mt-0.5">
+          <p className="text-[11px] text-white/40 mt-0.5 leading-tight">
             {formatDist(deal.distanceKm)} · {deal.category}
           </p>
         </div>
@@ -94,32 +100,34 @@ function NearbyDealRow({
       {/* Badge */}
       {deal.discount != null ? (
         <div
-          className="shrink-0 rounded-lg px-2.5 py-1"
+          className="shrink-0 rounded-lg px-2.5 py-1.5 ml-2"
           style={{
-            background: "rgba(239,68,68,0.13)",
-            border: "1px solid rgba(239,68,68,0.28)",
-            boxShadow: "0 0 10px rgba(239,68,68,0.12)",
+            background: "rgba(239,68,68,0.12)",
+            border: "1px solid rgba(239,68,68,0.25)",
+            boxShadow: "0 0 10px rgba(239,68,68,0.1)",
           }}
         >
-          <span className="font-display font-bold text-sm text-red-400">
+          <span
+            className="font-display font-bold text-[13px] text-red-400"
+            style={{ textShadow: "0 0 10px rgba(239,68,68,0.5)" }}
+          >
             -{deal.discount}%
           </span>
         </div>
       ) : isRed ? (
         <span
-          className="shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold"
+          className="shrink-0 rounded-lg px-2.5 py-1.5 ml-2 text-[11px] font-bold"
           style={{
             background: "rgba(239,68,68,0.1)",
-            border: "1.5px dashed rgba(239,68,68,0.38)",
+            border: "1.5px dashed rgba(239,68,68,0.35)",
             color: "#ef4444",
             textShadow: "0 0 8px rgba(239,68,68,0.6)",
-            boxShadow: "0 0 10px rgba(239,68,68,0.1)",
           }}
         >
           Red Label
         </span>
       ) : (
-        <Zap size={14} className="shrink-0" style={{ color: "#00E676" }} />
+        <Zap size={14} className="shrink-0 ml-2" style={{ color: "#00E676" }} />
       )}
     </button>
   );
@@ -168,135 +176,180 @@ const Index = () => {
   return (
     <div className="min-h-screen pb-28 w-full max-w-[420px] mx-auto">
 
-      {/* ── Background: layered radial glows ── */}
-      <div className="fixed inset-0 -z-10" style={{ background: "#07090f" }} />
-      {/* Large green halo top-left — hero glow */}
+      {/* ── Background: 5-layer depth field ── */}
+      {/* Base */}
+      <div className="fixed inset-0 -z-10" style={{ background: "#06080f" }} />
+      {/* Hero green halo — top-center, large and soft */}
       <div
         className="fixed -z-10 pointer-events-none"
         style={{
           inset: 0,
           background:
-            "radial-gradient(ellipse 75% 45% at 15% 5%, rgba(0,230,118,0.09) 0%, transparent 65%)",
+            "radial-gradient(ellipse 110% 55% at 50% -8%, rgba(0,230,118,0.13) 0%, transparent 60%)",
         }}
       />
-      {/* Softer green mid-right depth layer */}
+      {/* Top-left corner accent */}
       <div
         className="fixed -z-10 pointer-events-none"
         style={{
           inset: 0,
           background:
-            "radial-gradient(ellipse 55% 35% at 85% 45%, rgba(0,230,118,0.04) 0%, transparent 55%)",
+            "radial-gradient(ellipse 50% 35% at -8% 18%, rgba(0,230,118,0.07) 0%, transparent 55%)",
         }}
       />
-      {/* Violet accent bottom */}
+      {/* Right-side mid ambient */}
       <div
         className="fixed -z-10 pointer-events-none"
         style={{
           inset: 0,
           background:
-            "radial-gradient(ellipse 60% 30% at 50% 95%, rgba(124,58,237,0.06) 0%, transparent 60%)",
+            "radial-gradient(ellipse 40% 28% at 108% 38%, rgba(0,230,118,0.04) 0%, transparent 55%)",
+        }}
+      />
+      {/* Bottom purple tint */}
+      <div
+        className="fixed -z-10 pointer-events-none"
+        style={{
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 85% 38% at 50% 108%, rgba(88,28,235,0.1) 0%, transparent 55%)",
         }}
       />
 
       <Header
         onUploadReceipt={handleScanReceipt}
         onShareDiscount={handleScanRedLabel}
+        hideCuan
       />
 
       {/* ── Hero ── */}
-      <section className="relative px-4 pt-6 pb-8 overflow-hidden">
-        {/* Decorative radar rings behind the text */}
+      <section className="relative px-4 pt-7 pb-9 overflow-hidden">
+        {/* Animated ambient orb behind the hero text */}
         <div
-          className="pointer-events-none absolute -right-8 -top-6 h-52 w-52 rounded-full opacity-[0.06]"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-56 rounded-full -z-10"
           style={{
-            border: "1px solid #00E676",
-            animation: "radar-ring-expand 3s ease-out 0s infinite",
+            background:
+              "radial-gradient(ellipse at center, rgba(0,230,118,0.09) 0%, transparent 70%)",
+            animation: "hero-pulse 4s ease-in-out infinite",
+            filter: "blur(20px)",
           }}
-        />
-        <div
-          className="pointer-events-none absolute -right-8 -top-6 h-52 w-52 rounded-full opacity-[0.04]"
-          style={{
-            border: "1px solid #00E676",
-            animation: "radar-ring-expand 3s ease-out 1.5s infinite",
-          }}
+          aria-hidden
         />
 
-        {/* Label */}
-        <div className="flex items-center gap-2 mb-3">
+        {/* Decorative radar rings (top-right) */}
+        <div
+          className="pointer-events-none absolute -right-10 -top-8 h-56 w-56 rounded-full -z-10"
+          style={{
+            border: "1px solid rgba(0,230,118,0.07)",
+            animation: "radar-ring-expand 3.5s ease-out 0s infinite",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -right-10 -top-8 h-56 w-56 rounded-full -z-10"
+          style={{
+            border: "1px solid rgba(0,230,118,0.04)",
+            animation: "radar-ring-expand 3.5s ease-out 1.75s infinite",
+          }}
+          aria-hidden
+        />
+
+        {/* Live Deal Radar label */}
+        <div className="flex items-center gap-2 mb-4">
           <span
-            className="h-1.5 w-1.5 rounded-full"
+            className="h-[7px] w-[7px] rounded-full shrink-0"
             style={{
               background: "#00E676",
-              boxShadow: "0 0 6px rgba(0,230,118,0.9)",
+              boxShadow: "0 0 8px rgba(0,230,118,1), 0 0 16px rgba(0,230,118,0.5)",
               animation: "live-dot 1.5s ease-in-out infinite",
               display: "inline-block",
             }}
+            aria-hidden
           />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/35">
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: "rgba(0,230,118,0.65)" }}
+          >
             Live Deal Radar
           </p>
         </div>
 
         {/* Headline */}
-        <h1 className="font-display text-[2.15rem] font-bold leading-tight text-white text-balance">
+        <h1 className="font-display leading-[1.1] text-white text-balance"
+          style={{ fontSize: "clamp(2rem, 8vw, 2.3rem)", fontWeight: 800 }}
+        >
           Scan Deals &<br />
           <span
             style={{
               color: "#00E676",
-              textShadow: "0 0 28px rgba(0,230,118,0.5), 0 0 60px rgba(0,230,118,0.2)",
+              textShadow:
+                "0 0 24px rgba(0,230,118,0.7), 0 0 48px rgba(0,230,118,0.35), 0 0 96px rgba(0,230,118,0.12)",
             }}
           >
             Earn Rewards
           </span>
         </h1>
-        <p className="mt-3 text-[13px] text-white/50 leading-relaxed max-w-[265px]">
+
+        {/* Subtitle */}
+        <p className="mt-3.5 text-[13px] leading-relaxed max-w-[258px]"
+          style={{ color: "rgba(255,255,255,0.48)" }}
+        >
           Capture receipts and red-label discounts to earn tickets for the weekly draw.
         </p>
 
-        {/* Scan Now button — premium full-width */}
+        {/* ── Scan Now — primary CTA ── */}
         <button
           onClick={handleScanReceipt}
-          className="relative mt-7 w-full overflow-hidden rounded-2xl py-5 font-display font-bold text-[16px] text-[#07090f] transition-all active:scale-[0.97] flex items-center justify-center gap-3"
+          className="relative mt-8 w-full overflow-hidden rounded-[18px] py-[18px] font-display font-extrabold text-[16px] tracking-wide text-[#06080f] transition-transform active:scale-[0.97] flex items-center justify-center gap-3"
           style={{
-            background: "linear-gradient(135deg, #00E676 0%, #00c853 100%)",
+            background: "linear-gradient(155deg, #00E676 0%, #00d664 45%, #00c853 100%)",
             boxShadow:
-              "0 0 32px rgba(0,230,118,0.55), 0 0 64px rgba(0,230,118,0.2), 0 8px 24px rgba(0,0,0,0.4)",
-            animation: "fab-glow-pulse 2s ease-in-out infinite",
+              "0 0 36px rgba(0,230,118,0.55), 0 0 72px rgba(0,230,118,0.2), 0 0 120px rgba(0,230,118,0.08), 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.1)",
+            animation: "scan-btn-pulse 2.5s ease-in-out infinite",
           }}
         >
-          {/* Inner shimmer sweep */}
+          {/* Left-to-right shimmer sweep */}
           <span
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)",
-              animation: "scan-sweep 3s linear infinite",
-            }}
-          />
-          <ScanLine size={20} strokeWidth={2.5} />
-          Scan Now
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-[18px]"
+            aria-hidden
+          >
+            <span
+              className="absolute top-0 bottom-0 w-[45%]"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)",
+                animation: "shimmer-ltr 2.4s ease-in-out infinite",
+              }}
+            />
+          </span>
+
+          <ScanLine size={21} strokeWidth={2.5} className="relative z-10" />
+          <span className="relative z-10">Scan Now</span>
         </button>
       </section>
 
-      {/* ── Nearby Deals Preview ── */}
-      <section className="px-4 pb-6">
-        {/* Section header */}
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="flex items-center gap-2">
+      {/* ── Nearby Deals ── */}
+      <section className="px-4 pb-7">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
             <span
-              className="block h-3.5 w-0.5 rounded-full"
+              className="block h-[14px] w-[3px] rounded-full"
               style={{
-                background: "#00E676",
-                boxShadow: "0 0 6px rgba(0,230,118,0.7)",
+                background: "linear-gradient(to bottom, #00E676, #00c853)",
+                boxShadow: "0 0 8px rgba(0,230,118,0.75)",
               }}
             />
-            <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/50">
+            <h2
+              className="text-[11px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: "rgba(255,255,255,0.45)" }}
+            >
               Nearby Deals
             </h2>
           </div>
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-1 text-[11px] font-semibold"
+            className="flex items-center gap-1 text-[11.5px] font-semibold"
             style={{ color: "#00E676" }}
           >
             View Map <ChevronRight size={13} />
@@ -307,15 +360,17 @@ const Index = () => {
           <div
             className="rounded-2xl py-10 text-center"
             style={{
-              background: "rgba(255,255,255,0.03)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              background: "rgba(255,255,255,0.025)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
             }}
           >
-            <MapPin size={22} className="mx-auto mb-2 text-white/15" />
-            <p className="text-sm text-white/30">No deals nearby yet</p>
+            <MapPin size={22} className="mx-auto mb-2.5" style={{ color: "rgba(255,255,255,0.12)" }} />
+            <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.28)" }}>
+              No deals nearby yet
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -331,17 +386,19 @@ const Index = () => {
       </section>
 
       {/* ── Weekly Reward ── */}
-      <section className="px-4 pb-4">
-        {/* Section header */}
-        <div className="flex items-center gap-2 mb-3">
+      <section className="px-4 pb-5">
+        <div className="flex items-center gap-2.5 mb-4">
           <span
-            className="block h-3.5 w-0.5 rounded-full"
+            className="block h-[14px] w-[3px] rounded-full"
             style={{
-              background: "#ec4899",
-              boxShadow: "0 0 6px rgba(236,72,153,0.7)",
+              background: "linear-gradient(to bottom, #ec4899, #c026d3)",
+              boxShadow: "0 0 8px rgba(236,72,153,0.75)",
             }}
           />
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-white/50">
+          <h2
+            className="text-[11px] font-bold uppercase tracking-[0.14em]"
+            style={{ color: "rgba(255,255,255,0.45)" }}
+          >
             Weekly Reward
           </h2>
         </div>
@@ -351,24 +408,39 @@ const Index = () => {
       {/* ── FAB ── */}
       <button
         onClick={handleScanReceipt}
-        className="fixed bottom-24 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full transition-all active:scale-95"
+        className="fixed bottom-24 right-4 z-50 flex h-[62px] w-[62px] items-center justify-center rounded-full transition-transform active:scale-95"
         style={{
-          background: "linear-gradient(135deg, #00E676 0%, #00c853 100%)",
+          background: "linear-gradient(145deg, #00E676 0%, #00c853 100%)",
           boxShadow:
-            "0 0 32px rgba(0,230,118,0.6), 0 0 64px rgba(0,230,118,0.25), 0 4px 14px rgba(0,0,0,0.4)",
+            "0 0 36px rgba(0,230,118,0.7), 0 0 72px rgba(0,230,118,0.3), 0 0 120px rgba(0,230,118,0.1), 0 4px 20px rgba(0,0,0,0.5)",
           animation: "fab-glow-pulse 2s ease-in-out infinite",
         }}
         aria-label="Scan receipt"
       >
-        {/* Outer animated ring */}
+        {/* Expanding radar ring 1 */}
         <span
           className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            border: "1.5px solid rgba(0,230,118,0.4)",
-            animation: "radar-ring-expand 2s ease-out infinite",
+            border: "1.5px solid rgba(0,230,118,0.45)",
+            animation: "radar-ring-expand 2s ease-out 0s infinite",
           }}
+          aria-hidden
         />
-        <Camera size={26} className="relative z-10 text-[#07090f]" strokeWidth={2.5} />
+        {/* Expanding radar ring 2 */}
+        <span
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            border: "1px solid rgba(0,230,118,0.2)",
+            animation: "radar-ring-expand 2s ease-out 1s infinite",
+          }}
+          aria-hidden
+        />
+        <Camera
+          size={25}
+          className="relative z-10"
+          style={{ color: "#06080f" }}
+          strokeWidth={2.5}
+        />
       </button>
 
       <LegalFooter />

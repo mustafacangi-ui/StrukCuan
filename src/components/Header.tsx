@@ -12,9 +12,11 @@ import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotificat
 interface HeaderProps {
   onUploadReceipt?: () => void;
   onShareDiscount?: () => void;
+  /** Hide the Cuan metric badge (e.g. on the focused Home screen) */
+  hideCuan?: boolean;
 }
 
-const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
+const Header = ({ onUploadReceipt, onShareDiscount, hideCuan = false }: HeaderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, session, isOnboarded, isLoading, requireLogin } = useUser();
@@ -80,20 +82,48 @@ const Header = ({ onUploadReceipt, onShareDiscount }: HeaderProps) => {
             onClick={() => isOnboarded && navigate("/cuan")}
             className="flex items-center gap-3"
           >
-            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/30 border border-white/40 min-w-[88px]">
-              <Ticket size={16} className="text-emerald-600" />
+            {/* Ticket badge — red premium style when hideCuan, standard emerald otherwise */}
+            <div
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 min-w-[88px]"
+              style={hideCuan ? {
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.22)",
+                boxShadow: "0 0 14px rgba(239,68,68,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+              } : {
+                background: "rgba(255,255,255,0.3)",
+                border: "1px solid rgba(255,255,255,0.4)",
+              }}
+            >
+              <Ticket
+                size={16}
+                style={hideCuan
+                  ? { color: "#ef4444", filter: "drop-shadow(0 0 4px rgba(239,68,68,0.65))" }
+                  : undefined}
+                className={hideCuan ? "" : "text-emerald-600"}
+              />
               <div className="text-left">
-                <p className="font-display text-sm font-bold text-slate-800">{tiket.toLocaleString()}</p>
-                <p className="text-[9px] text-slate-600">Bilet</p>
+                <p className={`font-display text-sm font-bold ${hideCuan ? "text-white" : "text-slate-800"}`}>
+                  {tiket.toLocaleString()}
+                </p>
+                <p
+                  className={`text-[9px] ${hideCuan ? "" : "text-slate-600"}`}
+                  style={hideCuan ? { color: "rgba(239,68,68,0.65)" } : undefined}
+                >
+                  Bilet
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/30 border border-white/40 min-w-[88px]">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <div className="text-left">
-                <p className="font-display text-sm font-bold text-emerald-700">{cuan.toLocaleString()}</p>
-                <p className="text-[9px] text-slate-600">Cuan</p>
+
+            {/* Cuan badge — hidden when hideCuan=true */}
+            {!hideCuan && (
+              <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/30 border border-white/40 min-w-[88px]">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="text-left">
+                  <p className="font-display text-sm font-bold text-emerald-700">{cuan.toLocaleString()}</p>
+                  <p className="text-[9px] text-slate-600">Cuan</p>
+                </div>
               </div>
-            </div>
+            )}
           </button>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-red-500/10 border border-red-500/20">
