@@ -676,10 +676,10 @@ const Index = () => {
             </h1>
 
             <p
-              className="text-[12px] leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.4)", maxWidth: "190px" }}
+              className="mt-3 text-[13px] leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.68)", maxWidth: "210px" }}
             >
-              Upload receipts &amp; red-label deals to earn tickets for the weekly draw.
+              Earn tickets and get access to weekly rewards.
             </p>
           </div>
 
