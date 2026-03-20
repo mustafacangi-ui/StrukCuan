@@ -21,18 +21,6 @@ import {
 
 const USER_FACING_ERROR = "Upload failed. Please try again.";
 
-const RECEIPT_RULES = `Rules:
-• Only supermarket receipts
-• Receipt must be from today
-• Maximum ${MAX_RECEIPTS_PER_DAY} receipts per day`;
-
-const RED_LABEL_RULES = `Kırmızı Etiket (Red Label):
-• Photo of discounted product
-• Will appear on the map for others`;
-
-const UPLOAD_CONSENT = "By uploading a receipt you allow StrukCuan to review and store it for verification.";
-const FRAUD_WARNING = "Uploading fake or duplicated receipts may result in account suspension.";
-
 export type CameraMode = "receipt" | "red_label";
 
 interface CameraScannerProps {
@@ -49,13 +37,15 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   const { data: todayCount = 0 }        = useReceiptsToday(user?.id ?? undefined);
   const { data: redLabelTodayCount = 0 } = useRedLabelsToday(user?.id ?? undefined);
 
-  const isRedLabel = mode === "red_label";
-
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [step, setStep] = useState<"camera" | "preview" | "form" | "processing" | "success" | "error">("camera");
+  const [step, setStep] = useState<"camera" | "type" | "preview" | "form" | "processing" | "success" | "error">("camera");
+  // Resolved after the user picks a type on the "type" selection screen.
+  // Defaults to the prop so callers can still pre-select a mode.
+  const [selectedType, setSelectedType] = useState<CameraMode>(mode);
+  const isRedLabel = selectedType === "red_label";
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,18 +99,6 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     const canvas = canvasRef.current;
     if (!video || !canvas || !userId) return;
 
-    // ── Daily limit checks ────────────────────────────────────────────────
-    if (!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Daily receipt limit reached (max ${MAX_RECEIPTS_PER_DAY} per day).`);
-      setStep("error");
-      return;
-    }
-    if (isRedLabel && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
-      setError(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day).`);
-      setStep("error");
-      return;
-    }
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -128,7 +106,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    // ── Hash + duplicate check (async callback is intentional) ────────────
+    // ── Hash + duplicate check, then go to type-selection ────────────────
     canvas.toBlob(async (blob) => {
       if (!blob) return;
 
@@ -143,17 +121,33 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setCapturedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       stopCamera();
-      setStep(isRedLabel ? "form" : "preview");
+      setStep("type");   // always land on type-selection first
     }, "image/jpeg", 0.9);
-  }, [userId, todayCount, redLabelTodayCount, stopCamera, isRedLabel]);
+  }, [userId, stopCamera]);
+
+  // Called when user picks a type on the selection screen.
+  const handleSelectType = useCallback((type: CameraMode) => {
+    if (type === "receipt" && todayCount >= MAX_RECEIPTS_PER_DAY) {
+      toast.error(`Daily receipt limit reached (max ${MAX_RECEIPTS_PER_DAY} per day)`);
+      return;
+    }
+    if (type === "red_label" && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
+      toast.error(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day)`);
+      return;
+    }
+    setSelectedType(type);
+    setStep(type === "red_label" ? "form" : "preview");
+  }, [todayCount, redLabelTodayCount]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setCapturedBlob(null);
+    setPendingHash(null);
+    setSelectedType(mode);
     setError(null);
     setStep("camera");
-  }, [previewUrl]);
+  }, [previewUrl, mode]);
 
   const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
@@ -324,7 +318,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     <div className="fixed inset-0 z-[80] flex flex-col bg-black">
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Camera preview */}
+      {/* ── Camera viewfinder ─────────────────────────────────────────── */}
       {step === "camera" && (
         <>
           <div className="absolute inset-0">
@@ -336,6 +330,8 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               className="h-full w-full object-cover"
             />
           </div>
+
+          {/* Top bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
             <button
               onClick={handleClose}
@@ -344,33 +340,100 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
             >
               <X size={24} />
             </button>
-            <span className="text-sm font-medium text-white">Take Photo</span>
+            <span className="text-sm font-medium text-white">
+              Scan receipt or red label
+            </span>
             <div className="w-10" />
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-6 pb-10">
-            <div className="mb-4 space-y-2">
-              <pre className="rounded-lg bg-black/60 p-3 text-[10px] text-white/90 whitespace-pre-wrap">
-                {isRedLabel ? RED_LABEL_RULES : RECEIPT_RULES}
-              </pre>
-              <p className="rounded-lg bg-black/60 p-2.5 text-[10px] text-white/80">
-                {UPLOAD_CONSENT}
-              </p>
-              <p className="rounded-lg bg-amber-500/20 border border-amber-500/40 p-2.5 text-[10px] text-amber-200">
-                ⚠ {FRAUD_WARNING}
-              </p>
-            </div>
+
+          {/* Shutter */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center p-6 pb-12">
             <button
               onClick={handleCapture}
               disabled={
-                (!isRedLabel && todayCount >= MAX_RECEIPTS_PER_DAY) ||
-                (isRedLabel && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY)
+                todayCount >= MAX_RECEIPTS_PER_DAY &&
+                redLabelTodayCount >= MAX_RED_LABELS_PER_DAY
               }
-              className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-white disabled:opacity-50"
+              className="flex h-18 w-18 h-[72px] w-[72px] items-center justify-center rounded-full bg-white shadow-lg disabled:opacity-40 active:scale-95 transition-transform"
             >
-              <Camera size={32} className="text-black" />
+              <Camera size={34} className="text-black" />
             </button>
           </div>
         </>
+      )}
+
+      {/* ── Type selection — shown after every capture ────────────────── */}
+      {step === "type" && previewUrl && (
+        <div className="absolute inset-0 flex flex-col bg-black">
+          {/* Thumbnail */}
+          <div className="relative flex-1 flex items-center justify-center bg-black/80 p-4">
+            <img
+              src={previewUrl}
+              alt="Captured"
+              className="max-h-full max-w-full object-contain rounded-xl"
+            />
+          </div>
+
+          {/* Selection panel */}
+          <div className="bg-[#0d0920] px-5 pt-6 pb-10 space-y-4">
+            <p className="text-center text-base font-bold text-white mb-1">
+              What did you scan?
+            </p>
+
+            {/* Receipt button */}
+            <button
+              onClick={() => handleSelectType("receipt")}
+              disabled={todayCount >= MAX_RECEIPTS_PER_DAY}
+              className="w-full flex items-center justify-between rounded-2xl px-5 py-4 border border-white/10 bg-white/5 disabled:opacity-40 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🧾</span>
+                <span className="text-sm font-semibold text-white">Receipt</span>
+              </div>
+              <span
+                className="text-sm font-bold rounded-full px-3 py-1"
+                style={{
+                  background: "rgba(0,230,118,0.12)",
+                  color: "#00E676",
+                  border: "1px solid rgba(0,230,118,0.25)",
+                }}
+              >
+                +1 ticket
+              </span>
+            </button>
+
+            {/* Red Label button */}
+            <button
+              onClick={() => handleSelectType("red_label")}
+              disabled={redLabelTodayCount >= MAX_RED_LABELS_PER_DAY}
+              className="w-full flex items-center justify-between rounded-2xl px-5 py-4 border border-red-500/20 bg-red-500/5 disabled:opacity-40 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🏷️</span>
+                <span className="text-sm font-semibold text-white">Red Label</span>
+              </div>
+              <span
+                className="text-sm font-bold rounded-full px-3 py-1"
+                style={{
+                  background: "rgba(255,68,68,0.15)",
+                  color: "#ff7070",
+                  border: "1px solid rgba(255,68,68,0.3)",
+                }}
+              >
+                +3 tickets
+              </span>
+            </button>
+
+            {/* Retake link */}
+            <button
+              onClick={handleRetake}
+              className="w-full flex items-center justify-center gap-2 py-2 text-sm text-white/40"
+            >
+              <RotateCcw size={14} />
+              Retake photo
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Red Label form (after capture) */}
@@ -463,7 +526,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
             >
               <RotateCcw size={24} />
             </button>
-            <span className="text-sm font-medium text-white">Preview</span>
+            <span className="text-sm font-medium text-white">Receipt preview</span>
             <button
               onClick={handleClose}
               className="rounded-full bg-black/50 p-2 text-white"
@@ -472,27 +535,23 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               <X size={24} />
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 p-4 pb-10">
-            <p className="text-[10px] text-white/80 text-center">
-              {UPLOAD_CONSENT}
-            </p>
-            <p className="text-[10px] text-amber-200 text-center">
-              ⚠ {FRAUD_WARNING}
-            </p>
-            <div className="flex gap-3">
+          <div className="absolute bottom-0 left-0 right-0 flex gap-3 p-4 pb-10">
             <button
               onClick={handleRetake}
-              className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
+              className="flex-1 rounded-xl border border-white/20 bg-black/50 py-3.5 text-sm font-medium text-white"
             >
               Retake
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+              className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white"
+              style={{
+                background: "linear-gradient(90deg,#00c853,#00E676)",
+                boxShadow: "0 0 20px rgba(0,230,118,0.35)",
+              }}
             >
-              Submit
+              Submit — +1 ticket 🎉
             </button>
-            </div>
           </div>
         </>
       )}
