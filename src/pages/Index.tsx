@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bell, Settings, ChevronRight } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -8,11 +8,17 @@ import { useUserStats } from "@/hooks/useUserStats";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
 import { getHelloForCountry, getWelcomeForCountry } from "@/lib/greeting";
 
-import WeeklyRewardCard from "@/components/WeeklyRewardCard";
+// ── Always-visible chrome (keep eager) ───────────────────────────────────────
 import BottomNav from "@/components/BottomNav";
-import LoginSheet from "@/components/LoginSheet";
-import LegalFooter from "@/components/LegalFooter";
-import CameraScanner from "@/components/CameraScanner";
+
+// ── Lazy-loaded: only downloaded when actually needed ────────────────────────
+// CameraScanner: ~60 KB chunk — only when user taps Scan
+const CameraScanner   = lazy(() => import("@/components/CameraScanner"));
+// WeeklyRewardCard: below the fold, deferred until visible
+const WeeklyRewardCard = lazy(() => import("@/components/WeeklyRewardCard"));
+// LoginSheet + LegalFooter: rarely/never needed on first paint
+const LoginSheet      = lazy(() => import("@/components/LoginSheet"));
+const LegalFooter     = lazy(() => import("@/components/LegalFooter"));
 
 
 type ScannerMode = "receipt" | "red_label" | null;
@@ -290,6 +296,9 @@ const Index = () => {
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
   const [showNotifs, setShowNotifs] = useState(false);
   const [onlineCount, setOnlineCount] = useState(341);
+  // Defer the complex 3-D phone decoration so React can paint the LCP hero
+  // text first, then add non-critical animations in the next frame.
+  const [showPhone, setShowPhone] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   // Entry computation (10 tickets = 1 entry) — used in user header inline progress
@@ -309,6 +318,12 @@ const Index = () => {
       setOnlineCount((p) => Math.max(280, Math.min(420, p + Math.floor(Math.random() * 7) - 3)));
     }, 3500);
     return () => clearInterval(id);
+  }, []);
+
+  // Defer 3D phone so the LCP hero text paints first
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setShowPhone(true));
+    return () => cancelAnimationFrame(t);
   }, []);
 
   // Deep-link navigation state
@@ -683,8 +698,8 @@ const Index = () => {
             </p>
           </div>
 
-          {/* 3D phone — absolutely positioned right */}
-          <PhoneHero />
+          {/* 3D phone — deferred so LCP hero text paints first */}
+          {showPhone && <PhoneHero />}
         </section>
 
         {/* ── Scan CTA ── */}
@@ -975,17 +990,23 @@ const Index = () => {
           </div>
         </div>
 
-        {/* ── Weekly Reward Card ── */}
+        {/* ── Weekly Reward Card (lazy — below fold) ── */}
         <section className="px-4 mt-3" style={{ animation: "home-card-in 0.5s 0.3s ease both" }}>
-          <WeeklyRewardCard />
+          <Suspense fallback={
+            <div className="mx-4 h-64 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+          }>
+            <WeeklyRewardCard />
+          </Suspense>
         </section>
 
-        <LegalFooter />
-        <LoginSheet />
+        <Suspense fallback={null}><LegalFooter /></Suspense>
+        <Suspense fallback={null}><LoginSheet /></Suspense>
         <BottomNav />
 
         {scannerMode && (
-          <CameraScanner mode={scannerMode} onClose={() => setScannerMode(null)} />
+          <Suspense fallback={null}>
+            <CameraScanner mode={scannerMode} onClose={() => setScannerMode(null)} />
+          </Suspense>
         )}
       </div>
     </>

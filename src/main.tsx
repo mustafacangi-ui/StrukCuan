@@ -10,8 +10,9 @@ import { APP_URL, IS_LOCALHOST, REDIRECT_HOSTS } from "./config/app";
 if (typeof window !== "undefined" && !IS_LOCALHOST && REDIRECT_HOSTS.includes(window.location.hostname)) {
   window.location.replace(`${APP_URL}${window.location.pathname}${window.location.search}${window.location.hash}`);
 } else {
+  // The HTML shell in index.html already shows the loading state — keep fallback null
   createRoot(document.getElementById("root")!).render(
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#ff4ecd] to-[#1a0f3c]"><p className="text-white">Loading...</p></div>}>
+    <Suspense fallback={null}>
       <App />
     </Suspense>
   );
