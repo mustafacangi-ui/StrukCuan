@@ -19,20 +19,17 @@ export const MAX_RED_LABELS_PER_DAY = 3;
 export const DAILY_RECEIPT_TICKET_LIMIT = 3;
 
 /**
- * Decreasing ticket schedule for normal receipt scans — mirrors Red Label logic.
+ * Ticket schedule for normal receipt scans.
  *
- *  Scan 1 (todayCount === 0) → +3 tickets
- *  Scan 2 (todayCount === 1) → +2 tickets
- *  Scan 3 (todayCount === 2) → +1 ticket
- *  Scan 4+                   →  0 tickets  (daily limit reached)
+ *  Scan 1–3 (todayCount 0–2) → +1 ticket each
+ *  Scan 4+  (todayCount ≥ 3) →  0 tickets  (daily limit reached)
+ *
+ * Red Label uses its own separate 3→2→1→0 schedule.
  *
  * @param todayCount  Number of receipts already uploaded today (BEFORE this scan).
  */
 export function getReceiptTicketsForScan(todayCount: number): number {
-  if (todayCount === 0) return 3;
-  if (todayCount === 1) return 2;
-  if (todayCount === 2) return 1;
-  return 0;
+  return todayCount < DAILY_RECEIPT_TICKET_LIMIT ? 1 : 0;
 }
 
 function todayStart(): string {
