@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 
 export type ReceiptStatus = "pending" | "approved" | "rejected";
 
@@ -131,30 +132,16 @@ export function useUserPendingReceipts(userId: string | undefined) {
 }
 
 /**
- * Fetches today's receipt count (Asia/Jakarta). Uses RPC when available for backend consistency.
- * Fallback: direct query with UTC start-of-day.
+ * Fetches today's receipt count. Backend only (RPC, UTC-based).
+ * No frontend date calculations.
  */
 export async function fetchReceiptsTodayCount(userId: string): Promise<number> {
   const { data, error } = await supabase.rpc("get_receipts_today_count", {
     p_user_id: userId,
   });
-
   if (error) {
-    // Fallback if RPC not yet deployed
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const todayStr = startOfDay.toISOString();
-    const { count, error: qError } = await supabase
-      .from("receipts")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", todayStr);
-    if (qError) {
-      console.error("Failed to fetch receipts today count", qError);
-      return 0;
-    }
-    return count ?? 0;
+    console.error("[fetchReceiptsTodayCount] RPC failed:", error);
+    throw error;
   }
   return (data as number) ?? 0;
 }
@@ -175,42 +162,39 @@ export interface CreateReceiptInput {
   receiptIndexToday?: number | null;
 }
 
+/** Response from create_receipt RPC. remaining = 3 - (count + 1). */
+export interface CreateReceiptResult {
+  id: number;
+  remaining: number;
+}
+
 export function useCreateReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: CreateReceiptInput) => {
-      const payload = {
-        user_id: String(input.userId),
-        image_url: String(input.imageUrl),
-        store: input.store != null ? String(input.store) : null,
-        total: input.total != null ? Number(input.total) : null,
-        status: "pending" as const,
-        receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
-      };
-      const { data, error } = await supabase
-        .from("receipts")
-        .insert([payload])
-        .select("*")
-        .single();
+      const { data, error } = await supabase.rpc("create_receipt", {
+        p_user_id: String(input.userId),
+        p_image_url: String(input.imageUrl),
+        p_store: input.store != null ? String(input.store) : null,
+        p_total: input.total != null ? Number(input.total) : null,
+        p_receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
+      });
 
       if (error) {
-        const sbError = error as { message?: string; code?: string; details?: string; hint?: string };
-        console.error("[createReceipt] Supabase insert error:", {
-          message: sbError.message,
-          code: sbError.code,
-          details: sbError.details,
-          hint: sbError.hint,
-          full: error,
-        });
+        const sbError = error as { message?: string };
+        console.error("[createReceipt] RPC error:", sbError?.message ?? error);
         throw error;
       }
 
-      return data as ReceiptRow;
+      const result = data as { id: number; remaining: number };
+      return { receipt: { id: result.id } as ReceiptRow, remaining: result.remaining };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      const remaining = (data as { receipt: ReceiptRow; remaining: number }).remaining;
+      const newTodayCount = DAILY_RECEIPT_LIMIT - remaining;
+      queryClient.setQueryData([...RECEIPTS_QUERY_KEY, "today", variables.userId], newTodayCount);
       queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["receipts", "today", variables.userId] });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["daily_mission"] });

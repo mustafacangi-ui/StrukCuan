@@ -1,6 +1,0 @@
-import{c as l,s as o}from"./index-Ch2DlsRW.js";import{a as _}from"./vendor-query-DjnmRe6a.js";/**
- * @license lucide-react v0.462.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const p=l("Award",[["path",{d:"m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526",key:"1yiouv"}],["circle",{cx:"12",cy:"8",r:"6",key:"1vp47v"}]]);async function m(t=10,n){let r=o.from("weekly_lottery").select("id, draw_date, winner_user_id, tickets_used, reward_amount").order("draw_date",{ascending:!1}).limit(t*2);const c=(n??"ID").toUpperCase().slice(0,2);r=r.eq("country_code",c);const{data:a,error:s}=await r;if(s)throw console.error("Failed to fetch lottery winners",s),s;if(!a?.length)return[];const i=[...new Set(a.map(e=>e.winner_user_id))],{data:d}=await o.from("user_stats").select("user_id, nickname").in("user_id",i),u=new Map((d??[]).map(e=>[e.user_id,e.nickname||"Anonim"]));return a.slice(0,t).map(e=>({...e,nickname:u.get(e.winner_user_id)??"Anonim"}))}function f(t=10,n){const r=(n??"ID").toUpperCase().slice(0,2);return _({queryKey:["lottery_winners",t,r],queryFn:()=>m(t,r)})}export{p as A,f as u};

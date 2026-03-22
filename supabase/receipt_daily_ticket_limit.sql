@@ -8,18 +8,19 @@ language plpgsql
 security definer
 as $$
 declare
-  v_today date := (new.created_at at time zone 'Asia/Jakarta')::date;
+  v_utc_day_start timestamptz := date_trunc('day', now() at time zone 'UTC') at time zone 'UTC';
+  v_today date := (now() at time zone 'UTC')::date;
   v_receipts_today integer;
   v_last_date date;
   v_new_streak integer;
   v_streak_bonus_tickets integer := 0;
   v_grant_ticket boolean := false;
 begin
-  -- Count receipts today FIRST (includes this new row) for server-side limit
+  -- Count receipts today (UTC, includes this new row) for server-side limit
   select count(*) into v_receipts_today
   from public.receipts
   where user_id = new.user_id
-    and (created_at at time zone 'Asia/Jakarta')::date = v_today;
+    and created_at >= v_utc_day_start;
 
   v_grant_ticket := (v_receipts_today <= 3);
 
