@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export const WHATSAPP_MESSAGE = (referralUrl: string, code?: string) => {
   const displayCode = code ?? (referralUrl.includes("?r=") ? new URL(referralUrl).searchParams.get("r") ?? "" : "");
-  return `Selam! StrukCuan ile alışveriş fişlerimi bilete dönüştürüp ödüller kazanıyorum. Sen de katıl, ilk fişinde bonus bilet kazan! Kodum: ${displayCode} Link: ${referralUrl}`;
+  return `Hi! I'm earning tickets on StrukCuan by scanning receipts. Join with my link and get bonus tickets on your first receipt! Code: ${displayCode} Link: ${referralUrl}`;
 };
 
 /** Generate a fallback referral code from user id (6-char uppercase) */

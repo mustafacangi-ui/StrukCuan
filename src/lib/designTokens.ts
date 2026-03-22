@@ -52,3 +52,14 @@ export const BTN_GLASS =
 
 /** Unified pulse/glow animation timing */
 export const ANIM_PULSE = "2s ease-in-out infinite";
+
+/**
+ * Premium page background — deep navy/purple gradient with subtle radial glows.
+ * Matches the Home screen "gold standard" theme. Use on Invite, Radar, Rank, Earn, etc.
+ */
+export const PREMIUM_PAGE_BACKGROUND = `
+  radial-gradient(ellipse 90% 55% at 50% -5%, rgba(155,92,255,0.16) 0%, transparent 60%),
+  radial-gradient(ellipse 60% 40% at 10% 65%, rgba(100,40,200,0.1) 0%, transparent 50%),
+  radial-gradient(ellipse 70% 50% at 90% 85%, rgba(255,78,205,0.07) 0%, transparent 50%),
+  linear-gradient(180deg,#0c0920 0%,#0e0b1e 50%,#090714 100%)
+`;

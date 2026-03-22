@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/hooks/useUserStats";
-import { Trophy, Medal } from "lucide-react";
+import { Medal } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -32,7 +33,11 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      {/* Premium dark navy/purple background — matches Home screen */}
+      <div
+        className="fixed inset-0 -z-10"
+        style={{ background: PREMIUM_PAGE_BACKGROUND }}
+      />
       <PageHeader title="Leaderboard" onBack={() => navigate(-1)} />
 
       <div className="mx-4 mt-4">
@@ -80,7 +85,7 @@ export default function Leaderboard() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-primary">
-                    {row.tiket ?? 0} tiket
+                    {row.tiket ?? 0} tickets
                   </p>
                 </div>
               </div>

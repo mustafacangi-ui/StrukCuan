@@ -8,8 +8,10 @@ import { useReferralCode, useReferralCount, WHATSAPP_MESSAGE } from "@/hooks/use
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import { APP_URL } from "@/config/app";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
-const INVITE_MESSAGE = "Aku lagi kumpulin tiket di StrukCuan! Daftar pakai link aku dan dapat tiket gratis.";
+const INVITE_MESSAGE =
+  "I'm earning tickets on StrukCuan! Sign up with my link and get bonus tickets on your first receipt.";
 
 export default function Invite() {
   const navigate = useNavigate();
@@ -125,16 +127,20 @@ export default function Invite() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      {/* Premium dark navy/purple background — matches Home screen gold standard */}
+      <div
+        className="fixed inset-0 -z-10"
+        style={{ background: PREMIUM_PAGE_BACKGROUND }}
+      />
       <PageHeader title="Invite" onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-6">
         {/* Title & Subtitle */}
         <div className="text-center mb-6">
-          <h2 className="font-display text-xl font-bold text-foreground">
+          <h2 className="font-display text-xl font-bold text-white">
             Invite Friends & Earn Tickets
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-white/68">
             Invite your friends to StrukCuan and earn tickets together.
           </p>
         </div>
@@ -143,12 +149,12 @@ export default function Invite() {
         <div
           className="rounded-2xl p-4"
           style={{
-            background: "rgba(0,0,0,0.45)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <p className="text-[10px] uppercase tracking-wider text-white/80 mb-2 font-semibold">
-            Link undangan kamu
+          <p className="text-[10px] uppercase tracking-wider text-white/70 mb-2 font-semibold">
+            Your Invite Link
           </p>
           {codeLoading && !referralUrl ? (
             <div className="space-y-3">
@@ -161,10 +167,10 @@ export default function Invite() {
                 className="rounded-2xl p-4 mb-4"
                 style={{ background: "rgba(0,0,0,0.4)" }}
               >
-                <p className="text-sm text-white leading-relaxed mb-3">
-                  Ajak temanmu ke StrukCuan.
+                <p className="text-sm text-white/90 leading-relaxed mb-3">
+                  Invite your friends to StrukCuan.
                   <br />
-                  Kamu +5 bilet, temanmu +2 bilet bonus saat struk pertamanya onaylanır.
+                  You get +5 tickets, your friend gets +2 bonus tickets when they upload their first receipt.
                 </p>
                 <input
                   type="text"
@@ -178,9 +184,12 @@ export default function Invite() {
                 type="button"
                 onClick={handleCopyLink}
                 disabled={!referralUrl}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#9b6bcc] py-3.5 font-display font-bold text-sm text-white shadow-lg disabled:opacity-50 hover:opacity-90 transition-opacity mb-4"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 font-display font-bold text-sm text-white disabled:opacity-50 hover:opacity-95 transition-opacity mb-4 border border-[#00E676]/30 shadow-[0_0_20px_rgba(0,230,118,0.25)]"
+                style={{
+                  background: "linear-gradient(90deg,#00E676,#00c853)",
+                }}
               >
-                <Copy size={18} />
+                <Copy size={18} strokeWidth={2.5} />
                 Copy Link
               </button>
               <div className="flex flex-wrap gap-2">
@@ -238,20 +247,23 @@ export default function Invite() {
         <div
           className="mt-6 rounded-2xl p-4"
           style={{
-            background: "rgba(0,0,0,0.45)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary glow-green">
-              <UserPlus size={24} className="text-primary" />
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-full border-2"
+              style={{ borderColor: "rgba(0,230,118,0.4)" }}
+            >
+              <UserPlus size={24} className="text-[#00E676]" />
             </div>
             <div>
               <p className="font-display text-sm font-bold text-white">
                 Friends joined: {friendsJoined}
               </p>
-              <p className="text-[10px] text-white/80">
-                Teman yang sudah daftar & upload struk pertama
+              <p className="text-[10px] text-white/68">
+                Friends who registered & uploaded their first receipt
               </p>
             </div>
           </div>
@@ -261,12 +273,12 @@ export default function Invite() {
         <div
           className="mt-6 rounded-2xl p-4"
           style={{
-            background: "rgba(0,0,0,0.45)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <p className="text-xs text-white leading-relaxed">
-            Bagikan link undangan ke teman. Saat teman daftar dan struk pertamanya onaylanır, kamu +5 bilet, teman +2 bilet bonus kazanır!
+          <p className="text-xs text-white/85 leading-relaxed">
+            Share the invite link with friends and start making your next grocery run pay. Every friend who registers and uploads their first receipt earns you +5 tickets and them +2 bonus tickets. Everyone wins!
           </p>
         </div>
       </div>

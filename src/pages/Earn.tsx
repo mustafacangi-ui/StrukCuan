@@ -23,7 +23,7 @@ import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
 import { getCountdownParts } from "@/lib/weeklyCountdown";
-import { CARD_BASE, BTN_GLASS } from "@/lib/designTokens";
+import { CARD_BASE, BTN_GLASS, PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const WEEKLY_MAX = 42;
 
@@ -145,9 +145,9 @@ export default function Earn() {
   return (
     <div
       className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden"
-      style={{ background: "linear-gradient(160deg,#0f0726 0%,#1a0d40 50%,#0d0520 100%)", position: "relative", zIndex: 10, minHeight: "100vh" }}
+      style={{ background: PREMIUM_PAGE_BACKGROUND, position: "relative", zIndex: 10, minHeight: "100vh" }}
     >
-      <div className="fixed inset-0 -z-10" style={{ background: "linear-gradient(160deg,#0f0726 0%,#1a0d40 50%,#0d0520 100%)" }} />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
 
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-white/20 flex items-start justify-between gap-3">

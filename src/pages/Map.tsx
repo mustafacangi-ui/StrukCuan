@@ -14,7 +14,7 @@ import { Radar } from "lucide-react";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useRadar } from "@/contexts/RadarContext";
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
-import { CARD_GLASS, BTN_GLASS } from "@/lib/designTokens";
+import { CARD_GLASS, BTN_GLASS, PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 // ─── Category filters ────────────────────────────────────────────────────────
 
@@ -75,12 +75,10 @@ export default function Map() {
 
   return (
     <div className="min-h-screen max-w-[430px] mx-auto relative flex flex-col pb-20">
-      {/* Background — deep dark purple to match Earn page */}
+      {/* Premium dark background — matches Home screen gold standard */}
       <div
         className="fixed inset-0 -z-10"
-        style={{
-          background: "linear-gradient(160deg,#0f0726 0%,#1a0d40 50%,#0d0520 100%)",
-        }}
+        style={{ background: PREMIUM_PAGE_BACKGROUND }}
       />
 
       {/* ── Topbar ───────────────────────────────────────────────────────── */}

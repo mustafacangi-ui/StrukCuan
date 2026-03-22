@@ -1,1 +1,0 @@
-const o="bg-zinc-900/60 backdrop-blur-3xl border border-white/10",r="rounded-2xl p-4 "+o+" shadow-2xl transition-all duration-300",t="bg-white/10 border border-white/15 hover:bg-white/20 transition-colors";export{t as B,o as C,r as a};
