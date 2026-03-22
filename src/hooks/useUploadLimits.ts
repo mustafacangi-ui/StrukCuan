@@ -12,6 +12,12 @@ import { supabase } from "@/lib/supabase";
 export const MAX_RECEIPTS_PER_DAY   = 5;
 export const MAX_RED_LABELS_PER_DAY = 3;
 
+/**
+ * Maximum TICKETS earnable from normal receipt scans per day.
+ * Scans beyond this limit are still accepted and stored, but award 0 tickets.
+ */
+export const DAILY_RECEIPT_TICKET_LIMIT = 3;
+
 function todayStart(): string {
   const d = new Date();
   d.setHours(0, 0, 0, 0);

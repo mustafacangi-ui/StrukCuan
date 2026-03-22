@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
-import { X, Camera, RotateCcw } from "lucide-react";
+import { X, Camera, RotateCcw, Receipt, Tag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt } from "@/hooks/useReceipts";
@@ -16,6 +16,7 @@ import {
   useRedLabelsToday,
   MAX_RECEIPTS_PER_DAY,
   MAX_RED_LABELS_PER_DAY,
+  DAILY_RECEIPT_TICKET_LIMIT,
   RED_LABELS_TODAY_KEY,
 } from "@/hooks/useUploadLimits";
 
@@ -23,12 +24,26 @@ const USER_FACING_ERROR = "Upload failed. Please try again.";
 
 export type CameraMode = "receipt" | "red_label";
 
+type ScanStep =
+  | "select"      // NEW — pre-scan type selection (always shown first)
+  | "camera"      // viewfinder
+  | "preview"     // receipt confirm
+  | "form"        // red-label detail form
+  | "processing"
+  | "success"
+  | "error";
+
 interface CameraScannerProps {
   onClose: () => void;
+  /**
+   * If provided, skips the pre-scan selection screen and opens
+   * the camera directly in this mode (e.g. from the Radar/Map page).
+   * If omitted, the selection screen is shown first.
+   */
   mode?: CameraMode;
 }
 
-export default function CameraScanner({ onClose, mode = "receipt" }: CameraScannerProps) {
+export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
   const { user } = useUser();
   const createReceipt = useCreateReceipt();
   const createDeal = useCreateDeal();
@@ -37,34 +52,46 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   const { data: todayCount = 0 }        = useReceiptsToday(user?.id ?? undefined);
   const { data: redLabelTodayCount = 0 } = useRedLabelsToday(user?.id ?? undefined);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef  = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [step, setStep] = useState<"camera" | "type" | "preview" | "form" | "processing" | "success" | "error">("camera");
-  // Resolved after the user picks a type on the "type" selection screen.
-  // Defaults to the prop so callers can still pre-select a mode.
-  const [selectedType, setSelectedType] = useState<CameraMode>(mode);
+  // Start on the pre-scan select screen unless a mode was explicitly given
+  const [step, setStep] = useState<ScanStep>(mode ? "camera" : "select");
+  // Which type the user has chosen (pre-scan selection or prop)
+  const [selectedType, setSelectedType] = useState<CameraMode>(mode ?? "receipt");
   const isRedLabel = selectedType === "red_label";
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [redLabelForm, setRedLabelForm] = useState({ product_name: "", price: "", store: "", discount: "" });
-  // Holds the SHA-256 hash of the last captured blob so we can register
-  // it in localStorage only after a *successful* upload (not on capture).
+  const [error, setError]               = useState<string | null>(null);
+  const [redLabelForm, setRedLabelForm] = useState({
+    product_name: "",
+    price: "",
+    store: "",
+    discount: "",
+  });
   const [pendingHash, setPendingHash] = useState<string | null>(null);
-  // Counts successful uploads in this session for the streak display.
-  const [scanStreak, setScanStreak] = useState(0);
+  const [scanStreak, setScanStreak]   = useState(0);
+  // Tracks how many tickets were actually awarded for the success screen
+  const [ticketsAwarded, setTicketsAwarded] = useState(0);
 
   const userId = user?.id;
+
+  // ── How many receipt tickets are still earnable today ────────────────────
+  const receiptTicketsLeft = Math.max(0, DAILY_RECEIPT_TICKET_LIMIT - todayCount);
+  const receiptAtTicketLimit = todayCount >= DAILY_RECEIPT_TICKET_LIMIT;
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   }, []);
 
+  // Start/stop camera only when step === "camera"
   useEffect(() => {
     let mounted = true;
+    if (step !== "camera") return;
+
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -76,39 +103,47 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
           return;
         }
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = stream;
       } catch (e) {
         console.error("Camera error:", e);
         if (mounted) {
-          setError("Cannot access camera");
+          setError("Cannot access camera. Please allow camera permission.");
           setStep("error");
         }
       }
     };
-    if (step === "camera") {
-      startCamera();
-    }
+
+    startCamera();
     return () => {
       mounted = false;
-      if (step === "preview" || step === "camera") stopCamera();
+      stopCamera();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  // ── Pre-scan type selection (Issue 1) ────────────────────────────────────
+  const handleSelectTypePre = useCallback((type: CameraMode) => {
+    if (type === "red_label" && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
+      toast.error(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day)`);
+      return;
+    }
+    setSelectedType(type);
+    setStep("camera");
+  }, [redLabelTodayCount]);
+
+  // ── Capture — hash check, then go straight to preview/form ───────────────
   const handleCapture = useCallback(() => {
-    const video = videoRef.current;
+    const video  = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !userId) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = video.videoWidth;
+    canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    // ── Hash + duplicate check, then go to type-selection ────────────────
     canvas.toBlob(async (blob) => {
       if (!blob) return;
 
@@ -123,53 +158,43 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setCapturedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       stopCamera();
-      setStep("type");   // always land on type-selection first
+      // Since type is already chosen, skip the post-capture "type" screen
+      setStep(selectedType === "red_label" ? "form" : "preview");
     }, "image/jpeg", 0.9);
-  }, [userId, stopCamera]);
-
-  // Called when user picks a type on the selection screen.
-  const handleSelectType = useCallback((type: CameraMode) => {
-    if (type === "receipt" && todayCount >= MAX_RECEIPTS_PER_DAY) {
-      toast.error(`Daily receipt limit reached (max ${MAX_RECEIPTS_PER_DAY} per day)`);
-      return;
-    }
-    if (type === "red_label" && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
-      toast.error(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day)`);
-      return;
-    }
-    setSelectedType(type);
-    setStep(type === "red_label" ? "form" : "preview");
-  }, [todayCount, redLabelTodayCount]);
+  }, [userId, stopCamera, selectedType]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setCapturedBlob(null);
     setPendingHash(null);
-    setSelectedType(mode);
     setError(null);
     setStep("camera");
-  }, [previewUrl, mode]);
+  }, [previewUrl]);
 
-  // "Scan Again" on the success screen — keeps streak alive.
   const handleScanAgain = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setCapturedBlob(null);
     setPendingHash(null);
-    setSelectedType(mode);
     setError(null);
-    setStep("camera");
+    // Go back to select screen so user can choose type again
+    setSelectedType(mode ?? "receipt");
+    setStep(mode ? "camera" : "select");
   }, [previewUrl, mode]);
 
+  // ── Receipt submit (Issue 2: daily ticket cap) ────────────────────────────
   const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
 
     setStep("processing");
     setError(null);
 
+    // How many tickets will this scan earn? (Issue 2)
+    const earnedTickets = receiptAtTicketLimit ? 0 : 1;
+
     try {
-      const file = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const file        = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
       const storagePath = `${String(userId)}/${Date.now()}.jpg`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -177,10 +202,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         .upload(storagePath, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        const msg = uploadError?.message ?? "Upload path missing";
-        console.log("Storage Error Detayı:", uploadError);
-        console.error("[CameraScanner] Receipt storage upload failed:", { uploadError, msg });
-        throw new Error(`Upload failed: ${msg}`);
+        throw new Error(`Upload failed: ${uploadError?.message ?? "Upload path missing"}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -201,33 +223,35 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         console.error("[CameraScanner] Receipt DB insert failed:", dbErr);
       }
 
-      // Register hash so the same image cannot be re-submitted today
       if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
       setPendingHash(null);
 
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setCapturedBlob(null);
-      toast.success("You earned +1 ticket 🎉");
-      setScanStreak((s) => s + 1);
+
+      setTicketsAwarded(earnedTickets);
+      if (earnedTickets > 0) {
+        toast.success("You earned +1 ticket 🎉");
+        setScanStreak((s) => s + 1);
+      } else {
+        toast.info("Scan received! Daily ticket limit reached (0 tickets today)");
+      }
       setStep("success");
     } catch (e) {
-      const err = e as Error & { message?: string; code?: string };
-      console.error("[CameraScanner] Receipt upload error:", {
-        message: err?.message,
-        code: err?.code,
-        full: e,
-      });
+      const err = e as Error;
+      console.error("[CameraScanner] Receipt upload error:", err);
       setError(USER_FACING_ERROR);
       setStep("error");
     }
-  }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl]);
+  }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl, receiptAtTicketLimit]);
 
+  // ── Red Label submit ──────────────────────────────────────────────────────
   const handleSubmitRedLabel = useCallback(async () => {
     if (!capturedBlob || !userId) return;
     const { product_name, store, price, discount } = redLabelForm;
     if (!product_name.trim() || !store.trim()) {
-      setError("Ürün adı ve market adresi zorunludur.");
+      setError("Product name and store address are required.");
       return;
     }
 
@@ -235,45 +259,35 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     setError(null);
 
     try {
-      console.log("[RedLabel] 1. Başlangıç - userId:", userId);
       const file = new File([capturedBlob], `deal-${Date.now()}.jpg`, { type: "image/jpeg" });
-
       const storagePathDeals = `deals/${String(userId)}/${Date.now()}.jpg`;
-      console.log("[RedLabel] 2. Storage upload başlıyor - bucket: receipts, path:", storagePathDeals);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
         .upload(storagePathDeals, file, { upsert: false, contentType: "image/jpeg" });
 
       if (uploadError || !uploadData?.path) {
-        const msg = uploadError?.message ?? "Upload path missing";
-        console.log("Storage Error Detayı:", uploadError);
-        console.error("[CameraScanner] Red Label storage upload failed:", { uploadError, msg });
-        throw new Error(`Upload failed: ${msg}`);
+        throw new Error(`Upload failed: ${uploadError?.message ?? "Upload path missing"}`);
       }
-      console.log("[RedLabel] 3. Storage upload OK - path:", uploadData.path);
 
       const { data: { publicUrl } } = supabase.storage
         .from("receipts")
         .getPublicUrl(uploadData.path);
-      console.log("[RedLabel] 4. Public URL alındı:", publicUrl?.slice(0, 60) + "...");
 
-      const discountNum = discount ? parseInt(discount, 10) : undefined;
-      const priceNum = price ? parseInt(price.replace(/\D/g, ""), 10) : undefined;
-      const expiry = new Date();
+      const discountNum   = discount ? parseInt(discount, 10) : undefined;
+      const priceNum      = price ? parseInt(price.replace(/\D/g, ""), 10) : undefined;
+      const expiry        = new Date();
       expiry.setDate(expiry.getDate() + 7);
       const isRedLabelFlag = (discountNum ?? 0) >= 50;
 
       const lat = Number(location?.lat);
       const lng = Number(location?.lng);
       if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.error("[CameraScanner] Invalid coordinates:", { lat, lng, location });
-        setError("Konum geçersiz. Lütfen GPS iznini kontrol edin.");
+        setError("Location unavailable. Please enable GPS permission.");
         setStep("error");
         return;
       }
-      console.log("[RedLabel] 5. Koordinatlar OK - lat:", lat, "lng:", lng);
 
-      console.log("[RedLabel] 6. deals tablosuna insert başlıyor");
       await createDeal.mutateAsync({
         lat,
         lng,
@@ -286,17 +300,13 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         is_red_label: isRedLabelFlag,
         user_id: userId,
       });
-      console.log("[RedLabel] 7. deals insert OK");
 
-      console.log("[RedLabel] 8. grantDealTickets RPC çağrılıyor");
       await grantDealTickets();
-      console.log("[RedLabel] 9. grantDealTickets OK - tamamlandı");
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
       toast.success("You earned +3 tickets 🔥");
 
-      // Register hash so the same image cannot be re-submitted today
       if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
       setPendingHash(null);
 
@@ -304,24 +314,15 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
       setPreviewUrl(null);
       setCapturedBlob(null);
       setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
+      setTicketsAwarded(3);
       setScanStreak((s) => s + 1);
       setStep("success");
     } catch (e) {
-      console.log("Storage Error Detayı:", e);
-      const err = e as Error & { message?: string; code?: string };
-      const detail = err?.message ?? err?.code ?? String(e);
-      console.error("[CameraScanner] Red Label HATA - adım bilgisi için yukarıdaki [RedLabel] loglarına bakın:", {
-        message: err?.message,
-        code: err?.code,
-        detail,
-        full: e,
-      });
+      console.error("[CameraScanner] Red Label upload error:", e);
       setError(USER_FACING_ERROR);
       setStep("error");
     }
   }, [capturedBlob, userId, pendingHash, redLabelForm, createDeal, location, previewUrl, queryClient]);
-
-  const handleSubmit = isRedLabel ? handleSubmitRedLabel : handleSubmitReceipt;
 
   const handleClose = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -333,7 +334,120 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
     <div className="fixed inset-0 z-[80] flex flex-col bg-black">
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* ── Camera viewfinder ─────────────────────────────────────────── */}
+      {/* ── PRE-SCAN TYPE SELECTION (Issue 1) ─────────────────────────── */}
+      {step === "select" && (
+        <div className="absolute inset-0 flex flex-col bg-[#0A0E1A]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-white/10 p-2 text-white"
+              aria-label="Close"
+            >
+              <X size={22} />
+            </button>
+            <span className="text-sm font-semibold text-white">What are you scanning?</span>
+            <div className="w-10" />
+          </div>
+
+          {/* Options */}
+          <div className="flex-1 flex flex-col justify-center px-6 gap-5">
+            {/* Option A — Normal Receipt */}
+            <button
+              onClick={() => handleSelectTypePre("receipt")}
+              className="w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]"
+              style={{
+                background: receiptAtTicketLimit
+                  ? "rgba(255,255,255,0.03)"
+                  : "rgba(0,230,118,0.05)",
+                border: receiptAtTicketLimit
+                  ? "1px solid rgba(255,255,255,0.1)"
+                  : "1px solid rgba(0,230,118,0.25)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ background: "rgba(0,230,118,0.12)" }}
+                  >
+                    <Receipt size={22} className="text-[#00E676]" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-[15px]">Normal Grocery Receipt</p>
+                    <p className="text-xs text-white/50 mt-0.5">Any supermarket or store receipt</p>
+                  </div>
+                </div>
+                <span
+                  className="text-xs font-bold rounded-full px-3 py-1.5 ml-2 shrink-0"
+                  style={
+                    receiptAtTicketLimit
+                      ? { background: "rgba(255,183,0,0.1)", color: "#FFB700", border: "1px solid rgba(255,183,0,0.25)" }
+                      : { background: "rgba(0,230,118,0.12)", color: "#00E676", border: "1px solid rgba(0,230,118,0.3)" }
+                  }
+                >
+                  {receiptAtTicketLimit ? "0 tickets" : "+1 ticket"}
+                </span>
+              </div>
+              {receiptAtTicketLimit && (
+                <p className="text-[11px] text-amber-400/80 mt-1 ml-1">
+                  Daily ticket limit reached ({DAILY_RECEIPT_TICKET_LIMIT}/{DAILY_RECEIPT_TICKET_LIMIT}). Scan is accepted but earns 0 tickets today.
+                </p>
+              )}
+              {!receiptAtTicketLimit && (
+                <p className="text-[11px] text-[#00E676]/60 mt-1 ml-1">
+                  {receiptTicketsLeft} ticket{receiptTicketsLeft !== 1 ? "s" : ""} remaining today
+                </p>
+              )}
+            </button>
+
+            {/* Option B — Red Label */}
+            <button
+              onClick={() => handleSelectTypePre("red_label")}
+              disabled={redLabelTodayCount >= MAX_RED_LABELS_PER_DAY}
+              className="w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98] disabled:opacity-40"
+              style={{
+                background: "rgba(255,68,68,0.05)",
+                border: "1px solid rgba(255,68,68,0.25)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ background: "rgba(255,68,68,0.12)" }}
+                  >
+                    <Tag size={22} className="text-[#ff7070]" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-[15px]">Red Label / Local Discount</p>
+                    <p className="text-xs text-white/50 mt-0.5">Special sale, price-off label</p>
+                  </div>
+                </div>
+                <span
+                  className="text-xs font-bold rounded-full px-3 py-1.5 ml-2 shrink-0"
+                  style={{
+                    background: "rgba(255,68,68,0.15)",
+                    color: "#ff7070",
+                    border: "1px solid rgba(255,68,68,0.3)",
+                  }}
+                >
+                  +3 tickets
+                </span>
+              </div>
+              {redLabelTodayCount >= MAX_RED_LABELS_PER_DAY ? (
+                <p className="text-[11px] text-white/40 mt-1 ml-1">Daily limit reached</p>
+              ) : (
+                <p className="text-[11px] text-red-400/60 mt-1 ml-1">
+                  {MAX_RED_LABELS_PER_DAY - redLabelTodayCount} scan{MAX_RED_LABELS_PER_DAY - redLabelTodayCount !== 1 ? "s" : ""} remaining today
+                </p>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAMERA VIEWFINDER ─────────────────────────────────────────── */}
       {step === "camera" && (
         <>
           <div className="absolute inset-0">
@@ -349,14 +463,14 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
           {/* Top bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
             <button
-              onClick={handleClose}
+              onClick={() => setStep(mode ? "select" : "select")}
               className="rounded-full bg-black/50 p-2 text-white"
-              aria-label="Close"
+              aria-label="Back"
             >
               <X size={24} />
             </button>
             <span className="text-sm font-medium text-white">
-              Scan receipt or red label
+              {isRedLabel ? "📍 Scan Red Label" : "🧾 Scan Receipt"}
             </span>
             <div className="w-10" />
           </div>
@@ -365,11 +479,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
           <div className="absolute bottom-0 left-0 right-0 flex justify-center p-6 pb-12">
             <button
               onClick={handleCapture}
-              disabled={
-                todayCount >= MAX_RECEIPTS_PER_DAY &&
-                redLabelTodayCount >= MAX_RED_LABELS_PER_DAY
-              }
-              className="flex h-18 w-18 h-[72px] w-[72px] items-center justify-center rounded-full bg-white shadow-lg disabled:opacity-40 active:scale-95 transition-transform"
+              className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white shadow-lg active:scale-95 transition-transform"
             >
               <Camera size={34} className="text-black" />
             </button>
@@ -377,153 +487,7 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         </>
       )}
 
-      {/* ── Type selection — shown after every capture ────────────────── */}
-      {step === "type" && previewUrl && (
-        <div className="absolute inset-0 flex flex-col bg-black">
-          {/* Thumbnail */}
-          <div className="relative flex-1 flex items-center justify-center bg-black/80 p-4">
-            <img
-              src={previewUrl}
-              alt="Captured"
-              className="max-h-full max-w-full object-contain rounded-xl"
-            />
-          </div>
-
-          {/* Selection panel */}
-          <div className="bg-[#0d0920] px-5 pt-6 pb-10 space-y-4">
-            <p className="text-center text-base font-bold text-white mb-1">
-              What did you scan?
-            </p>
-
-            {/* Receipt button */}
-            <button
-              onClick={() => handleSelectType("receipt")}
-              disabled={todayCount >= MAX_RECEIPTS_PER_DAY}
-              className="w-full flex items-center justify-between rounded-2xl px-5 py-4 border border-white/10 bg-white/5 disabled:opacity-40 active:scale-[0.98] transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🧾</span>
-                <span className="text-sm font-semibold text-white">Receipt</span>
-              </div>
-              <span
-                className="text-sm font-bold rounded-full px-3 py-1"
-                style={{
-                  background: "rgba(0,230,118,0.12)",
-                  color: "#00E676",
-                  border: "1px solid rgba(0,230,118,0.25)",
-                }}
-              >
-                +1 ticket
-              </span>
-            </button>
-
-            {/* Red Label button */}
-            <button
-              onClick={() => handleSelectType("red_label")}
-              disabled={redLabelTodayCount >= MAX_RED_LABELS_PER_DAY}
-              className="w-full flex items-center justify-between rounded-2xl px-5 py-4 border border-red-500/20 bg-red-500/5 disabled:opacity-40 active:scale-[0.98] transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🏷️</span>
-                <span className="text-sm font-semibold text-white">Red Label</span>
-              </div>
-              <span
-                className="text-sm font-bold rounded-full px-3 py-1"
-                style={{
-                  background: "rgba(255,68,68,0.15)",
-                  color: "#ff7070",
-                  border: "1px solid rgba(255,68,68,0.3)",
-                }}
-              >
-                +3 tickets
-              </span>
-            </button>
-
-            {/* Retake link */}
-            <button
-              onClick={handleRetake}
-              className="w-full flex items-center justify-center gap-2 py-2 text-sm text-white/40"
-            >
-              <RotateCcw size={14} />
-              Retake photo
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Red Label form (after capture) */}
-      {step === "form" && previewUrl && isRedLabel && (
-        <div className="absolute inset-0 flex flex-col bg-black overflow-y-auto">
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <span className="text-sm font-medium text-white">İndirim Bilgileri</span>
-            <button
-              onClick={handleClose}
-              className="rounded-full bg-black/50 p-2 text-white"
-              aria-label="Kapat"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          <div className="flex-1 p-4">
-            <img
-              src={previewUrl}
-              alt="Product"
-              className="w-full max-h-48 object-contain rounded-lg mb-4"
-            />
-            {locationError && (
-              <div className="mb-3 rounded-lg border border-amber-500/50 bg-amber-500/20 p-3 text-xs text-amber-200">
-                ⚠ Konum alınamadı. Haritada Jakarta merkez noktası kullanılacak. Devam edebilirsiniz.
-              </div>
-            )}
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Ürün adı *"
-                value={redLabelForm.product_name}
-                onChange={(e) => setRedLabelForm((f) => ({ ...f, product_name: e.target.value }))}
-                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
-              />
-              <input
-                type="text"
-                placeholder="Market adresi *"
-                value={redLabelForm.store}
-                onChange={(e) => setRedLabelForm((f) => ({ ...f, store: e.target.value }))}
-                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
-              />
-              <input
-                type="text"
-                placeholder="Fiyat (Rp)"
-                value={redLabelForm.price}
-                onChange={(e) => setRedLabelForm((f) => ({ ...f, price: e.target.value }))}
-                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
-              />
-              <input
-                type="text"
-                placeholder="İndirim (%)"
-                value={redLabelForm.discount}
-                onChange={(e) => setRedLabelForm((f) => ({ ...f, discount: e.target.value }))}
-                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
-              />
-            </div>
-          </div>
-          <div className="p-4 flex gap-3 border-t border-white/10">
-            <button
-              onClick={handleRetake}
-              className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
-            >
-              Yeniden Çek
-            </button>
-            <button
-              onClick={handleSubmitRedLabel}
-              className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white"
-            >
-              Post to Map (+3 Tickets)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Preview (receipt mode) */}
+      {/* ── RECEIPT PREVIEW (Issue 3: hint text) ─────────────────────── */}
       {step === "preview" && previewUrl && !isRedLabel && (
         <>
           <div className="absolute inset-0 flex items-center justify-center bg-black p-4">
@@ -533,6 +497,8 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               className="max-h-full max-w-full object-contain rounded-lg"
             />
           </div>
+
+          {/* Top bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-black/40">
             <button
               onClick={handleRetake}
@@ -550,28 +516,112 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
               <X size={24} />
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 flex gap-3 p-4 pb-10">
-            <button
-              onClick={handleRetake}
-              className="flex-1 rounded-xl border border-white/20 bg-black/50 py-3.5 text-sm font-medium text-white"
-            >
-              Retake
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white"
-              style={{
-                background: "linear-gradient(90deg,#00c853,#00E676)",
-                boxShadow: "0 0 20px rgba(0,230,118,0.35)",
-              }}
-            >
-              Submit — +1 ticket 🎉
-            </button>
+
+          {/* Bottom actions */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 pb-10 bg-black/40">
+            {/* Issue 3: helpful hint text */}
+            <p className="text-center text-xs text-white/50 mb-3">
+              Check clarity before submitting.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleRetake}
+                className="flex-1 rounded-xl border border-white/20 bg-black/50 py-3.5 text-sm font-medium text-white"
+              >
+                Retake
+              </button>
+              <button
+                onClick={handleSubmitReceipt}
+                className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white"
+                style={{
+                  background: receiptAtTicketLimit
+                    ? "linear-gradient(90deg,#555,#777)"
+                    : "linear-gradient(90deg,#00c853,#00E676)",
+                  boxShadow: receiptAtTicketLimit
+                    ? "none"
+                    : "0 0 20px rgba(0,230,118,0.35)",
+                }}
+              >
+                {receiptAtTicketLimit ? "Submit (0 tickets today)" : "Submit — +1 ticket 🎉"}
+              </button>
+            </div>
           </div>
         </>
       )}
 
-      {/* Processing */}
+      {/* ── RED LABEL FORM ────────────────────────────────────────────── */}
+      {step === "form" && previewUrl && isRedLabel && (
+        <div className="absolute inset-0 flex flex-col bg-black overflow-y-auto">
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <span className="text-sm font-semibold text-white">Red Label Details</span>
+            <button
+              onClick={handleClose}
+              className="rounded-full bg-black/50 p-2 text-white"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="flex-1 p-4">
+            <img
+              src={previewUrl}
+              alt="Product"
+              className="w-full max-h-48 object-contain rounded-lg mb-4"
+            />
+            {locationError && (
+              <div className="mb-3 rounded-lg border border-amber-500/50 bg-amber-500/20 p-3 text-xs text-amber-200">
+                ⚠ Location unavailable. The map will use a default position. You can still submit.
+              </div>
+            )}
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Product name *"
+                value={redLabelForm.product_name}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, product_name: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="Store name / address *"
+                value={redLabelForm.store}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, store: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="Price (Rp)"
+                value={redLabelForm.price}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, price: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+              <input
+                type="text"
+                placeholder="Discount (%)"
+                value={redLabelForm.discount}
+                onChange={(e) => setRedLabelForm((f) => ({ ...f, discount: e.target.value }))}
+                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
+              />
+            </div>
+          </div>
+          <div className="p-4 flex gap-3 border-t border-white/10">
+            <button
+              onClick={handleRetake}
+              className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
+            >
+              Retake
+            </button>
+            <button
+              onClick={handleSubmitRedLabel}
+              className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white"
+            >
+              Post to Map (+3 Tickets)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PROCESSING ────────────────────────────────────────────────── */}
       {step === "processing" && (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
@@ -581,30 +631,31 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
         </div>
       )}
 
-      {/* Success with celebration */}
+      {/* ── SUCCESS ────────────────────────────────────────────────────── */}
       {step === "success" && (
         <SuccessCelebration
           onClose={handleClose}
           onScanAgain={handleScanAgain}
           isRedLabel={isRedLabel}
           streak={scanStreak}
+          ticketsAwarded={ticketsAwarded}
         />
       )}
 
-      {/* Error */}
+      {/* ── ERROR ─────────────────────────────────────────────────────── */}
       {step === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6">
-          <p className="text-red-400 font-medium text-center mb-4">{error}</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0E1A] p-6">
+          <p className="text-red-400 font-medium text-center mb-6">{error}</p>
           <div className="flex gap-3">
             <button
-              onClick={() => { setStep("camera"); setError(null); }}
+              onClick={() => { setStep(mode ? "camera" : "select"); setError(null); }}
               className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white"
             >
               Try Again
             </button>
             <button
               onClick={handleClose}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
+              className="rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold text-white"
             >
               Close
             </button>
@@ -615,35 +666,54 @@ export default function CameraScanner({ onClose, mode = "receipt" }: CameraScann
   );
 }
 
+// ── Success Celebration ────────────────────────────────────────────────────
+
 interface SuccessCelebrationProps {
   onClose: () => void;
   onScanAgain: () => void;
   isRedLabel?: boolean;
   streak: number;
+  ticketsAwarded: number;
 }
 
-function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: SuccessCelebrationProps) {
+function SuccessCelebration({
+  onClose,
+  onScanAgain,
+  isRedLabel,
+  streak,
+  ticketsAwarded,
+}: SuccessCelebrationProps) {
   const [visible, setVisible] = useState(false);
-  const tickets = isRedLabel ? 3 : 1;
+  const limitReached = !isRedLabel && ticketsAwarded === 0;
 
-  const accentColor  = isRedLabel ? "#ff7070"            : "#00E676";
-  const accentGlow   = isRedLabel ? "rgba(255,68,68,0.5)"  : "rgba(0,230,118,0.5)";
-  const btnGradient  = isRedLabel
-    ? "linear-gradient(90deg,#e53935,#ff4ecd)"
-    : "linear-gradient(90deg,#00c853,#00E676)";
-  const btnGlow      = isRedLabel
-    ? "0 0 30px rgba(229,57,53,0.4), 0 4px 20px rgba(0,0,0,0.5)"
-    : "0 0 30px rgba(0,200,83,0.4), 0 4px 20px rgba(0,0,0,0.5)";
-  const bgGlow       = isRedLabel
-    ? "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(255,68,68,0.13), transparent)"
-    : "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(0,230,118,0.11), transparent)";
+  const accentColor = limitReached
+    ? "#FFB700"
+    : isRedLabel ? "#ff7070" : "#00E676";
+  const accentGlow = limitReached
+    ? "rgba(255,183,0,0.4)"
+    : isRedLabel ? "rgba(255,68,68,0.5)" : "rgba(0,230,118,0.5)";
+  const btnGradient = limitReached
+    ? "linear-gradient(90deg,#5a4200,#7a5a00)"
+    : isRedLabel
+      ? "linear-gradient(90deg,#e53935,#ff4ecd)"
+      : "linear-gradient(90deg,#00c853,#00E676)";
+  const btnGlow = limitReached
+    ? "0 0 20px rgba(255,183,0,0.3), 0 4px 20px rgba(0,0,0,0.5)"
+    : isRedLabel
+      ? "0 0 30px rgba(229,57,53,0.4), 0 4px 20px rgba(0,0,0,0.5)"
+      : "0 0 30px rgba(0,200,83,0.4), 0 4px 20px rgba(0,0,0,0.5)";
+  const bgGlow = limitReached
+    ? "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(255,183,0,0.08), transparent)"
+    : isRedLabel
+      ? "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(255,68,68,0.13), transparent)"
+      : "radial-gradient(ellipse 70% 45% at 50% 35%, rgba(0,230,118,0.11), transparent)";
 
   useEffect(() => {
-    // Step 1 — fade + scale in after a short pause
     const showTimer = setTimeout(() => setVisible(true), 120);
 
-    // Step 2 — confetti after content is visible
     const confettiTimer = setTimeout(() => {
+      if (limitReached) return; // no confetti when 0 tickets
+
       const colors = isRedLabel
         ? ["#FF3B3B", "#FF6B6B", "#FFD166", "#FFE066", "#FFFFFF"]
         : ["#00E676", "#00c853", "#FFD600", "#FFFFFF", "#9b5cff"];
@@ -662,14 +732,14 @@ function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: Succes
       clearTimeout(showTimer);
       clearTimeout(confettiTimer);
     };
-  }, [isRedLabel]);
+  }, [isRedLabel, limitReached]);
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0E1A] p-6 overflow-hidden">
       <style>{`
         @keyframes scan-again-glow {
           0%,100% { box-shadow: ${btnGlow}; }
-          50%      { box-shadow: ${btnGlow.replace("0.4", "0.65")}; }
+          50%      { box-shadow: ${btnGlow.replace("0.4", "0.65").replace("0.3", "0.5")}; }
         }
       `}</style>
 
@@ -687,24 +757,35 @@ function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: Succes
       >
         {/* Big emoji */}
         <p className="text-6xl mb-5" style={{ filter: `drop-shadow(0 0 18px ${accentGlow})` }}>
-          {isRedLabel ? "🏷️" : "🎉"}
+          {limitReached ? "📋" : isRedLabel ? "🏷️" : "🎉"}
         </p>
 
         {/* Headline */}
         <p className="text-3xl font-extrabold text-white mb-2" style={{ letterSpacing: "-0.5px" }}>
-          Nice! 🎉
+          {limitReached ? "Scan Received!" : "Nice! 🎉"}
         </p>
 
-        {/* Ticket reward */}
+        {/* Ticket reward / limit message */}
         <p
           className="text-xl font-bold mb-2"
           style={{ color: accentColor, textShadow: `0 0 16px ${accentGlow}` }}
         >
-          +{tickets} ticket{tickets > 1 ? "s" : ""} added
+          {limitReached
+            ? "Daily Limit Reached"
+            : `+${ticketsAwarded} ticket${ticketsAwarded !== 1 ? "s" : ""} added`}
         </p>
 
-        {/* Streak badge — appears from 2nd scan onward */}
-        {streak >= 2 && (
+        {/* Daily limit explanation */}
+        {limitReached && (
+          <p className="text-sm text-white/50 mb-4 leading-relaxed">
+            You've reached {DAILY_RECEIPT_TICKET_LIMIT} receipt tickets today.
+            <br />
+            Come back tomorrow for more!
+          </p>
+        )}
+
+        {/* Streak badge — only when tickets are earned */}
+        {!limitReached && streak >= 2 && (
           <div
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-4 text-sm font-bold text-amber-300"
             style={{
@@ -717,9 +798,9 @@ function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: Succes
           </div>
         )}
 
-        <div className={streak >= 2 ? "" : "mt-4"} />
+        <div className={(!limitReached && streak >= 2) ? "" : "mt-4"} />
 
-        {/* Primary CTA — Scan Again */}
+        {/* Primary CTA */}
         <button
           onClick={onScanAgain}
           className="w-full py-[17px] rounded-2xl font-bold text-base text-white mb-3"

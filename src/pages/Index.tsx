@@ -340,15 +340,15 @@ const Index = () => {
     }
   }, [location.state, requireLogin, navigate]);
 
-  const handleScanReceipt = () => {
+  // All scan buttons open the scanner on the type-selection screen first
+  const handleOpenScanner = () => {
     if (!isOnboarded) { requireLogin("camera"); return; }
-    setScannerMode("receipt");
+    setScannerMode("receipt"); // any truthy value — actual type chosen inside scanner
   };
 
-  const handleScanRedLabel = () => {
-    if (!isOnboarded) { requireLogin("camera"); return; }
-    setScannerMode("red_label");
-  };
+  // Keep these as aliases so existing call sites compile without change
+  const handleScanReceipt  = handleOpenScanner;
+  const handleScanRedLabel = handleOpenScanner;
 
   const handleProfileClick = () => {
     if (!isOnboarded) requireLogin("profile");
@@ -999,7 +999,8 @@ const Index = () => {
 
         {scannerMode && (
           <Suspense fallback={null}>
-            <CameraScanner mode={scannerMode} onClose={() => setScannerMode(null)} />
+            {/* No `mode` prop → CameraScanner starts on the pre-scan type selection screen */}
+            <CameraScanner onClose={() => setScannerMode(null)} />
           </Suspense>
         )}
       </div>
