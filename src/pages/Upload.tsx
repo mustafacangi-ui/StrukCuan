@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount, isDailyLimitError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
+import { DAILY_RECEIPT_LIMIT, getRemainingReceiptsToday } from "@/hooks/useUploadLimits";
 import RewardPopup from "@/components/RewardPopup";
 import { Camera, ArrowLeft, Check, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 const ACCEPTED_EXTENSIONS = /\.(jpe?g|png)$/i;
-const MAX_RECEIPTS_PER_DAY = 3;
 
 function getFileExtension(type: string): string {
   if (type === "image/png") return "png";
@@ -166,6 +166,11 @@ export default function Upload() {
         });
       } catch (dbErr) {
         console.error("[Upload] Receipt DB insert failed (image uploaded):", dbErr);
+        if (isDailyLimitError(dbErr)) {
+          setError(DAILY_LIMIT_ERROR);
+          return;
+        }
+        throw dbErr;
       }
 
       handleRetake();
@@ -243,13 +248,15 @@ export default function Upload() {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={createReceipt.isPending || todayCount >= MAX_RECEIPTS_PER_DAY}
+                disabled={createReceipt.isPending || todayCount >= DAILY_RECEIPT_LIMIT}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
               >
-                {createReceipt.isPending ? "Sending..." : (
+                {createReceipt.isPending ? "Sending..." : todayCount >= DAILY_RECEIPT_LIMIT ? (
+                  DAILY_LIMIT_ERROR
+                ) : (
                   <>
                     <Check size={16} className="inline mr-1" />
-                    Submit
+                    Submit ({getRemainingReceiptsToday(todayCount)} left)
                   </>
                 )}
               </button>

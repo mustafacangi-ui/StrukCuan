@@ -8,15 +8,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-/** Maximum uploads per user per calendar day. */
-export const MAX_RECEIPTS_PER_DAY   = 5;
-export const MAX_RED_LABELS_PER_DAY = 3;
+/** Maximum receipt uploads per user per calendar day. Server-enforced. */
+export const DAILY_RECEIPT_LIMIT = 3;
 
-/**
- * Maximum receipt scans that can earn tickets per day (same as Red Label cap).
- * Scans beyond this limit are still accepted and stored, but award 0 tickets.
- */
-export const DAILY_RECEIPT_TICKET_LIMIT = 3;
+/** @deprecated Use DAILY_RECEIPT_LIMIT. Kept for backwards compatibility. */
+export const DAILY_RECEIPT_TICKET_LIMIT = DAILY_RECEIPT_LIMIT;
+
+export const MAX_RED_LABELS_PER_DAY = 3;
 
 /**
  * Ticket schedule for normal receipt scans.
@@ -29,7 +27,12 @@ export const DAILY_RECEIPT_TICKET_LIMIT = 3;
  * @param todayCount  Number of receipts already uploaded today (BEFORE this scan).
  */
 export function getReceiptTicketsForScan(todayCount: number): number {
-  return todayCount < DAILY_RECEIPT_TICKET_LIMIT ? 1 : 0;
+  return todayCount < DAILY_RECEIPT_LIMIT ? 1 : 0;
+}
+
+/** Remaining receipt uploads allowed today. */
+export function getRemainingReceiptsToday(todayCount: number): number {
+  return Math.max(0, DAILY_RECEIPT_LIMIT - todayCount);
 }
 
 function todayStart(): string {

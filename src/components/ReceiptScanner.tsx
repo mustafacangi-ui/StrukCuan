@@ -1,8 +1,8 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
-import { DAILY_RECEIPT_TICKET_LIMIT } from "@/hooks/useUploadLimits";
+import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount, isDailyLimitError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
+import { DAILY_RECEIPT_LIMIT, getRemainingReceiptsToday } from "@/hooks/useUploadLimits";
 
 export default function ReceiptScanner() {
   const { user, isOnboarded, requireLogin } = useUser();
@@ -55,8 +55,8 @@ export default function ReceiptScanner() {
       return;
     }
 
-    if (todayCount >= DAILY_RECEIPT_TICKET_LIMIT) {
-      setError(`Max ${DAILY_RECEIPT_TICKET_LIMIT} receipts per day. Try again tomorrow.`);
+    if (todayCount >= DAILY_RECEIPT_LIMIT) {
+      setError(DAILY_LIMIT_ERROR);
       return;
     }
 
@@ -65,9 +65,9 @@ export default function ReceiptScanner() {
 
     try {
       const freshCount = await fetchReceiptsTodayCount(userId);
-      if (freshCount >= DAILY_RECEIPT_TICKET_LIMIT) {
+      if (freshCount >= DAILY_RECEIPT_LIMIT) {
         submitLockRef.current = false;
-        setError(`Max ${DAILY_RECEIPT_TICKET_LIMIT} receipts per day. Try again tomorrow.`);
+        setError(DAILY_LIMIT_ERROR);
         return;
       }
 
@@ -86,12 +86,20 @@ export default function ReceiptScanner() {
         data: { publicUrl },
       } = supabase.storage.from("receipts").getPublicUrl(uploadData.path);
 
-      await createReceipt.mutateAsync({
-        userId,
-        imageUrl: publicUrl,
-        store: store.trim(),
-        total: totalNumber,
-      });
+      try {
+        await createReceipt.mutateAsync({
+          userId,
+          imageUrl: publicUrl,
+          store: store.trim(),
+          total: totalNumber,
+        });
+      } catch (dbErr) {
+        if (isDailyLimitError(dbErr)) {
+          setError(DAILY_LIMIT_ERROR);
+          return;
+        }
+        throw dbErr;
+      }
 
       setLastSubmittedAt(Date.now());
       setMessage("Receipt submitted – waiting for admin approval");
@@ -202,10 +210,10 @@ export default function ReceiptScanner() {
 
         <button
           onClick={submit}
-          disabled={createReceipt.isPending || todayCount >= DAILY_RECEIPT_TICKET_LIMIT}
+          disabled={createReceipt.isPending || todayCount >= DAILY_RECEIPT_LIMIT}
           className="w-full rounded-lg bg-primary py-2.5 font-display font-bold text-primary-foreground text-sm disabled:opacity-60"
         >
-          {createReceipt.isPending ? "Uploading..." : todayCount >= DAILY_RECEIPT_TICKET_LIMIT ? "Daily limit reached" : "Submit Receipt"}
+          {createReceipt.isPending ? "Uploading..." : todayCount >= DAILY_RECEIPT_LIMIT ? DAILY_LIMIT_ERROR : `Submit Receipt (${getRemainingReceiptsToday(todayCount)} left)`}
         </button>
 
         {message && (

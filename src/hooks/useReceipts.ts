@@ -17,6 +17,14 @@ export interface ReceiptRow {
 
 export const RECEIPTS_QUERY_KEY = ["receipts"];
 
+/** User-facing message when backend rejects due to daily limit. */
+export const DAILY_LIMIT_ERROR = "Daily limit reached, try again tomorrow.";
+
+export function isDailyLimitError(e: unknown): boolean {
+  const msg = (e as { message?: string })?.message ?? "";
+  return typeof msg === "string" && msg.toLowerCase().includes("daily limit");
+}
+
 async function fetchPendingReceipts(): Promise<ReceiptRow[]> {
   const { data, error } = await supabase
     .from("receipts")
@@ -122,24 +130,33 @@ export function useUserPendingReceipts(userId: string | undefined) {
   });
 }
 
-/** Fetches fresh count of receipts uploaded today (server-side). Use before submit to enforce limit. */
+/**
+ * Fetches today's receipt count (Asia/Jakarta). Uses RPC when available for backend consistency.
+ * Fallback: direct query with UTC start-of-day.
+ */
 export async function fetchReceiptsTodayCount(userId: string): Promise<number> {
-  const now = new Date();
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
-  const todayStr = startOfDay.toISOString();
-
-  const { count, error } = await supabase
-    .from("receipts")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", todayStr);
+  const { data, error } = await supabase.rpc("get_receipts_today_count", {
+    p_user_id: userId,
+  });
 
   if (error) {
-    console.error("Failed to fetch receipts today count", error);
-    return 0;
+    // Fallback if RPC not yet deployed
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const todayStr = startOfDay.toISOString();
+    const { count, error: qError } = await supabase
+      .from("receipts")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", todayStr);
+    if (qError) {
+      console.error("Failed to fetch receipts today count", qError);
+      return 0;
+    }
+    return count ?? 0;
   }
-  return count ?? 0;
+  return (data as number) ?? 0;
 }
 
 export function useReceiptsToday(userId: string | undefined) {
@@ -191,10 +208,9 @@ export function useCreateReceipt() {
 
       return data as ReceiptRow;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: RECEIPTS_QUERY_KEY,
-      });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["receipts", "today", variables.userId] });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["daily_mission"] });

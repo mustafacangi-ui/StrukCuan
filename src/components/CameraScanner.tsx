@@ -3,7 +3,7 @@ import confetti from "canvas-confetti";
 import { X, Camera, RotateCcw, Receipt, Tag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount, isDailyLimitError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
 import { useCreateDeal } from "@/hooks/useCreateDeal";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { grantDealTickets } from "@/hooks/useGrantDealTickets";
@@ -13,10 +13,10 @@ import { toast } from "sonner";
 import { hashBlob, wasDuplicateToday, markHashUsed } from "@/lib/imageHash";
 import {
   useRedLabelsToday,
-  MAX_RECEIPTS_PER_DAY,
   MAX_RED_LABELS_PER_DAY,
-  DAILY_RECEIPT_TICKET_LIMIT,
+  DAILY_RECEIPT_LIMIT,
   getReceiptTicketsForScan,
+  getRemainingReceiptsToday,
   RED_LABELS_TODAY_KEY,
 } from "@/hooks/useUploadLimits";
 
@@ -204,9 +204,9 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
     try {
       // Server-side validation: fetch fresh count before upload (prevents race/stale bypass)
       const freshCount = await fetchReceiptsTodayCount(String(userId));
-      if (freshCount >= DAILY_RECEIPT_TICKET_LIMIT) {
+      if (freshCount >= DAILY_RECEIPT_LIMIT) {
         submitLockRef.current = false;
-        toast.error("Daily receipt limit reached. Try again tomorrow.");
+        toast.error(DAILY_LIMIT_ERROR);
         setStep("preview");
         return;
       }
@@ -214,7 +214,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       const earnedTickets = getReceiptTicketsForScan(freshCount);
       if (earnedTickets === 0) {
         submitLockRef.current = false;
-        toast.error("Daily ticket limit reached. This scan would earn 0 tickets.");
+        toast.error(DAILY_LIMIT_ERROR);
         setStep("preview");
         return;
       }
@@ -246,6 +246,12 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         });
       } catch (dbErr) {
         console.error("[CameraScanner] Receipt DB insert failed:", dbErr);
+        if (isDailyLimitError(dbErr)) {
+          toast.error(DAILY_LIMIT_ERROR);
+          setStep("preview");
+          return;
+        }
+        throw dbErr;
       }
 
       if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
@@ -417,11 +423,11 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               </div>
               {receiptAtTicketLimit ? (
                 <p className="text-[11px] text-amber-400/80 mt-1 ml-1">
-                  Daily ticket limit reached ({DAILY_RECEIPT_TICKET_LIMIT}/{DAILY_RECEIPT_TICKET_LIMIT}). Scan accepted but earns 0 tickets today.
+                  {DAILY_LIMIT_ERROR}
                 </p>
               ) : (
                 <p className="text-[11px] text-[#00E676]/60 mt-1 ml-1">
-                  Scan {todayCount + 1} today — earn +1 ticket ({DAILY_RECEIPT_TICKET_LIMIT - todayCount} remaining today)
+                  {getRemainingReceiptsToday(todayCount)} left today — earn +1 ticket
                 </p>
               )}
             </button>
@@ -569,8 +575,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                 }}
               >
                 {receiptAtTicketLimit
-                  ? "Submit (0 tickets today)"
-                  : `Submit — +${nextReceiptTickets} ticket${nextReceiptTickets !== 1 ? "s" : ""} 🎉`
+                  ? DAILY_LIMIT_ERROR
+                  : `Submit — +${nextReceiptTickets} ticket${nextReceiptTickets !== 1 ? "s" : ""} (${getRemainingReceiptsToday(todayCount)} left) 🎉`
                 }
               </button>
             </div>
@@ -807,7 +813,7 @@ function SuccessCelebration({
         {/* Daily limit explanation */}
         {limitReached && (
           <p className="text-sm text-white/50 mb-4 leading-relaxed">
-            You've reached {DAILY_RECEIPT_TICKET_LIMIT} receipt tickets today.
+            You've reached {DAILY_RECEIPT_LIMIT} receipt tickets today.
             <br />
             Come back tomorrow for more!
           </p>

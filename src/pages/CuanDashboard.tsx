@@ -11,9 +11,9 @@ import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import { Progress } from "@/components/ui/progress";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
+import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 
 const WEEKLY_MAX = 42;
-const DAILY_RECEIPT_LIMIT = 3;
 const DAILY_PROMO_LIMIT = 3;
 
 function getTitle(tickets: number): string {
