@@ -21,9 +21,12 @@ export const RECEIPTS_QUERY_KEY = ["receipts"];
 /** User-facing message when backend rejects due to daily limit. */
 export const DAILY_LIMIT_ERROR = "Daily limit reached, try again tomorrow.";
 
+/** Detects backend daily-limit rejection. Handles Supabase { message, details } shape. */
 export function isDailyLimitError(e: unknown): boolean {
-  const msg = (e as { message?: string })?.message ?? "";
-  return typeof msg === "string" && msg.toLowerCase().includes("daily limit");
+  if (!e || typeof e !== "object") return false;
+  const err = e as { message?: string; details?: string };
+  const msg = String(err?.message ?? err?.details ?? "").toLowerCase();
+  return msg.includes("daily limit");
 }
 
 async function fetchPendingReceipts(): Promise<ReceiptRow[]> {
@@ -199,6 +202,12 @@ export function useCreateReceipt() {
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["daily_mission"] });
       queryClient.invalidateQueries({ queryKey: ["referral_count"] });
+    },
+    onError: (error, variables) => {
+      if (isDailyLimitError(error)) {
+        queryClient.setQueryData([...RECEIPTS_QUERY_KEY, "today", variables.userId], DAILY_RECEIPT_LIMIT);
+        queryClient.invalidateQueries({ queryKey: [...RECEIPTS_QUERY_KEY, "today", variables.userId] });
+      }
     },
   });
 }

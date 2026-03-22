@@ -272,8 +272,13 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
     } catch (e) {
       const err = e as Error;
       console.error("[CameraScanner] Receipt upload error:", err);
-      setError(USER_FACING_ERROR);
-      setStep("error");
+      if (isDailyLimitError(e)) {
+        toast.error(DAILY_LIMIT_ERROR);
+        setStep("preview");
+      } else {
+        setError(USER_FACING_ERROR);
+        setStep("error");
+      }
     }
   }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl, nextReceiptTickets]);
 

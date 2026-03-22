@@ -109,7 +109,11 @@ export default function ReceiptScanner() {
       setPreviewUrl(null);
     } catch (e) {
       console.error(e);
-      setError("Something went wrong when submitting your receipt");
+      if (isDailyLimitError(e)) {
+        setError(DAILY_LIMIT_ERROR);
+      } else {
+        setError("Upload failed. Please try again.");
+      }
     } finally {
       submitLockRef.current = false;
     }

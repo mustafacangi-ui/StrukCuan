@@ -122,9 +122,9 @@ export default function Upload() {
 
     try {
       const freshCount = await fetchReceiptsTodayCount(userId);
-      if (freshCount >= MAX_RECEIPTS_PER_DAY) {
+      if (freshCount >= DAILY_RECEIPT_LIMIT) {
         submitLockRef.current = false;
-        setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day. Try again tomorrow.`);
+        setError(DAILY_LIMIT_ERROR);
         return;
       }
 
@@ -176,7 +176,11 @@ export default function Upload() {
       handleRetake();
       setShowReward(true);
     } catch (e) {
-      setError("Error uploading image. Try again.");
+      if (isDailyLimitError(e)) {
+        setError(DAILY_LIMIT_ERROR);
+      } else {
+        setError("Upload failed. Please try again.");
+      }
     } finally {
       submitLockRef.current = false;
     }
