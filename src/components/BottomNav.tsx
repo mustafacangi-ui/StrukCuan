@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Ticket, Radar, Home, Trophy, Users } from "lucide-react";
 
 const navItems = [
-  { path: "/earn", icon: Ticket, labelKey: "nav.earn" },
-  { path: "/", icon: Radar, labelKey: "nav.radar" },
-  { path: "/home", icon: Home, labelKey: "nav.home", isCenter: true },
-  { path: "/rank", icon: Trophy, labelKey: "nav.rank" },
-  { path: "/invite", icon: Users, labelKey: "nav.invite" },
+  { path: "/earn",   icon: Ticket, labelKey: "nav.earn" },
+  { path: "/radar",  icon: Radar,  labelKey: "nav.radar" },
+  { path: "/",       icon: Home,   labelKey: "nav.home", isCenter: true },
+  { path: "/rank",   icon: Trophy, labelKey: "nav.rank" },
+  { path: "/invite", icon: Users,  labelKey: "nav.invite" },
 ];
 
 const BottomNav = () => {

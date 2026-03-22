@@ -787,7 +787,7 @@ const Index = () => {
               </h2>
             </div>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/radar")}
               className="flex items-center gap-1 text-[12px] font-semibold transition-all hover:gap-2"
               style={{ color: "#9b5cff" }}
             >
@@ -813,7 +813,7 @@ const Index = () => {
                 return (
                   <button
                     key={deal.id}
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/radar")}
                     className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left relative overflow-hidden transition-all active:scale-[0.98]"
                     style={{
                       background: "rgba(255,255,255,0.045)",

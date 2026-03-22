@@ -45,9 +45,10 @@ const App = () => (
             <ReferralCapture />
             <PostLoginRedirect />
             <Routes>
-              <Route path="/" element={<Map />} />
-              <Route path="/home" element={<Index />} />
-              <Route path="/map" element={<Navigate to="/" replace />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              <Route path="/radar" element={<Map />} />
+              <Route path="/map" element={<Navigate to="/radar" replace />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/promo" element={<Promo />} />
               <Route path="/earn" element={<EarnErrorBoundary><Earn /></EarnErrorBoundary>} />
