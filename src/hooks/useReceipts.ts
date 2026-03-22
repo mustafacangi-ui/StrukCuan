@@ -122,7 +122,8 @@ export function useUserPendingReceipts(userId: string | undefined) {
   });
 }
 
-async function fetchReceiptsTodayCount(userId: string): Promise<number> {
+/** Fetches fresh count of receipts uploaded today (server-side). Use before submit to enforce limit. */
+export async function fetchReceiptsTodayCount(userId: string): Promise<number> {
   const now = new Date();
   const startOfDay = new Date(now);
   startOfDay.setHours(0, 0, 0, 0);

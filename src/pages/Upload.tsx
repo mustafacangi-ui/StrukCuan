@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt } from "@/hooks/useReceipts";
-import { useReceiptsToday } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
 import RewardPopup from "@/components/RewardPopup";
 import { Camera, ArrowLeft, Check, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +37,7 @@ export default function Upload() {
   const [error, setError] = useState<string | null>(null);
   const [showReward, setShowReward] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitLockRef = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -117,14 +117,18 @@ export default function Upload() {
       return;
     }
 
-    if (todayCount >= MAX_RECEIPTS_PER_DAY) {
-      setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day. Try again tomorrow.`);
-      return;
-    }
-
-    const storagePath = sanitizeStoragePath(userId, image);
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
 
     try {
+      const freshCount = await fetchReceiptsTodayCount(userId);
+      if (freshCount >= MAX_RECEIPTS_PER_DAY) {
+        submitLockRef.current = false;
+        setError(`Max ${MAX_RECEIPTS_PER_DAY} receipts per day. Try again tomorrow.`);
+        return;
+      }
+
+      const storagePath = sanitizeStoragePath(userId, image);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
         .upload(storagePath, image, {
@@ -168,8 +172,10 @@ export default function Upload() {
       setShowReward(true);
     } catch (e) {
       setError("Error uploading image. Try again.");
+    } finally {
+      submitLockRef.current = false;
     }
-  }, [userId, image, todayCount, createReceipt, handleRetake]);
+  }, [userId, image, createReceipt, handleRetake]);
 
   if (!isLoading && (!user || !isOnboarded)) return null;
 
@@ -237,7 +243,7 @@ export default function Upload() {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={createReceipt.isPending}
+                disabled={createReceipt.isPending || todayCount >= MAX_RECEIPTS_PER_DAY}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
               >
                 {createReceipt.isPending ? "Sending..." : (

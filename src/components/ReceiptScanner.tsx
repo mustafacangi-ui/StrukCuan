@@ -1,11 +1,14 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
+import { DAILY_RECEIPT_TICKET_LIMIT } from "@/hooks/useUploadLimits";
 
 export default function ReceiptScanner() {
   const { user, isOnboarded, requireLogin } = useUser();
   const createReceipt = useCreateReceipt();
+  const userId = user?.id;
+  const { data: todayCount = 0 } = useReceiptsToday(userId ?? undefined);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [store, setStore] = useState("");
@@ -52,9 +55,23 @@ export default function ReceiptScanner() {
       return;
     }
 
-    const fileName = `${userId}/${Date.now()}-${image.name}`;
+    if (todayCount >= DAILY_RECEIPT_TICKET_LIMIT) {
+      setError(`Max ${DAILY_RECEIPT_TICKET_LIMIT} receipts per day. Try again tomorrow.`);
+      return;
+    }
+
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
 
     try {
+      const freshCount = await fetchReceiptsTodayCount(userId);
+      if (freshCount >= DAILY_RECEIPT_TICKET_LIMIT) {
+        submitLockRef.current = false;
+        setError(`Max ${DAILY_RECEIPT_TICKET_LIMIT} receipts per day. Try again tomorrow.`);
+        return;
+      }
+
+      const fileName = `${userId}/${Date.now()}-${image.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("receipts")
         .upload(fileName, image, { upsert: false });
@@ -85,6 +102,8 @@ export default function ReceiptScanner() {
     } catch (e) {
       console.error(e);
       setError("Something went wrong when submitting your receipt");
+    } finally {
+      submitLockRef.current = false;
     }
   };
 
@@ -183,10 +202,10 @@ export default function ReceiptScanner() {
 
         <button
           onClick={submit}
-          disabled={createReceipt.isPending}
+          disabled={createReceipt.isPending || todayCount >= DAILY_RECEIPT_TICKET_LIMIT}
           className="w-full rounded-lg bg-primary py-2.5 font-display font-bold text-primary-foreground text-sm disabled:opacity-60"
         >
-          {createReceipt.isPending ? "Uploading..." : "Submit Receipt"}
+          {createReceipt.isPending ? "Uploading..." : todayCount >= DAILY_RECEIPT_TICKET_LIMIT ? "Daily limit reached" : "Submit Receipt"}
         </button>
 
         {message && (

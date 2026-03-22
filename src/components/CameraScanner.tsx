@@ -3,8 +3,7 @@ import confetti from "canvas-confetti";
 import { X, Camera, RotateCcw, Receipt, Tag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt } from "@/hooks/useReceipts";
-import { useReceiptsToday } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount } from "@/hooks/useReceipts";
 import { useCreateDeal } from "@/hooks/useCreateDeal";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { grantDealTickets } from "@/hooks/useGrantDealTickets";
@@ -53,9 +52,10 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
   const { data: todayCount = 0 }        = useReceiptsToday(user?.id ?? undefined);
   const { data: redLabelTodayCount = 0 } = useRedLabelsToday(user?.id ?? undefined);
 
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const videoRef       = useRef<HTMLVideoElement>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null);
+  const streamRef     = useRef<MediaStream | null>(null);
+  const submitLockRef = useRef(false);
 
   // Start on the pre-scan select screen unless a mode was explicitly given
   const [step, setStep] = useState<ScanStep>(mode ? "camera" : "select");
@@ -79,9 +79,16 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
   const userId = user?.id;
 
-  // ── Receipt ticket schedule (mirrors Red Label: +3 / +2 / +1 / 0) ────────
+  // ── Receipt ticket schedule (+1 per scan, 0 after limit) ─────────────────
   const nextReceiptTickets   = getReceiptTicketsForScan(todayCount); // tickets THIS scan will earn
-  const receiptAtTicketLimit = nextReceiptTickets === 0;             // true on 4th+ scan today
+  const receiptAtTicketLimit = nextReceiptTickets === 0;             // canonical: true whenever 0 tickets
+
+  // Force-refresh todayCount when select screen is shown (avoid stale data)
+  useEffect(() => {
+    if (step === "select" && userId) {
+      queryClient.refetchQueries({ queryKey: [...RECEIPTS_QUERY_KEY, "today", userId] });
+    }
+  }, [step, userId, queryClient]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -124,13 +131,14 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
   // ── Pre-scan type selection (Issue 1) ────────────────────────────────────
   const handleSelectTypePre = useCallback((type: CameraMode) => {
+    if (type === "receipt" && nextReceiptTickets === 0) return;
     if (type === "red_label" && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
       toast.error(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day)`);
       return;
     }
     setSelectedType(type);
     setStep("camera");
-  }, [redLabelTodayCount]);
+  }, [nextReceiptTickets, redLabelTodayCount]);
 
   // ── Capture — hash check, then go straight to preview/form ───────────────
   const handleCapture = useCallback(() => {
@@ -187,14 +195,30 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
   // ── Receipt submit (Issue 2: daily ticket cap) ────────────────────────────
   const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
-
+    if (nextReceiptTickets === 0) return;
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setStep("processing");
     setError(null);
 
-    // Decreasing ticket schedule: +3 / +2 / +1 / 0 (mirrors Red Label logic)
-    const earnedTickets = nextReceiptTickets;
-
     try {
+      // Server-side validation: fetch fresh count before upload (prevents race/stale bypass)
+      const freshCount = await fetchReceiptsTodayCount(String(userId));
+      if (freshCount >= DAILY_RECEIPT_TICKET_LIMIT) {
+        submitLockRef.current = false;
+        toast.error("Daily receipt limit reached. Try again tomorrow.");
+        setStep("preview");
+        return;
+      }
+
+      const earnedTickets = getReceiptTicketsForScan(freshCount);
+      if (earnedTickets === 0) {
+        submitLockRef.current = false;
+        toast.error("Daily ticket limit reached. This scan would earn 0 tickets.");
+        setStep("preview");
+        return;
+      }
+
       const file        = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
       const storagePath = `${String(userId)}/${Date.now()}.jpg`;
 
@@ -210,7 +234,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         .from("receipts")
         .getPublicUrl(uploadData.path);
 
-      const receiptIndexToday = todayCount + 1;
+      const receiptIndexToday = freshCount + 1;
 
       try {
         await createReceipt.mutateAsync({
@@ -356,7 +380,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
             {/* Option A — Normal Receipt */}
             <button
               onClick={() => handleSelectTypePre("receipt")}
-              className="w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98]"
+              disabled={receiptAtTicketLimit}
+              className="w-full rounded-2xl border p-5 text-left transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: receiptAtTicketLimit
                   ? "rgba(255,255,255,0.03)"
@@ -396,9 +421,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                 </p>
               ) : (
                 <p className="text-[11px] text-[#00E676]/60 mt-1 ml-1">
-                  Scan {todayCount + 1} today — earn{" "}
-                  +{nextReceiptTickets} ticket{nextReceiptTickets !== 1 ? "s" : ""}
-                  {todayCount < DAILY_RECEIPT_TICKET_LIMIT - 1 && ` (decreases next scan)`}
+                  Scan {todayCount + 1} today — earn +1 ticket ({DAILY_RECEIPT_TICKET_LIMIT - todayCount} remaining today)
                 </p>
               )}
             </button>
@@ -534,7 +557,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               </button>
               <button
                 onClick={handleSubmitReceipt}
-                className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white"
+                disabled={receiptAtTicketLimit || createReceipt.isPending}
+                className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: receiptAtTicketLimit
                     ? "linear-gradient(90deg,#3a3a3a,#555)"
