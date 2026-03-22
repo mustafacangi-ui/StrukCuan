@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef } from "react";
 import Map, { Marker, NavigationControl, Source, Layer } from "react-map-gl";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+
+// Load mapbox CSS dynamically so it never blocks the home-page render.
+const MAPBOX_CSS = "https://api.mapbox.com/mapbox-gl-js/v3.19.1/mapbox-gl.css";
+function injectMapboxCss() {
+  if (typeof document === "undefined") return;
+  if (document.querySelector(`link[href="${MAPBOX_CSS}"]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = MAPBOX_CSS;
+  document.head.appendChild(link);
+}
+injectMapboxCss();
 import { useRadar } from "@/contexts/RadarContext";
 import type { DealWithDistance } from "@/hooks/useDealsWithRadius";
 import { haversineDistance, SAFE_DEFAULT_COORDS } from "@/hooks/useUserLocation";

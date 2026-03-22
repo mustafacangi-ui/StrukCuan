@@ -62,8 +62,18 @@
       Weights trimmed to what the app actually uses — halves download size
       vs the old 4-family / 8-weight import.
     -->
+    <!--
+      ── Resource hints ──────────────────────────────────────────────────────
+      preconnect  → opens TCP + TLS handshake early, saving ~100-300 ms.
+      dns-prefetch → fallback for browsers that don't support preconnect.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Mapbox CDN (used on /radar page for map tiles + CSS) -->
+    <link rel="preconnect" href="https://api.mapbox.com" />
+    <link rel="dns-prefetch" href="https://api.mapbox.com" />
+    <link rel="preconnect" href="https://events.mapbox.com" />
+    <link rel="dns-prefetch" href="https://events.mapbox.com" />
     <link rel="preload"    as="style"
       href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap" />
     <link rel="stylesheet"

@@ -62,8 +62,18 @@
       Weights trimmed to what the app actually uses — halves download size
       vs the old 4-family / 8-weight import.
     -->
+    <!--
+      ── Resource hints ──────────────────────────────────────────────────────
+      preconnect  → opens TCP + TLS handshake early, saving ~100-300 ms.
+      dns-prefetch → fallback for browsers that don't support preconnect.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Mapbox CDN (used on /radar page for map tiles + CSS) -->
+    <link rel="preconnect" href="https://api.mapbox.com" />
+    <link rel="dns-prefetch" href="https://api.mapbox.com" />
+    <link rel="preconnect" href="https://events.mapbox.com" />
+    <link rel="dns-prefetch" href="https://events.mapbox.com" />
     <link rel="preload"    as="style"
       href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap" />
     <link rel="stylesheet"
@@ -73,15 +83,13 @@
       <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap" />
     </noscript>
-    <script type="module" crossorigin src="/assets/index-CyPZKUFT.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CT8eXrsy.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-misc-Ue4guMwP.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-map-CsZCeXBH.js">
+    <script type="module" crossorigin src="/assets/index-BrwOtJTP.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CDDBAplg.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-misc-pj4kQEBC.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-BgHQXmj8.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-radix-Cg1uftnA.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B3YhWqUk.js">
-    <link rel="stylesheet" crossorigin href="/assets/vendor-map-C-MTQCnQ.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-sgWcFDmY.css">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-radix-BoAGhz2z.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-DjnmRe6a.js">
+    <link rel="preload" as="style" crossorigin href="/assets/index-sgWcFDmY.css" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" crossorigin href="/assets/index-sgWcFDmY.css"></noscript>
   </head>
 
   <body>
