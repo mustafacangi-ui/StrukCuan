@@ -10,6 +10,7 @@ import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import { Progress } from "@/components/ui/progress";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const WEEKLY_MAX = 42;
 const DAILY_RECEIPT_LIMIT = 3;
@@ -62,7 +63,7 @@ export default function CuanDashboard() {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
       <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
 
       {/* Ödüller + Anket */}

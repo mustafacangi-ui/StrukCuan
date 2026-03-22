@@ -20,7 +20,7 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/20 bg-black/90 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 bg-[#060810]/98 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[420px] items-center justify-around px-1 py-2.5">
         {navItems.map((item) => {
           const isActive =

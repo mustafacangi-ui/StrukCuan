@@ -54,12 +54,19 @@ export const BTN_GLASS =
 export const ANIM_PULSE = "2s ease-in-out infinite";
 
 /**
- * Premium page background — deep navy/purple gradient with subtle radial glows.
- * Matches the Home screen "gold standard" theme. Use on Invite, Radar, Rank, Earn, etc.
+ * Premium page background — Deep Navy with subtle indigo/blue glows.
+ * Zero pink/magenta. Used on every screen for seamless transitions.
+ *
+ * Base:      #0A0E1A  (deep midnight navy)
+ * Top glow:  subtle indigo radial  (very low opacity)
+ * Side glow: deep blue ambient     (barely visible)
  */
 export const PREMIUM_PAGE_BACKGROUND = `
-  radial-gradient(ellipse 90% 55% at 50% -5%, rgba(155,92,255,0.16) 0%, transparent 60%),
-  radial-gradient(ellipse 60% 40% at 10% 65%, rgba(100,40,200,0.1) 0%, transparent 50%),
-  radial-gradient(ellipse 70% 50% at 90% 85%, rgba(255,78,205,0.07) 0%, transparent 50%),
-  linear-gradient(180deg,#0c0920 0%,#0e0b1e 50%,#090714 100%)
+  radial-gradient(ellipse 80% 50% at 50% -5%, rgba(60,50,140,0.18) 0%, transparent 65%),
+  radial-gradient(ellipse 50% 35% at 12% 60%, rgba(30,30,100,0.10) 0%, transparent 50%),
+  radial-gradient(ellipse 55% 40% at 88% 80%, rgba(40,35,110,0.08) 0%, transparent 50%),
+  linear-gradient(180deg, #0A0E1A 0%, #0C0F22 40%, #080B16 100%)
 `;
+
+/** Deep navy base color — used for body fallback and BottomNav */
+export const DEEP_NAVY = "#0A0E1A";

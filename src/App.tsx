@@ -37,7 +37,7 @@ const ReceiptHistory = lazy(() => import("./pages/ReceiptHistory"));
 // Minimal dark spinner shown while a lazy page chunk is downloading
 function PageLoader() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#07050f]">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#0A0E1A]">
       <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#9b5cff] border-t-transparent" />
     </div>
   );

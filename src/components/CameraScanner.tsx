@@ -665,7 +665,7 @@ function SuccessCelebration({ onClose, onScanAgain, isRedLabel, streak }: Succes
   }, [isRedLabel]);
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07050f] p-6 overflow-hidden">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0E1A] p-6 overflow-hidden">
       <style>{`
         @keyframes scan-again-glow {
           0%,100% { box-shadow: ${btnGlow}; }

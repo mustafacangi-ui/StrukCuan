@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import BottomNav from "@/components/BottomNav";
 import LegalFooter from "@/components/LegalFooter";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import {
   useTodayRewardedTickets,
   TODAY_REWARDED_TICKETS_QUERY_KEY,
@@ -82,7 +83,7 @@ export default function Promo() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
 
       <PageHeader title="Promo" onBack={() => navigate(-1)} />
 

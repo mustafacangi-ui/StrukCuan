@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
 import { CountrySelector } from "@/components/CountrySelector";
 import BottomNav from "@/components/BottomNav";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -33,8 +34,8 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
-      <PageHeader title="Pengaturan" onBack={() => navigate(-1)} />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
+      <PageHeader title="Settings" onBack={() => navigate(-1)} />
 
       {/* Profile card */}
       <div className="mx-4 mt-4 rounded-xl p-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>

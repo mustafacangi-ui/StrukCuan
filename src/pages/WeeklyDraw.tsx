@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
 import { useTotalTicketsThisWeek, useLastWinner } from "@/hooks/useWeeklyDraw";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const PRIZE_POOL_TOTAL = 500_000;
 const PRIZE_PER_WINNER = 100_000;
@@ -70,7 +71,7 @@ export default function WeeklyDraw() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
 
       <PageHeader title="Weekly Draw" onBack={() => navigate(-1)} />
 

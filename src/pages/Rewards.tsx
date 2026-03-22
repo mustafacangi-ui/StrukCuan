@@ -8,6 +8,7 @@ import { useRewards, useRedeemReward, type RewardRow } from "@/hooks/useRewards"
 import { formatCurrency } from "@/config/locale";
 import { PageHeader } from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,7 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#ff4ecd] via-[#9b5cff] to-[#1a0f3c] bg-fixed" />
+      <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
       <PageHeader title={t("rewards.title", "Ödüller")} onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-4">

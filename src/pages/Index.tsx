@@ -7,6 +7,7 @@ import { useUserTickets } from "@/hooks/useUserTickets";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useNotifications, useMarkNotificationsRead } from "@/hooks/useNotifications";
 import { getHelloForCountry, getWelcomeForCountry } from "@/lib/greeting";
+import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 // ── Always-visible chrome (keep eager) ───────────────────────────────────────
 import BottomNav from "@/components/BottomNav";
@@ -370,24 +371,17 @@ const Index = () => {
         className="min-h-screen pb-28 w-full max-w-[430px] mx-auto relative"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
-        {/* ── Background ── */}
+        {/* ── Background — shared Deep Navy Premium ── */}
         <div
           className="fixed inset-0 -z-10"
-          style={{
-            background: `
-              radial-gradient(ellipse 90% 55% at 50% -5%, rgba(155,92,255,0.16) 0%, transparent 60%),
-              radial-gradient(ellipse 60% 40% at 10% 65%, rgba(100,40,200,0.1) 0%, transparent 50%),
-              radial-gradient(ellipse 70% 50% at 90% 85%, rgba(255,78,205,0.07) 0%, transparent 50%),
-              linear-gradient(180deg,#0c0920 0%,#0e0b1e 50%,#090714 100%)
-            `,
-          }}
+          style={{ background: PREMIUM_PAGE_BACKGROUND }}
         />
 
         {/* ── Sticky Topbar ── */}
         <header
           className="sticky top-0 z-50 flex items-center gap-2.5 px-4 py-3"
           style={{
-            background: "rgba(10,8,26,0.8)",
+            background: "rgba(10,14,26,0.85)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             borderBottom: "1px solid rgba(155,92,255,0.12)",
@@ -463,7 +457,7 @@ const Index = () => {
               >
                 <Bell size={16} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#ff4444]" style={{ border: "1.5px solid #0e0b1e" }} />
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#ff4444]" style={{ border: "1.5px solid #0A0E1A" }} />
                 )}
               </button>
               {showNotifs && (
@@ -544,7 +538,7 @@ const Index = () => {
                 className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-extrabold"
                 style={{
                   background: "linear-gradient(135deg,#ffd600,#ffab00)",
-                  border: "2px solid #0e0b1e",
+                  border: "2px solid #0A0E1A",
                   color: "#1a0a00",
                 }}
               >
