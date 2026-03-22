@@ -5,37 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#9333ea" />
-    <title>StrukCuan · Scan Receipts, Earn Cuan</title>
+    <title>StrukCuan · Scan Receipts, Earn Rewards</title>
     <meta
       name="description"
-      content="StrukCuan helps you scan supermarket receipts, earn cuan points, and join a weekly lottery for cash rewards."
+      content="Scan supermarket receipts and red-label discounts to earn tickets and access weekly rewards."
     />
     <meta name="author" content="StrukCuan" />
     <meta name="monetag" content="71aa62de61b8c9f02b847fa809899e00" />
 
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="StrukCuan · Scan Receipts, Earn Cuan" />
-    <meta
-      property="og:description"
-      content="Upload your shopping receipts, collect cuan coins, and get automatic entries into the weekly lottery."
-    />
+    <meta property="og:type"        content="website" />
+    <meta property="og:title"       content="StrukCuan · Scan Receipts, Earn Rewards" />
+    <meta property="og:description" content="Scan receipts and red labels to earn tickets for the weekly reward draw." />
     <meta
       property="og:image"
       content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4e4100a8-3c4c-4e7f-b025-b819538fdb0f/id-preview-9ef15c52--c6172227-1dd7-401b-802f-caf1a8257e76.lovable.app-1772993166888.png"
     />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="StrukCuan · Scan Receipts, Earn Cuan" />
-    <meta
-      name="twitter:description"
-      content="Scan your receipts, earn cuan points, and win weekly prizes with StrukCuan."
-    />
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="StrukCuan · Scan Receipts, Earn Rewards" />
+    <meta name="twitter:description" content="Scan receipts and red labels to earn tickets for the weekly reward draw." />
     <meta
       name="twitter:image"
       content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4e4100a8-3c4c-4e7f-b025-b819538fdb0f/id-preview-9ef15c52--c6172227-1dd7-401b-802f-caf1a8257e76.lovable.app-1772993166888.png"
     />
-    <script type="module" crossorigin src="/assets/index-fpqZFacO.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-TRQbqzZk.css">
+
+    <!--
+      ── Font loading strategy ───────────────────────────────────────────────
+      1. preconnect  → opens TCP+TLS to Google Fonts before the browser even
+                       parses the stylesheet, saving ~100-300 ms RTT.
+      2. <link rel="stylesheet"> in <head> with display=swap already in the
+                       URL → fonts load non-blocking; text stays visible
+                       (FOUT instead of FOIT) while the font downloads.
+      3. Weights are trimmed to only what the app actually uses, halving the
+         font payload vs the old four-family, eight-weight import.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap"
+    />
+    <script type="module" crossorigin src="/assets/index-BhB9KYCZ.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CT8eXrsy.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-misc-Ue4guMwP.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-map-CsZCeXBH.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-BgHQXmj8.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-radix-P097NcJU.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-B3YhWqUk.js">
+    <link rel="stylesheet" crossorigin href="/assets/vendor-map-C-MTQCnQ.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-D1FAciO3.css">
   </head>
 
   <body>
