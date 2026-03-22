@@ -17,6 +17,7 @@ import {
   MAX_RECEIPTS_PER_DAY,
   MAX_RED_LABELS_PER_DAY,
   DAILY_RECEIPT_TICKET_LIMIT,
+  getReceiptTicketsForScan,
   RED_LABELS_TODAY_KEY,
 } from "@/hooks/useUploadLimits";
 
@@ -78,9 +79,9 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
   const userId = user?.id;
 
-  // ── How many receipt tickets are still earnable today ────────────────────
-  const receiptTicketsLeft = Math.max(0, DAILY_RECEIPT_TICKET_LIMIT - todayCount);
-  const receiptAtTicketLimit = todayCount >= DAILY_RECEIPT_TICKET_LIMIT;
+  // ── Receipt ticket schedule (mirrors Red Label: +3 / +2 / +1 / 0) ────────
+  const nextReceiptTickets   = getReceiptTicketsForScan(todayCount); // tickets THIS scan will earn
+  const receiptAtTicketLimit = nextReceiptTickets === 0;             // true on 4th+ scan today
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -190,8 +191,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
     setStep("processing");
     setError(null);
 
-    // How many tickets will this scan earn? (Issue 2)
-    const earnedTickets = receiptAtTicketLimit ? 0 : 1;
+    // Decreasing ticket schedule: +3 / +2 / +1 / 0 (mirrors Red Label logic)
+    const earnedTickets = nextReceiptTickets;
 
     try {
       const file        = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
@@ -232,7 +233,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
       setTicketsAwarded(earnedTickets);
       if (earnedTickets > 0) {
-        toast.success("You earned +1 ticket 🎉");
+        toast.success(`You earned +${earnedTickets} ticket${earnedTickets !== 1 ? "s" : ""} 🎉`);
         setScanStreak((s) => s + 1);
       } else {
         toast.info("Scan received! Daily ticket limit reached (0 tickets today)");
@@ -244,7 +245,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       setError(USER_FACING_ERROR);
       setStep("error");
     }
-  }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl, receiptAtTicketLimit]);
+  }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl, nextReceiptTickets]);
 
   // ── Red Label submit ──────────────────────────────────────────────────────
   const handleSubmitRedLabel = useCallback(async () => {
@@ -386,17 +387,18 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                       : { background: "rgba(0,230,118,0.12)", color: "#00E676", border: "1px solid rgba(0,230,118,0.3)" }
                   }
                 >
-                  {receiptAtTicketLimit ? "0 tickets" : "+1 ticket"}
+                  {receiptAtTicketLimit ? "0 tickets" : `+${nextReceiptTickets} ticket${nextReceiptTickets !== 1 ? "s" : ""}`}
                 </span>
               </div>
-              {receiptAtTicketLimit && (
+              {receiptAtTicketLimit ? (
                 <p className="text-[11px] text-amber-400/80 mt-1 ml-1">
-                  Daily ticket limit reached ({DAILY_RECEIPT_TICKET_LIMIT}/{DAILY_RECEIPT_TICKET_LIMIT}). Scan is accepted but earns 0 tickets today.
+                  Daily ticket limit reached ({DAILY_RECEIPT_TICKET_LIMIT}/{DAILY_RECEIPT_TICKET_LIMIT}). Scan accepted but earns 0 tickets today.
                 </p>
-              )}
-              {!receiptAtTicketLimit && (
+              ) : (
                 <p className="text-[11px] text-[#00E676]/60 mt-1 ml-1">
-                  {receiptTicketsLeft} ticket{receiptTicketsLeft !== 1 ? "s" : ""} remaining today
+                  Scan {todayCount + 1} today — earn{" "}
+                  +{nextReceiptTickets} ticket{nextReceiptTickets !== 1 ? "s" : ""}
+                  {todayCount < DAILY_RECEIPT_TICKET_LIMIT - 1 && ` (decreases next scan)`}
                 </p>
               )}
             </button>
@@ -535,14 +537,17 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                 className="flex-1 rounded-xl py-3.5 text-sm font-bold text-white"
                 style={{
                   background: receiptAtTicketLimit
-                    ? "linear-gradient(90deg,#555,#777)"
+                    ? "linear-gradient(90deg,#3a3a3a,#555)"
                     : "linear-gradient(90deg,#00c853,#00E676)",
                   boxShadow: receiptAtTicketLimit
                     ? "none"
                     : "0 0 20px rgba(0,230,118,0.35)",
                 }}
               >
-                {receiptAtTicketLimit ? "Submit (0 tickets today)" : "Submit — +1 ticket 🎉"}
+                {receiptAtTicketLimit
+                  ? "Submit (0 tickets today)"
+                  : `Submit — +${nextReceiptTickets} ticket${nextReceiptTickets !== 1 ? "s" : ""} 🎉`
+                }
               </button>
             </div>
           </div>
