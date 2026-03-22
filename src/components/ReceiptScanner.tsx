@@ -11,6 +11,7 @@ export default function ReceiptScanner() {
   const { data: todayCount = 0 } = useReceiptsToday(userId ?? undefined);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const submitLockRef = useRef(false);
   const [store, setStore] = useState("");
   const [total, setTotal] = useState("");
   const [image, setImage] = useState<File | null>(null);
@@ -19,8 +20,6 @@ export default function ReceiptScanner() {
   const [error, setError] = useState<string | null>(null);
   const [lastSubmittedAt, setLastSubmittedAt] = useState<number | null>(null);
   const [highlight, setHighlight] = useState(false);
-
-  const userId = user?.phone;
 
   const totalNumber = useMemo(() => {
     const n = Number(total);
@@ -98,7 +97,8 @@ export default function ReceiptScanner() {
           setError(DAILY_LIMIT_ERROR);
           return;
         }
-        throw dbErr;
+        setError((dbErr as Error)?.message ?? "Upload failed. Please try again.");
+        return;
       }
 
       setLastSubmittedAt(Date.now());
@@ -112,7 +112,7 @@ export default function ReceiptScanner() {
       if (isDailyLimitError(e)) {
         setError(DAILY_LIMIT_ERROR);
       } else {
-        setError("Upload failed. Please try again.");
+        setError((e as Error)?.message ?? "Upload failed. Please try again.");
       }
     } finally {
       submitLockRef.current = false;

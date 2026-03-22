@@ -170,7 +170,8 @@ export default function Upload() {
           setError(DAILY_LIMIT_ERROR);
           return;
         }
-        throw dbErr;
+        setError((dbErr as Error)?.message ?? "Upload failed. Please try again.");
+        return;
       }
 
       handleRetake();
@@ -179,7 +180,7 @@ export default function Upload() {
       if (isDailyLimitError(e)) {
         setError(DAILY_LIMIT_ERROR);
       } else {
-        setError("Upload failed. Please try again.");
+        setError((e as Error)?.message ?? "Upload failed. Please try again.");
       }
     } finally {
       submitLockRef.current = false;

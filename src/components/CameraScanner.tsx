@@ -251,7 +251,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
           setStep("preview");
           return;
         }
-        throw dbErr;
+        const msg = (dbErr as Error)?.message ?? "Upload failed. Please try again.";
+        throw new Error(msg);
       }
 
       if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
@@ -276,7 +277,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         toast.error(DAILY_LIMIT_ERROR);
         setStep("preview");
       } else {
-        setError(USER_FACING_ERROR);
+        setError(err?.message ?? "Upload failed. Please try again.");
         setStep("error");
       }
     }
@@ -355,7 +356,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       setStep("success");
     } catch (e) {
       console.error("[CameraScanner] Red Label upload error:", e);
-      setError(USER_FACING_ERROR);
+      setError((e as Error)?.message ?? USER_FACING_ERROR);
       setStep("error");
     }
   }, [capturedBlob, userId, pendingHash, redLabelForm, createDeal, location, previewUrl, queryClient]);

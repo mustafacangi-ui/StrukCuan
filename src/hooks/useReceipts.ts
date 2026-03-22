@@ -176,21 +176,29 @@ export function useCreateReceipt() {
 
   return useMutation({
     mutationFn: async (input: CreateReceiptInput) => {
-      const { data, error } = await supabase.rpc("create_receipt", {
+      const params = {
         p_user_id: String(input.userId),
         p_image_url: String(input.imageUrl),
         p_store: input.store != null ? String(input.store) : null,
         p_total: input.total != null ? Number(input.total) : null,
         p_receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
-      });
+      };
+      const { data, error } = await supabase.rpc("create_receipt", params);
+
+      console.log("RPC DATA:", data);
+      console.log("RPC ERROR:", error);
 
       if (error) {
-        const sbError = error as { message?: string };
-        console.error("[createReceipt] RPC error:", sbError?.message ?? error);
-        throw error;
+        const msg = (error as { message?: string }).message ?? "Upload failed. Please try again.";
+        const err = new Error(msg);
+        (err as unknown as { originalError: unknown }).originalError = error;
+        throw err;
       }
 
       const result = data as { id: number; remaining: number };
+      if (!result || typeof result.remaining !== "number") {
+        console.warn("[createReceipt] Unexpected RPC response shape:", result);
+      }
       return { receipt: { id: result.id } as ReceiptRow, remaining: result.remaining };
     },
     onSuccess: (data, variables) => {
