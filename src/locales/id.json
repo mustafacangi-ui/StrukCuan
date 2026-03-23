@@ -288,6 +288,8 @@
     "empty": "Belum ada pemburu minggu ini.",
     "loading": "Memuat peringkat...",
     "error": "Gagal memuat peringkat.",
+    "hallOfFame": "Pemenang Undian",
+    "winner": "Pemenang",
     "topHunters": "Pemburu Terbaik",
     "myPosition": "Posisiku"
   },

@@ -288,6 +288,8 @@
     "empty": "No hunters yet this week.",
     "loading": "Loading leaderboard...",
     "error": "Failed to load leaderboard.",
+    "hallOfFame": "Draw Winners",
+    "winner": "Winner",
     "topHunters": "Top Hunters",
     "myPosition": "My Position"
   },
