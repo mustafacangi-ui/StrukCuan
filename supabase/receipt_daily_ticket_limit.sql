@@ -1,5 +1,5 @@
 -- Server-side enforcement: only first 3 receipts per day earn tickets
--- Run in Supabase SQL Editor after lottery_migration.sql
+-- UPDATED: uuid/text safe version - use fix_uuid_text_final.sql instead
 -- Prevents bypass via API, double-submit, or stale client data
 
 create or replace function public.on_receipt_insert_reward()
@@ -15,19 +15,22 @@ declare
   v_new_streak integer;
   v_streak_bonus_tickets integer := 0;
   v_grant_ticket boolean := false;
+  v_user_uuid uuid;  -- receipts.user_id is text; user_stats may be uuid - cast once
 begin
+  v_user_uuid := new.user_id::uuid;
+
   -- Count receipts today (UTC, includes this new row) for server-side limit
   select count(*) into v_receipts_today
   from public.receipts
-  where user_id = new.user_id
+  where (user_id::text) = (new.user_id::text)
     and created_at >= v_utc_day_start;
 
   v_grant_ticket := (v_receipts_today <= 3);
 
   if v_grant_ticket then
-    -- Within limit: grant +1 ticket
+    -- Within limit: grant +1 ticket (user_stats.user_id may be uuid or text)
     insert into public.user_stats (user_id, tiket, total_receipts, level)
-    values (new.user_id, 1, 1, 1)
+    values (v_user_uuid::text, 1, 1, 1)
     on conflict (user_id)
     do update set
       tiket = public.user_stats.tiket + 1,
@@ -37,7 +40,7 @@ begin
   else
     -- Over limit: receipt stored but NO ticket
     insert into public.user_stats (user_id, tiket, total_receipts, level)
-    values (new.user_id, 0, 1, 1)
+    values (v_user_uuid::text, 0, 1, 1)
     on conflict (user_id)
     do update set
       total_receipts = public.user_stats.total_receipts + 1,
@@ -55,14 +58,14 @@ begin
     -- Streak logic: ticket bonuses for milestones (only when within receipt limit)
     if v_grant_ticket then
       select last_upload_date into v_last_date
-      from public.user_stats where user_id = new.user_id;
+      from public.user_stats where (user_id::text) = (v_user_uuid::text);
 
       if v_last_date is null then
         v_new_streak := 1;
       elsif v_last_date = v_today then
-        v_new_streak := (select current_streak from public.user_stats where user_id = new.user_id);
+        v_new_streak := (select current_streak from public.user_stats where (user_id::text) = (v_user_uuid::text));
       elsif v_last_date = v_today - 1 then
-        v_new_streak := (select current_streak from public.user_stats where user_id = new.user_id) + 1;
+        v_new_streak := (select current_streak from public.user_stats where (user_id::text) = (v_user_uuid::text)) + 1;
       else
         v_new_streak := 1;
       end if;
@@ -78,7 +81,7 @@ begin
         last_upload_date = v_today,
         tiket = tiket + v_streak_bonus_tickets,
         updated_at = now()
-      where user_id = new.user_id;
+      where (user_id::text) = (v_user_uuid::text);
 
       if v_streak_bonus_tickets > 0 then
         insert into public.notifications (user_id, title, message)
@@ -91,7 +94,7 @@ begin
     else
       update public.user_stats
       set last_upload_date = v_today, updated_at = now()
-      where user_id = new.user_id;
+      where (user_id::text) = (v_user_uuid::text);
     end if;
   end if;
 

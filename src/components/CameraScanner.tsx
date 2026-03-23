@@ -238,7 +238,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
       try {
         await createReceipt.mutateAsync({
-          userId: String(userId),
+          userId: userId,
           imageUrl: publicUrl,
           store: null,
           total: null,

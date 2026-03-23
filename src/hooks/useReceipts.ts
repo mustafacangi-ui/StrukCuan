@@ -139,6 +139,10 @@ export function useUserPendingReceipts(userId: string | undefined) {
  * No frontend date calculations.
  */
 export async function fetchReceiptsTodayCount(userId: string): Promise<number> {
+  if (!userId || typeof userId !== "string") {
+    console.warn("[fetchReceiptsTodayCount] Invalid userId:", userId);
+    return 0;
+  }
   const { data, error } = await supabase.rpc("get_receipts_today_count", {
     p_user_id: userId,
   });
@@ -176,8 +180,11 @@ export function useCreateReceipt() {
 
   return useMutation({
     mutationFn: async (input: CreateReceiptInput) => {
+      const userId = input.userId;
+      console.log("USER ID TYPE:", typeof userId, userId);
+
       const params = {
-        p_user_id: String(input.userId),
+        p_user_id: userId,
         p_image_url: String(input.imageUrl),
         p_store: input.store != null ? String(input.store) : null,
         p_total: input.total != null ? Number(input.total) : null,
