@@ -163,7 +163,8 @@
     "drawEntryDesc": "Every {{n}} tickets = 1 draw entry",
     "entryEarned": "+1 Draw Entry Earned!",
     "entryEarnedSub": "You're in the weekly lottery!",
-    "entryEarnedBadge": "{{count}} draw entr{{count, plural, one{y} other{ies}}} earned today",
+    "entryEarnedBadgeOne": "{{count}} draw entry earned today",
+    "entryEarnedBadgeMany": "{{count}} draw entries earned today",
     "entryRemaining": "{{remaining}} more tickets for next entry",
     "dailyMission": {
       "title": "Daily Mission",
@@ -189,6 +190,9 @@
       "cta": "Watch Ad",
       "ticketEarned": "+1 Ticket earned!"
     },
+    "ballotNumbersTitle": "Your ballot numbers (this week)",
+    "ballotNumbersHint": "Each ticket you earn adds one numbered ballot to the pool. On Sunday, the draw picks random ballots — if your number is announced below, you won.",
+    "ballotNumbersEmpty": "Earn tickets (ads, receipts, etc.) to get ballot numbers here.",
     "surveys": {
       "title": "Complete Surveys",
       "subtitle": "Earn tickets directly",
@@ -252,7 +256,11 @@
     "userId": "User ID",
     "draw": "Draw",
     "prize": "Prize",
-    "earnMore": "Earn More Tickets"
+    "earnMore": "Earn More Tickets",
+    "winningBallotsTitle": "Last draw — winning ballot #s",
+    "winningBallotsHint": "If one of these matches your numbers from Earn, you won (we also notify winners).",
+    "winningBallotsEmpty": "Ballot numbers will appear here after the next draw runs.",
+    "ballotNumber": "#{{id}}"
   },
   "weeklyReward": {
     "cardTitle": "Weekly Reward",

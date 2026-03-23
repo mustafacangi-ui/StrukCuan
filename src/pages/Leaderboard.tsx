@@ -107,6 +107,11 @@ export default function Leaderboard() {
                 <p className="text-[11px] font-bold text-emerald-400 relative z-10">
                   Rp {(w.prize_amount ?? 100000).toLocaleString("id-ID")}
                 </p>
+                {w.winning_ballot_id != null && (
+                  <p className="text-[9px] font-mono text-amber-200/55 mt-0.5 relative z-10">
+                    {t("weeklyDraw.ballotNumber", { id: w.winning_ballot_id })}
+                  </p>
+                )}
                 {/* Date */}
                 {w.draw_date && (
                   <p className="text-[9px] text-white/30 mt-1 relative z-10">{w.draw_date}</p>

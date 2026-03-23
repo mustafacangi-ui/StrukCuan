@@ -5,7 +5,7 @@ import { Trophy, Ticket, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import LegalFooter from "@/components/LegalFooter";
-import { useTotalTicketsThisWeek, useLastWinner } from "@/hooks/useWeeklyDraw";
+import { useTotalTicketsThisWeek, useLastWinner, useLastDrawWinningBallots } from "@/hooks/useWeeklyDraw";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const PRIZE_POOL_TOTAL = 500_000;
@@ -141,6 +141,32 @@ export default function WeeklyDraw() {
               </p>
             </div>
 
+            {/* Winning ballot IDs from last draw */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                {t("weeklyDraw.winningBallotsTitle")}
+              </p>
+              <p className="text-[10px] text-muted-foreground/90 mb-2 leading-snug">
+                {t("weeklyDraw.winningBallotsHint")}
+              </p>
+              {lastBallotsLoading ? (
+                <p className="text-sm text-muted-foreground">{t("weeklyDraw.loading")}</p>
+              ) : winningBallotIds.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("weeklyDraw.winningBallotsEmpty")}</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {winningBallotIds.map((id) => (
+                    <span
+                      key={id}
+                      className="font-mono text-xs font-bold tabular-nums px-2.5 py-1 rounded-lg bg-pink-500/15 text-pink-300 border border-pink-500/35"
+                    >
+                      {t("weeklyDraw.ballotNumber", { id })}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Last Winner */}
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{t("weeklyDraw.lastWinner")}</p>
@@ -161,12 +187,17 @@ export default function WeeklyDraw() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-white/50 uppercase tracking-wider">{t("weeklyDraw.prize")}</span>
                     <span className="font-display font-bold text-amber-300">
                       Rp {(lastWinner.prize_amount ?? PRIZE_PER_WINNER).toLocaleString("id-ID")}
                     </span>
                   </div>
+                  {lastWinner.winning_ballot_id != null && (
+                    <p className="text-[10px] text-white/45 mt-2 font-mono">
+                      {t("weeklyDraw.ballotNumber", { id: lastWinner.winning_ballot_id })}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">{t("weeklyDraw.noWinner")}</p>

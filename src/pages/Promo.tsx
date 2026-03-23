@@ -13,6 +13,7 @@ import {
   MAX_ADS_PER_DAY,
 } from "@/hooks/useTodayRewardedTickets";
 import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -69,6 +70,7 @@ export default function Promo() {
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateLotteryPoolQueries(queryClient);
       toast.success("+1 Video counted!");
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "message" in err

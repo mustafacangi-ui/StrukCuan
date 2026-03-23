@@ -7,6 +7,7 @@ import { shakeToWin } from "@/hooks/useShakeToWin";
 import { useShakeDetection, requestShakePermission, isShakeSupported } from "@/hooks/useShakeDetection";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { pad } from "@/lib/weeklyCountdown";
 
 interface CountdownState {
@@ -82,6 +83,7 @@ export default function LuckyShakeCard({
       if (result?.success) {
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        invalidateLotteryPoolQueries(queryClient);
         setShakeLoading(false);
         setShakeWonTickets(result.ticketsAdded ?? 1);
         // Consume the weekly shake right

@@ -5,6 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
 import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -66,6 +67,7 @@ export default function FreeTicketEvent() {
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateLotteryPoolQueries(queryClient);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (err: unknown) {
@@ -84,6 +86,7 @@ export default function FreeTicketEvent() {
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        invalidateLotteryPoolQueries(queryClient);
       }
       throw err;
     }

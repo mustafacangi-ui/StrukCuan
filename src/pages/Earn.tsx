@@ -13,6 +13,8 @@ import { useBitLabsSurveys, type SurveyDisplay } from "@/hooks/useBitLabsSurveys
 import { useQueryClient } from "@tanstack/react-query";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { useMyLotteryBallots } from "@/hooks/useMyLotteryBallots";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import { StatsBar } from "@/components/StatsBar";
@@ -36,6 +38,7 @@ export default function Earn() {
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
+  const { data: myBallotIds = [], isLoading: ballotsLoading, isError: ballotsError } = useMyLotteryBallots(user?.id);
   const { adsWatched, refetch } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -132,6 +135,7 @@ export default function Earn() {
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateLotteryPoolQueries(queryClient);
       toast.success(t("earn.watchAds.ticketEarned"));
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "message" in err
@@ -252,9 +256,40 @@ export default function Earn() {
           {/* Caption */}
           <p className="text-[10px] text-white/40 mt-2 text-right uppercase tracking-widest">
             {progressInBatch === 0 && entriesEarned > 0
-              ? t("earn.entryEarnedBadge", { count: entriesEarned })
+              ? entriesEarned === 1
+                ? t("earn.entryEarnedBadgeOne", { count: 1 })
+                : t("earn.entryEarnedBadgeMany", { count: entriesEarned })
               : t("earn.entryRemaining", { remaining: TICKETS_PER_ENTRY - progressInBatch })}
           </p>
+
+          {/* Pool ballot IDs — same rows used in Sunday draw */}
+          <div className="mt-4 pt-3 border-t border-white/10">
+            <p className="text-[11px] font-bold text-white/90 mb-1">{t("earn.ballotNumbersTitle")}</p>
+            <p className="text-[10px] text-white/45 mb-2 leading-snug">{t("earn.ballotNumbersHint")}</p>
+            {ballotsError ? (
+              <p className="text-[10px] text-white/35">{t("earn.ballotNumbersEmpty")}</p>
+            ) : ballotsLoading ? (
+              <p className="text-[10px] text-white/35">{t("common.loading")}</p>
+            ) : myBallotIds.length === 0 ? (
+              <p className="text-[10px] text-white/35">{t("earn.ballotNumbersEmpty")}</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {myBallotIds.map((id) => (
+                  <span
+                    key={id}
+                    className="font-mono text-[11px] font-bold tabular-nums px-2 py-1 rounded-lg"
+                    style={{
+                      background: "rgba(0,230,118,0.12)",
+                      color: "#69F0AE",
+                      border: "1px solid rgba(0,230,118,0.35)",
+                    }}
+                  >
+                    #{id}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bölüm 1: WATCH ADS (Üst) */}

@@ -163,7 +163,8 @@
     "drawEntryDesc": "Setiap {{n}} tiket = 1 kesempatan undian",
     "entryEarned": "+1 Kesempatan Undian Didapat!",
     "entryEarnedSub": "Kamu masuk ke undian mingguan!",
-    "entryEarnedBadge": "{{count}} kesempatan undian hari ini",
+    "entryEarnedBadgeOne": "{{count}} kesempatan undian hari ini",
+    "entryEarnedBadgeMany": "{{count}} kesempatan undian hari ini",
     "entryRemaining": "{{remaining}} tiket lagi untuk kesempatan berikutnya",
     "dailyMission": {
       "title": "Misi Harian",
@@ -189,6 +190,9 @@
       "cta": "Tonton Iklan",
       "ticketEarned": "+1 Tiket diperoleh!"
     },
+    "ballotNumbersTitle": "Nomor bilet undianmu (minggu ini)",
+    "ballotNumbersHint": "Setiap tiket yang kamu dapat = satu nomor di kolam undian. Minggu undian memilih nomor acak — jika nomormu muncul di bawah, kamu menang.",
+    "ballotNumbersEmpty": "Kumpulkan tiket (iklan, struk, dll.) untuk melihat nomor bilet di sini.",
     "surveys": {
       "title": "Selesaikan Survei",
       "subtitle": "Dapatkan tiket langsung",
@@ -252,7 +256,11 @@
     "userId": "ID Pengguna",
     "draw": "Undian",
     "prize": "Hadiah",
-    "earnMore": "Dapatkan Lebih Banyak Tiket"
+    "earnMore": "Dapatkan Lebih Banyak Tiket",
+    "winningBallotsTitle": "Undian terakhir — nomor bilet pemenang",
+    "winningBallotsHint": "Jika salah satu nomor ini sama dengan nomor di halaman Kumpulkan, kamu menang (pemenang juga dapat notifikasi).",
+    "winningBallotsEmpty": "Nomor bilet akan muncul setelah undian berikutnya dijalankan.",
+    "ballotNumber": "#{{id}}"
   },
   "weeklyReward": {
     "cardTitle": "Hadiah Mingguan",

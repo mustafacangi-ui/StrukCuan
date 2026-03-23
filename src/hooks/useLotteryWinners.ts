@@ -4,15 +4,16 @@ import { supabase } from "@/lib/supabase";
 export interface LotteryWinnerRow {
   id: number;
   user_id: string;
-  winner_name: string;   // "Mustafa #58964" – stored by run_weekly_draw
+  winner_name: string; // "Mustafa #58964" – stored by run_weekly_draw
   draw_date: string;
   prize_amount: number;
+  winning_ballot_id?: number | null;
 }
 
 async function fetchRecentWinners(limit = 10): Promise<LotteryWinnerRow[]> {
   const { data, error } = await supabase
     .from("weekly_winners")
-    .select("id, user_id, winner_name, draw_date, prize_amount")
+    .select("id, user_id, winner_name, draw_date, prize_amount, winning_ballot_id")
     .order("created_at", { ascending: false })
     .limit(limit);
 

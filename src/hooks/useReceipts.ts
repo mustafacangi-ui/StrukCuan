@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 
 export type ReceiptStatus = "pending" | "approved" | "rejected";
 
@@ -281,6 +282,7 @@ export function useApproveReceiptWithRewards() {
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      invalidateLotteryPoolQueries(queryClient);
     },
   });
 }

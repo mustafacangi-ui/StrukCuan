@@ -10,6 +10,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { grantDealTickets } from "@/hooks/useGrantDealTickets";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { toast } from "sonner";
 import { hashBlob, wasDuplicateToday, markHashUsed } from "@/lib/imageHash";
 import {
@@ -374,6 +375,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       await grantDealTickets();
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateLotteryPoolQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
       toast.success(t("scanner.toast.redLabelTickets"));
 
