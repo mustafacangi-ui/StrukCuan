@@ -1,12 +1,19 @@
-/** Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC */
+/**
+ * Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC.
+ * Draw window: Sunday 14:00–17:00 UTC (21:00–00:00 WIB).
+ * During the window the countdown is zero → Lucky Shake unlocks.
+ * After 17:00 UTC Sunday, countdown resets to next Sunday.
+ */
 export function getNextDrawTime(): Date {
   const now = new Date();
-  const day = now.getUTCDay();
+  const day = now.getUTCDay();   // 0 = Sunday
   const hour = now.getUTCHours();
-  const minute = now.getUTCMinutes();
 
   let daysToAdd = (7 - day) % 7;
-  if (daysToAdd === 0 && (hour > 14 || (hour === 14 && minute >= 0))) {
+
+  // On Sunday: only jump to next week AFTER the 3-hour draw window (≥17:00 UTC)
+  // Between 14:00–16:59 UTC the target date stays in the past → diff ≤ 0 → zeros → shake unlocked
+  if (daysToAdd === 0 && hour >= 17) {
     daysToAdd = 7;
   }
 
