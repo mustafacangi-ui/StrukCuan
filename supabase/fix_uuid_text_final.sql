@@ -208,7 +208,7 @@ returns jsonb language plpgsql security definer as $$
 declare
   v_start     timestamptz := date_trunc('day', now() at time zone 'UTC') at time zone 'UTC';
   v_count     integer;
-  v_new_id    bigint;
+  v_new_id    uuid;
   v_remaining integer;
 begin
   if auth.uid() is distinct from p_user_id then

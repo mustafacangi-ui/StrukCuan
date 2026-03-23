@@ -6,7 +6,7 @@ import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 export type ReceiptStatus = "pending" | "approved" | "rejected";
 
 export interface ReceiptRow {
-  id: number;
+  id: string | number;
   user_id: string;
   image_url: string;
   store: string | null;
@@ -202,7 +202,7 @@ export function useCreateReceipt() {
         throw err;
       }
 
-      const result = data as { id: number; remaining: number };
+      const result = data as { id: string | number; remaining: number };
       if (!result || typeof result.remaining !== "number") {
         console.warn("[createReceipt] Unexpected RPC response shape:", result);
       }
