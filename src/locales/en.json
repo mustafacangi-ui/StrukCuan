@@ -175,8 +175,8 @@
     "watchAds": {
       "title": "Watch Ads",
       "subtitle": "Earn tickets instantly",
-      "rule": "Watch 5 videos to earn 1 ticket",
-      "ready": "Ready to earn!",
+      "rule": "1 ad = 1 ticket · Max 10 per day",
+      "ready": "Daily limit reached!",
       "moreToGo": "{{count}} more to go",
       "watching": "Watching...",
       "dailyLimit": "Daily limit reached",

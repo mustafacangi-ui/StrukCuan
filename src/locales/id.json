@@ -175,8 +175,8 @@
     "watchAds": {
       "title": "Tonton Iklan",
       "subtitle": "Dapatkan tiket instan",
-      "rule": "Tonton 5 video untuk 1 tiket",
-      "ready": "Siap dapat hadiah!",
+      "rule": "1 iklan = 1 tiket · Maks 10 per hari",
+      "ready": "Batas harian tercapai!",
       "moreToGo": "Tinggal {{count}} lagi",
       "watching": "Menonton...",
       "dailyLimit": "Batas harian tercapai",
