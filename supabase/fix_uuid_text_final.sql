@@ -5,6 +5,22 @@
 -- Bu script: user_stats, daily_missions, notifications user_id → UUID'ye çevirir
 -- =============================================================================
 
+-- 0) BAĞIMLI FONKSİYONLAR
+-- level_from_receipts: toplam receipt sayısından seviye hesaplar
+create or replace function public.level_from_receipts(p_total integer)
+returns integer
+language plpgsql immutable
+as $$
+begin
+  if p_total >= 60 then return 5;
+  elsif p_total >= 30 then return 4;
+  elsif p_total >= 15 then return 3;
+  elsif p_total >= 5  then return 2;
+  else return 1;
+  end if;
+end;
+$$;
+
 -- 1) KOLON ADI DÜZELTMESİ: "image" → "image_url"
 do $$
 begin
