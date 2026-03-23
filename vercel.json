@@ -20,8 +20,16 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://events.mapbox.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://api.mapbox.com https://*.amazonaws.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://bitlabs.io https://*.bitlabs.io; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        { "key": "X-Frame-Options",           "value": "DENY" },
+        { "key": "X-Content-Type-Options",     "value": "nosniff" },
+        { "key": "Referrer-Policy",            "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security",  "value": "max-age=31536000; includeSubDomains; preload" },
+        { "key": "Permissions-Policy",         "value": "camera=(self), geolocation=(self), microphone=(), payment=(), usb=()" },
+        { "key": "X-XSS-Protection",           "value": "1; mode=block" }
       ]
     }
   ]
