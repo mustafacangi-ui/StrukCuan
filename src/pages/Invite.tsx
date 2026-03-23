@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Copy, MessageCircle, Send, Share2, Camera, Instagram, UserPlus } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import BottomNav from "@/components/BottomNav";
@@ -10,11 +11,9 @@ import { toast } from "sonner";
 import { APP_URL } from "@/config/app";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
-const INVITE_MESSAGE =
-  "I'm earning tickets on StrukCuan! Sign up with my link and get bonus tickets on your first receipt.";
-
 export default function Invite() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, isOnboarded, isLoading } = useUser();
   const { data: referralCode, isLoading: codeLoading, ensureReferralCode, fallbackCode } = useReferralCode(user?.id);
   const { data: friendsJoined = 0 } = useReferralCount(user?.id);
@@ -40,13 +39,15 @@ export default function Invite() {
   const effectiveCode = referralCode || fallbackCode;
   const referralUrl = effectiveCode ? `${APP_URL}?r=${effectiveCode}` : "";
 
+  const inviteMessage = t("invite.shareMessage", { code: effectiveCode ?? "" });
+
   const handleCopyLink = async () => {
     if (!referralUrl) return;
     try {
       await navigator.clipboard.writeText(referralUrl);
-      toast.success("Link copied!");
+      toast.success(t("invite.linkCopied"));
     } catch {
-      toast.error("Failed to copy");
+      toast.error(t("invite.failedCopy"));
     }
   };
 
@@ -58,7 +59,7 @@ export default function Invite() {
 
   const handleTelegramShare = () => {
     if (!referralUrl) return;
-    const text = encodeURIComponent(INVITE_MESSAGE);
+    const text = encodeURIComponent(inviteMessage);
     window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${text}`, "_blank");
   };
 
@@ -71,26 +72,22 @@ export default function Invite() {
     if (!referralUrl) return;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "StrukCuan",
-          text: INVITE_MESSAGE,
-          url: referralUrl,
-        });
-        toast.success("Shared!");
+        await navigator.share({ title: "StrukCuan", text: inviteMessage, url: referralUrl });
+        toast.success(t("invite.shared"));
       } catch {
         try {
           await navigator.clipboard.writeText(referralUrl);
-          toast.success("Link copied");
+          toast.success(t("invite.linkCopied"));
         } catch {
-          toast.error("Failed to copy");
+          toast.error(t("invite.failedCopy"));
         }
       }
     } else {
       try {
         await navigator.clipboard.writeText(referralUrl);
-        toast.success("Link copied");
+        toast.success(t("invite.linkCopied"));
       } catch {
-        toast.error("Failed to copy");
+        toast.error(t("invite.failedCopy"));
       }
     }
   };
@@ -99,26 +96,22 @@ export default function Invite() {
     if (!referralUrl) return;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "StrukCuan",
-          text: INVITE_MESSAGE,
-          url: referralUrl,
-        });
-        toast.success("Shared!");
+        await navigator.share({ title: "StrukCuan", text: inviteMessage, url: referralUrl });
+        toast.success(t("invite.shared"));
       } catch {
         try {
           await navigator.clipboard.writeText(referralUrl);
-          toast.success("Link copied");
+          toast.success(t("invite.linkCopied"));
         } catch {
-          toast.error("Failed to copy");
+          toast.error(t("invite.failedCopy"));
         }
       }
     } else {
       try {
         await navigator.clipboard.writeText(referralUrl);
-        toast.success("Link copied");
+        toast.success(t("invite.linkCopied"));
       } catch {
-        toast.error("Failed to copy");
+        toast.error(t("invite.failedCopy"));
       }
     }
   };
@@ -132,16 +125,16 @@ export default function Invite() {
         className="fixed inset-0 -z-10"
         style={{ background: PREMIUM_PAGE_BACKGROUND }}
       />
-      <PageHeader title="Invite" onBack={() => navigate(-1)} />
+      <PageHeader title={t("invite.title")} onBack={() => navigate(-1)} />
 
       <div className="px-4 mt-6">
         {/* Title & Subtitle */}
         <div className="text-center mb-6">
           <h2 className="font-display text-xl font-bold text-white">
-            Invite Friends & Earn Tickets
+            {t("invite.pageTitle")}
           </h2>
           <p className="mt-2 text-sm text-white/68">
-            Invite your friends to StrukCuan and earn tickets together.
+            {t("invite.subtitle")}
           </p>
         </div>
 
@@ -154,7 +147,7 @@ export default function Invite() {
           }}
         >
           <p className="text-[10px] uppercase tracking-wider text-white/70 mb-2 font-semibold">
-            Your Invite Link
+            {t("invite.yourInviteLink")}
           </p>
           {codeLoading && !referralUrl ? (
             <div className="space-y-3">
@@ -167,10 +160,8 @@ export default function Invite() {
                 className="rounded-2xl p-4 mb-4"
                 style={{ background: "rgba(0,0,0,0.4)" }}
               >
-                <p className="text-sm text-white/90 leading-relaxed mb-3">
-                  Invite your friends to StrukCuan.
-                  <br />
-                  You get +5 tickets, your friend gets +2 bonus tickets when they upload their first receipt.
+                <p className="text-sm text-white/90 leading-relaxed mb-3 whitespace-pre-line">
+                  {t("invite.inviteDesc")}
                 </p>
                 <input
                   type="text"
@@ -190,7 +181,7 @@ export default function Invite() {
                 }}
               >
                 <Copy size={18} strokeWidth={2.5} />
-                Copy Link
+                {t("invite.copyLink")}
               </button>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -260,10 +251,10 @@ export default function Invite() {
             </div>
             <div>
               <p className="font-display text-sm font-bold text-white">
-                Friends joined: {friendsJoined}
+                {t("invite.friendsJoined", { count: friendsJoined })}
               </p>
               <p className="text-[10px] text-white/68">
-                Friends who registered & uploaded their first receipt
+                {t("invite.friendsJoinedDesc")}
               </p>
             </div>
           </div>
@@ -278,7 +269,7 @@ export default function Invite() {
           }}
         >
           <p className="text-xs text-white/85 leading-relaxed">
-            Share the invite link with friends and start making your next grocery run pay. Every friend who registers and uploads their first receipt earns you +5 tickets and them +2 bonus tickets. Everyone wins!
+            {t("invite.infoCard")}
           </p>
         </div>
       </div>
