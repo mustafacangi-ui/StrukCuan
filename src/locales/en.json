@@ -159,6 +159,12 @@
     "title": "Earn Tickets",
     "subtitle": "Complete tasks to earn tickets for the weekly draw",
     "weeklyLimit": "Weekly ticket limit reached",
+    "drawEntryProgress": "Draw Entry Progress",
+    "drawEntryDesc": "Every {{n}} tickets = 1 draw entry",
+    "entryEarned": "+1 Draw Entry Earned!",
+    "entryEarnedSub": "You're in the weekly lottery!",
+    "entryEarnedBadge": "{{count}} draw entr{{count, plural, one{y} other{ies}}} earned today",
+    "entryRemaining": "{{remaining}} more tickets for next entry",
     "dailyMission": {
       "title": "Daily Mission",
       "subtitle": "Upload receipts to complete your daily mission",
@@ -180,7 +186,8 @@
       "moreToGo": "{{count}} more to go",
       "watching": "Watching...",
       "dailyLimit": "Daily limit reached",
-      "cta": "Watch Ad"
+      "cta": "Watch Ad",
+      "ticketEarned": "+1 Ticket earned!"
     },
     "surveys": {
       "title": "Complete Surveys",

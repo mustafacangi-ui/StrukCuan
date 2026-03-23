@@ -159,6 +159,12 @@
     "title": "Kumpulkan Tiket",
     "subtitle": "Selesaikan tugas untuk tiket undian mingguan",
     "weeklyLimit": "Batas tiket mingguan tercapai",
+    "drawEntryProgress": "Progres Tiket Undian",
+    "drawEntryDesc": "Setiap {{n}} tiket = 1 kesempatan undian",
+    "entryEarned": "+1 Kesempatan Undian Didapat!",
+    "entryEarnedSub": "Kamu masuk ke undian mingguan!",
+    "entryEarnedBadge": "{{count}} kesempatan undian hari ini",
+    "entryRemaining": "{{remaining}} tiket lagi untuk kesempatan berikutnya",
     "dailyMission": {
       "title": "Misi Harian",
       "subtitle": "Upload struk untuk selesaikan misi harian",
@@ -180,7 +186,8 @@
       "moreToGo": "Tinggal {{count}} lagi",
       "watching": "Menonton...",
       "dailyLimit": "Batas harian tercapai",
-      "cta": "Tonton Iklan"
+      "cta": "Tonton Iklan",
+      "ticketEarned": "+1 Tiket diperoleh!"
     },
     "surveys": {
       "title": "Selesaikan Survei",

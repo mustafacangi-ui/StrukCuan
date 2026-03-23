@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { getCountdownParts } from "@/lib/weeklyCountdown";
 import { CARD_BASE, BTN_GLASS, PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
-const WEEKLY_MAX = 42;
+const TICKETS_PER_ENTRY = 10;
 
 const DEFAULT_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
@@ -42,6 +42,8 @@ export default function Earn() {
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
   const [countdown, setCountdown] = useState(DEFAULT_COUNTDOWN);
   const [countdownReady, setCountdownReady] = useState(false);
+  const [showEntryAnimation, setShowEntryAnimation] = useState(false);
+  const prevAdsRef = useRef<number>(adsWatched ?? 0);
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
@@ -72,8 +74,22 @@ export default function Earn() {
     return () => clearInterval(id);
   }, []);
 
-  const progressPercent = Math.min(100, ((weeklyTickets ?? 0) / WEEKLY_MAX) * 100);
   const isWeeklyLimitReached = (weeklyTickets ?? 0) >= MAX_TICKETS_PER_WEEK;
+  const todayAds = adsWatched ?? 0;
+  const entriesEarned = Math.floor(todayAds / TICKETS_PER_ENTRY);
+  const progressInBatch = todayAds % TICKETS_PER_ENTRY;
+
+  // Detect crossing a multiple of TICKETS_PER_ENTRY → trigger animation
+  useEffect(() => {
+    const prev = prevAdsRef.current;
+    const cur = todayAds;
+    if (cur > 0 && cur > prev && Math.floor(cur / TICKETS_PER_ENTRY) > Math.floor(prev / TICKETS_PER_ENTRY)) {
+      setShowEntryAnimation(true);
+      const timer = setTimeout(() => setShowEntryAnimation(false), 3000);
+      return () => clearTimeout(timer);
+    }
+    prevAdsRef.current = cur;
+  }, [todayAds]);
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
@@ -116,17 +132,17 @@ export default function Earn() {
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      toast.success("+1 Video dihitung!");
+      toast.success(t("earn.watchAds.ticketEarned"));
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "message" in err
         ? String((err as { message?: string }).message)
-        : "Gagal";
+        : t("common.error");
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? "Batas harian tercapai." : msg);
+      toast.error(isLimitReached ? t("earn.watchAds.dailyLimit") : msg);
       if (isLimitReached) await refetch();
       throw err;
     }
-  }, [refetch, queryClient]);
+  }, [refetch, queryClient, t]);
 
   if (authLoading) {
     return (
@@ -172,22 +188,73 @@ export default function Earn() {
       </div>
 
       <div className="relative z-10 px-4 mt-4 space-y-4">
-        {/* Progress Section — green = system/progress */}
-        <div className={CARD_BASE}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold text-white">{t("common.progress")}</span>
-            <span className="text-sm font-bold text-white">{weeklyTickets} / {WEEKLY_MAX} {t("common.tickets")}</span>
-          </div>
-          <div className="h-3 rounded-full overflow-hidden bg-white/10">
+        {/* Draw Entry Progress — 10 tickets = 1 draw entry */}
+        <div
+          className={`${CARD_BASE} relative overflow-hidden`}
+          style={showEntryAnimation ? { boxShadow: "0 0 40px rgba(0,230,118,0.6), 0 0 80px rgba(0,230,118,0.3)" } : {}}
+        >
+          {/* Entry earned burst overlay */}
+          {showEntryAnimation && (
             <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${progressPercent}%`,
-                background: "linear-gradient(90deg, #00E676 0%, #00c853 100%)",
-                boxShadow: "0 0 12px rgba(0,230,118,0.5)",
-              }}
-            />
+              className="absolute inset-0 flex flex-col items-center justify-center z-20 rounded-2xl"
+              style={{ background: "rgba(0,0,0,0.75)", animation: "fadeInOut 3s ease-in-out forwards" }}
+            >
+              <span className="text-4xl mb-2">🎟️</span>
+              <p className="font-display font-bold text-xl text-[#00E676] drop-shadow-[0_0_12px_rgba(0,230,118,0.9)]">
+                {t("earn.entryEarned")}
+              </p>
+              <p className="text-xs text-white/70 mt-1">{t("earn.entryEarnedSub")}</p>
+            </div>
+          )}
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-sm font-bold text-white">{t("earn.drawEntryProgress")}</span>
+              <p className="text-[10px] text-white/50 mt-0.5">{t("earn.drawEntryDesc", { n: TICKETS_PER_ENTRY })}</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {entriesEarned > 0 && (
+                <span
+                  className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(0,230,118,0.2)", color: "#00E676", border: "1px solid rgba(0,230,118,0.4)" }}
+                >
+                  🎟️ ×{entriesEarned}
+                </span>
+              )}
+              <span className="font-display text-sm font-bold text-white tabular-nums">
+                {progressInBatch} <span className="text-white/40">/ {TICKETS_PER_ENTRY}</span>
+              </span>
+            </div>
           </div>
+
+          {/* 10-segment progress bar */}
+          <div className="flex gap-1">
+            {Array.from({ length: TICKETS_PER_ENTRY }, (_, i) => {
+              const filled = i < progressInBatch;
+              const justFilled = todayAds === TICKETS_PER_ENTRY && i === TICKETS_PER_ENTRY - 1;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 h-5 rounded-md transition-all duration-300"
+                  style={{
+                    background: filled
+                      ? "linear-gradient(135deg, #00E676 0%, #00c853 100%)"
+                      : "rgba(255,255,255,0.08)",
+                    boxShadow: filled ? "0 0 8px rgba(0,230,118,0.5)" : "none",
+                    transform: justFilled ? "scale(1.1)" : "scale(1)",
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {/* Caption */}
+          <p className="text-[10px] text-white/40 mt-2 text-right uppercase tracking-widest">
+            {progressInBatch === 0 && entriesEarned > 0
+              ? t("earn.entryEarnedBadge", { count: entriesEarned })
+              : t("earn.entryRemaining", { remaining: TICKETS_PER_ENTRY - progressInBatch })}
+          </p>
         </div>
 
         {/* Bölüm 1: WATCH ADS (Üst) */}
