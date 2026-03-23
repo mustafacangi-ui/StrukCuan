@@ -3,55 +3,30 @@ import { supabase } from "@/lib/supabase";
 
 export interface LotteryWinnerRow {
   id: number;
+  user_id: string;
+  winner_name: string;   // "Mustafa #58964" – stored by run_weekly_draw
   draw_date: string;
-  winner_user_id: string;
-  tickets_used: number;
-  reward_amount: number;
-  nickname?: string;
+  prize_amount: number;
 }
 
-async function fetchRecentWinners(limit = 10, countryCode?: string | null): Promise<LotteryWinnerRow[]> {
-  let q = supabase
-    .from("weekly_lottery")
-    .select("id, draw_date, winner_user_id, tickets_used, reward_amount")
-    .order("draw_date", { ascending: false })
-    .limit(limit * 2);
-
-  const code = (countryCode ?? "ID").toUpperCase().slice(0, 2);
-  q = q.eq("country_code", code);
-
-  const { data: lotteryData, error } = await q;
+async function fetchRecentWinners(limit = 10): Promise<LotteryWinnerRow[]> {
+  const { data, error } = await supabase
+    .from("weekly_winners")
+    .select("id, user_id, winner_name, draw_date, prize_amount")
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
   if (error) {
-    console.error("Failed to fetch lottery winners", error);
+    console.error("[useLotteryWinners] Failed to fetch weekly_winners:", error);
     throw error;
   }
 
-  if (!lotteryData?.length) return [];
-
-  const userIds = [...new Set((lotteryData as LotteryWinnerRow[]).map((w) => w.winner_user_id))];
-  const { data: statsData } = await supabase
-    .from("user_stats")
-    .select("user_id, nickname")
-    .in("user_id", userIds);
-
-  const nicknames = new Map(
-    (statsData ?? []).map((s: { user_id: string; nickname: string | null }) => [
-      s.user_id,
-      s.nickname || "Anonim",
-    ])
-  );
-
-  return (lotteryData as LotteryWinnerRow[]).slice(0, limit).map((w) => ({
-    ...w,
-    nickname: nicknames.get(w.winner_user_id) ?? "Anonim",
-  }));
+  return (data ?? []) as LotteryWinnerRow[];
 }
 
-export function useLotteryWinners(limit = 10, countryCode?: string | null) {
-  const code = (countryCode ?? "ID").toUpperCase().slice(0, 2);
+export function useLotteryWinners(limit = 10, _countryCode?: string | null) {
   return useQuery({
-    queryKey: ["lottery_winners", limit, code],
-    queryFn: () => fetchRecentWinners(limit, code),
+    queryKey: ["lottery_winners", limit],
+    queryFn: () => fetchRecentWinners(limit),
   });
 }

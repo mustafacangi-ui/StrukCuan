@@ -86,7 +86,7 @@ const PrizeSection = () => {
                         <span className="text-[10px] font-bold text-primary">#{i + 1}</span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-foreground">{w.nickname}</p>
+                        <p className="text-xs font-semibold text-foreground">{w.winner_name ?? "—"}</p>
                         <p className="text-[10px] text-muted-foreground">{formatDate(w.draw_date)}</p>
                       </div>
                     </div>

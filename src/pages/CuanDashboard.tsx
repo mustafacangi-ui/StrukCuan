@@ -159,25 +159,22 @@ export default function CuanDashboard() {
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {winners.map((w, i) => {
-                const winner = w as { id?: number; winner_user_id?: string; nickname?: string; reward_amount?: number };
-                const name = formatDisplayName(winner.nickname, winner.winner_user_id ?? String(winner.id ?? i));
-                const reward = winner.reward_amount ?? 100000;
-                return (
-                  <li key={winner.id ?? i} className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/30 font-bold text-amber-700 text-xs">
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        Rp {reward.toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                    <Award size={16} className="text-amber-500 shrink-0" />
-                  </li>
-                );
-              })}
+              {winners.map((w, i) => (
+                <li key={w.id ?? i} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/30 font-bold text-amber-700 text-xs shrink-0">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">
+                      {w.winner_name ?? w.user_id?.slice(0, 8) ?? "—"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {w.draw_date} · Rp {(w.prize_amount ?? 100000).toLocaleString("id-ID")}
+                    </p>
+                  </div>
+                  <Award size={16} className="text-amber-500 shrink-0" />
+                </li>
+              ))}
             </ul>
           )}
         </div>

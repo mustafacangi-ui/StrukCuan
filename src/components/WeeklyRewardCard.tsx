@@ -76,7 +76,7 @@ export default function WeeklyRewardCard() {
                         <span className="text-[10px] font-bold text-[#00FF88]">#{i + 1}</span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-white">{w.nickname}</p>
+                        <p className="text-xs font-semibold text-white">{w.winner_name ?? "—"}</p>
                         <p className="text-[10px] text-white/80">{formatDate(w.draw_date)}</p>
                       </div>
                     </div>

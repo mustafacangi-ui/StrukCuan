@@ -148,22 +148,24 @@ export default function WeeklyDraw() {
                 <p className="text-sm text-muted-foreground">{t("weeklyDraw.loading")}</p>
               ) : lastWinner ? (
                 <div className="rounded-lg bg-gradient-to-b from-amber-500/10 to-amber-600/10 border border-amber-400/30 p-4">
-                  <div className="flex justify-between items-center gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t("weeklyDraw.userId")}</p>
-                      <p className="font-display font-bold text-amber-300 truncate">
-                        {lastWinner.user_id ?? "—"}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full shrink-0" style={{ background: "rgba(251,191,36,0.2)", border: "1.5px solid rgba(251,191,36,0.5)" }}>
+                      <Trophy size={18} className="text-amber-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-display font-bold text-amber-300 truncate text-base">
+                        {lastWinner.winner_name ?? lastWinner.user_id?.slice(0, 8) ?? "—"}
                       </p>
                       {lastWinner.draw_date && (
-                        <p className="text-xs text-muted-foreground mt-1">{t("weeklyDraw.draw")}: {lastWinner.draw_date}</p>
+                        <p className="text-xs text-white/50">{lastWinner.draw_date}</p>
                       )}
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-muted-foreground">{t("weeklyDraw.prize")}</p>
-                      <p className="font-display font-bold text-amber-300">
-                        Rp {(lastWinner.prize_amount ?? lastWinner.prize ?? PRIZE_PER_WINNER).toLocaleString()}
-                      </p>
-                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/50 uppercase tracking-wider">{t("weeklyDraw.prize")}</span>
+                    <span className="font-display font-bold text-amber-300">
+                      Rp {(lastWinner.prize_amount ?? PRIZE_PER_WINNER).toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
               ) : (
