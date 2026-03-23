@@ -36,7 +36,9 @@ begin
 end;
 $$;
 
--- receipt_index_today kolonu da yoksa ekle
+-- Eksik kolonları ekle (idempotent - varsa hata vermez)
+alter table public.receipts add column if not exists store text;
+alter table public.receipts add column if not exists total numeric;
 alter table public.receipts add column if not exists receipt_index_today integer;
 
 -- 2) ESKI FONKSİYON İMZALARINI TEMİZLE
