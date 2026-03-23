@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 
 interface WatchAdsCardProps {
   adsWatched: number;
@@ -16,6 +17,7 @@ export default function WatchAdsCard({
   showModal,
   onWatchAd,
 }: WatchAdsCardProps) {
+  const { t } = useTranslation();
   const [isProgressShaking, setIsProgressShaking] = useState(false);
 
   const watched = adsWatched ?? 0;
@@ -117,11 +119,11 @@ export default function WatchAdsCard({
 
         <div className="flex-1 min-w-0">
           <h3 className="font-display font-bold text-white text-base leading-tight tracking-tight">
-            Watch Ads
+            {t("earn.watchAds.title")}
           </h3>
-          <p className="text-xs text-white/60 mt-0.5">Earn tickets instantly</p>
+          <p className="text-xs text-white/60 mt-0.5">{t("earn.watchAds.subtitle")}</p>
           <p className="text-xs font-semibold mt-1 text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.7)]">
-            Watch 5 videos to earn 1 Ticket
+            {t("earn.watchAds.rule")}
           </p>
         </div>
 
@@ -182,16 +184,16 @@ export default function WatchAdsCard({
 
         {/* Progress label */}
         <div className="flex items-center justify-between mt-1.5">
-          <span className="text-[10px] text-white/40 uppercase tracking-widest">Progress</span>
+          <span className="text-[10px] text-white/40 uppercase tracking-widest">{t("common.progress")}</span>
           {isFull ? (
             <span
               className="text-[10px] font-bold uppercase tracking-wider"
               style={{ color: "#ec4899", filter: "drop-shadow(0 0 6px rgba(236,72,153,0.9))" }}
             >
-              Ready to earn!
+              {t("earn.watchAds.ready")}
             </span>
           ) : (
-            <span className="text-[10px] text-white/50">{maxAds - watched} more to go</span>
+            <span className="text-[10px] text-white/50">{t("earn.watchAds.moreToGo", { count: maxAds - watched })}</span>
           )}
         </div>
       </div>
@@ -224,12 +226,12 @@ export default function WatchAdsCard({
         {showModal ? (
           <span className="flex items-center justify-center gap-2">
             <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Watching...
+            {t("earn.watchAds.watching")}
           </span>
         ) : isFull ? (
-          "Daily Limit Reached"
+          t("earn.watchAds.dailyLimit")
         ) : (
-          "Watch Ad"
+          t("earn.watchAds.cta")
         )}
       </button>
     </div>

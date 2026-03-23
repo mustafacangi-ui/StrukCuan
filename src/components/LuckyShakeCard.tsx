@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 import { Smartphone, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { shakeToWin } from "@/hooks/useShakeToWin";
@@ -28,6 +29,7 @@ export default function LuckyShakeCard({
   userId,
   isWeeklyLimitReached,
 }: LuckyShakeCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [shakeLoading, setShakeLoading] = useState(false);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
@@ -69,7 +71,7 @@ export default function LuckyShakeCard({
   const handleShake = useCallback(async () => {
     if (shakeLoading || !userId) return;
     if (!shakeRightAvailable) {
-      toast.error("Come back when the countdown reaches zero!");
+      toast.error(t("shake.toast.waitCountdown"));
       return;
     }
     setShakeLoading(true);
@@ -85,12 +87,12 @@ export default function LuckyShakeCard({
         // Consume the weekly shake right
         setShakeRightAvailable(false);
       } else {
-        const errMsg = result?.error ?? "Gagal";
+        const errMsg = result?.error ?? "FAILED";
         if (errMsg === "SHAKE_ALREADY_USED") {
-          toast.error("Already used this period. Come back next week!");
+          toast.error(t("shake.toast.alreadyUsed"));
           setShakeRightAvailable(false);
         } else if (errMsg === "WEEKLY_LIMIT_REACHED") {
-          toast.error("Weekly ticket limit reached.");
+          toast.error(t("shake.toast.weeklyLimit"));
         } else {
           toast.error(errMsg);
         }
@@ -98,10 +100,10 @@ export default function LuckyShakeCard({
       }
     } catch (err) {
       console.error("[LuckyShake] error:", err);
-      toast.error("Gagal");
+      toast.error(t("shake.toast.failed"));
       setShakeLoading(false);
     }
-  }, [shakeLoading, userId, queryClient, shakeRightAvailable]);
+  }, [shakeLoading, userId, queryClient, shakeRightAvailable, t]);
 
   useShakeDetection({
     onShake: handleShake,
@@ -110,21 +112,21 @@ export default function LuckyShakeCard({
 
   const handleOpenShake = async () => {
     try {
-      if (!userId) { toast.error("Login to play"); return; }
-      if (isWeeklyLimitReached) { toast.error("Weekly ticket limit reached."); return; }
+      if (!userId) { toast.error(t("shake.toast.loginToPlay")); return; }
+      if (isWeeklyLimitReached) { toast.error(t("shake.toast.weeklyLimit")); return; }
       if (!shakeRightAvailable) {
-        toast.error("Your shake unlocks when the countdown hits zero!");
+        toast.error(t("shake.toast.unlockOnZero"));
         return;
       }
-      if (!isShakeSupported()) { toast.error("Device not supported. Try on mobile."); return; }
+      if (!isShakeSupported()) { toast.error(t("shake.toast.unsupportedDevice")); return; }
       const granted = await requestShakePermission();
-      if (!granted) { toast.error("Sensor permission required for Lucky Shake."); return; }
+      if (!granted) { toast.error(t("shake.toast.sensorPermission")); return; }
       setShakeWonTickets(null);
       setProgressFill(false);
       setShakeModalOpen(true);
     } catch (err) {
       console.error("[LuckyShake] open error:", err);
-      toast.error("Gagal");
+      toast.error(t("shake.toast.failed"));
     }
   };
 
@@ -136,10 +138,10 @@ export default function LuckyShakeCard({
   }, []);
 
   const countdownBlocks = [
-    { val: pad(countdown?.days ?? 0), label: "DD" },
-    { val: pad(countdown?.hours ?? 0), label: "HH" },
-    { val: pad(countdown?.minutes ?? 0), label: "MM" },
-    { val: pad(countdown?.seconds ?? 0), label: "SS" },
+    { val: pad(countdown?.days ?? 0), label: t("time.days").slice(0, 2).toUpperCase() },
+    { val: pad(countdown?.hours ?? 0), label: t("time.hours").slice(0, 2).toUpperCase() },
+    { val: pad(countdown?.minutes ?? 0), label: t("time.min").slice(0, 2).toUpperCase() },
+    { val: pad(countdown?.seconds ?? 0), label: t("time.sec").slice(0, 2).toUpperCase() },
   ];
 
   // Card shake via inline style to avoid Tailwind animation class conflict
@@ -265,13 +267,13 @@ export default function LuckyShakeCard({
 
           <div className="flex-1 min-w-0">
             <h3 className="font-display font-bold text-white text-base leading-tight tracking-tight">
-              Lucky Shake
+              {t("shake.title")}
             </h3>
             <p className="text-xs text-white/60 mt-0.5">
-              Shake your phone to win bonus tickets!
+              {t("shake.subtitle")}
             </p>
             <p className="text-xs font-semibold mt-1 text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.7)]">
-              Win 1 to 5 tickets instantly
+              {t("shake.rule")}
             </p>
           </div>
         </div>
@@ -280,11 +282,11 @@ export default function LuckyShakeCard({
         <div className="mb-3 relative z-10">
           {shakeRightAvailable ? (
             <p className="text-xs font-bold text-[#4ade80] drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">
-              🎯 Your shake is ready — good luck!
+              {t("shake.ready")}
             </p>
           ) : (
             <p className="text-[10px] text-white/60 uppercase tracking-widest">
-              Next shake unlocks when countdown hits zero
+              {t("shake.lockedHint")}
             </p>
           )}
         </div>
@@ -341,12 +343,12 @@ export default function LuckyShakeCard({
           {shakeLoading ? (
             <span className="flex items-center justify-center gap-2">
               <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              Processing...
+              {t("common.processing")}
             </span>
           ) : shakeRightAvailable ? (
-            "Shake Now"
+            t("shake.cta.shakeNow")
           ) : (
-            "Locked — Wait for Draw"
+            t("shake.cta.locked")
           )}
         </button>
       </div>
@@ -367,9 +369,9 @@ export default function LuckyShakeCard({
                   </div>
                 </div>
                 <h3 className="font-display font-bold text-white text-2xl mb-1 drop-shadow-[0_0_16px_rgba(255,255,255,0.3)]">
-                  You won {shakeWonTickets} Ticket{shakeWonTickets !== 1 ? "s" : ""}!
+                  {t("shake.modal.won", { count: shakeWonTickets })}
                 </h3>
-                <p className="text-sm text-white/60 mb-6">Congratulations! 🎉</p>
+                <p className="text-sm text-white/60 mb-6">{t("shake.modal.congrats")}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -378,9 +380,9 @@ export default function LuckyShakeCard({
                     setShakeLoading(false);
                     setProgressFill(false);
                   }}
-                  className="w-full py-3.5 rounded-2xl font-display font-bold text-sm text-[#001a09] bg-[#4ade80] shadow-[0_0_24px_rgba(74,222,128,0.6)] hover:bg-[#4ade80]/90 active:scale-[0.97] transition-all"
+                    className="w-full py-3.5 rounded-2xl font-display font-bold text-sm text-[#001a09] bg-[#4ade80] shadow-[0_0_24px_rgba(74,222,128,0.6)] hover:bg-[#4ade80]/90 active:scale-[0.97] transition-all"
                 >
-                  Done
+                  {t("common.done")}
                 </button>
               </>
             ) : (
@@ -403,15 +405,15 @@ export default function LuckyShakeCard({
                   </div>
                 </div>
                 <h3 className="font-display font-bold text-white text-xl mb-2">
-                  Lucky Shake!
+                  {t("shake.modal.title")}
                 </h3>
                 <p className="text-sm text-white/60 mb-2">
-                  Shake your phone. Get 1–5 tickets!
+                  {t("shake.modal.body")}
                 </p>
                 {shakeLoading ? (
-                  <p className="text-[#4ade80] text-sm font-bold mb-5">Processing...</p>
+                  <p className="text-[#4ade80] text-sm font-bold mb-5">{t("common.processing")}</p>
                 ) : (
-                  <p className="text-xs text-white/40 mb-5">Or tap the button below</p>
+                  <p className="text-xs text-white/40 mb-5">{t("shake.modal.orTap")}</p>
                 )}
                 <div className="flex flex-col gap-2">
                   {!shakeLoading && (
@@ -420,7 +422,7 @@ export default function LuckyShakeCard({
                       onClick={handleShake}
                       className="w-full py-3 rounded-2xl font-display font-bold text-sm text-white bg-gradient-to-r from-[#ec4899] to-[#7c3aed] shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:scale-[1.02] active:scale-[0.97] transition-all"
                     >
-                      Tap to Shake
+                      {t("shake.modal.tapToShake")}
                     </button>
                   )}
                   <button
@@ -432,7 +434,7 @@ export default function LuckyShakeCard({
                     disabled={shakeLoading}
                     className="text-white/40 text-sm font-medium hover:text-white/70 transition-colors py-1 disabled:opacity-30"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -30,6 +31,7 @@ const WEEKLY_MAX = 42;
 const DEFAULT_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
 export default function Earn() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
@@ -84,15 +86,15 @@ export default function Earn() {
   const handleWatchAd = useCallback(() => {
     try {
       if (!user?.id) {
-        toast.error("Masuk untuk mendapatkan tiket");
+        toast.error(t("auth.mustLogin"));
         return;
       }
       if ((adsWatched ?? 0) >= MAX_ADS_PER_DAY) {
-        toast.error("Batas harian tercapai. Coba lagi besok.");
+        toast.error(t("earn.watchAds.dailyLimit"));
         return;
       }
       if (isWeeklyLimitReached) {
-        toast.error("Batas tiket mingguan tercapai.");
+        toast.error(t("earn.weeklyLimit"));
         return;
       }
       setPopupBlocked(false);
@@ -103,9 +105,9 @@ export default function Earn() {
       setShowModal(true);
     } catch (err) {
       console.error("[Earn] Watch Ad error:", err);
-      toast.error("Gagal");
+      toast.error(t("common.error"));
     }
-  }, [user?.id, adsWatched, isWeeklyLimitReached]);
+  }, [user?.id, adsWatched, isWeeklyLimitReached, t]);
 
   const handleAdComplete = useCallback(async () => {
     try {
@@ -129,7 +131,7 @@ export default function Earn() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f0726]">
-        <p className="text-white font-medium animate-pulse">Yükleniyor...</p>
+        <p className="text-white font-medium animate-pulse">{t("common.loading")}</p>
       </div>
     );
   }
@@ -137,7 +139,7 @@ export default function Earn() {
   if (isRedirecting) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f0726]">
-        <p className="text-white font-medium animate-pulse">Yönlendiriliyor...</p>
+        <p className="text-white font-medium animate-pulse">{t("common.loading")}</p>
       </div>
     );
   }
@@ -161,8 +163,8 @@ export default function Earn() {
               <ArrowLeft size={18} className="text-white" />
             </button>
             <div>
-              <h1 className="font-display text-xl font-bold text-white">Earn Tickets</h1>
-              <p className="text-sm text-white/80">Earn up to 42 tickets this week</p>
+              <h1 className="font-display text-xl font-bold text-white">{t("earn.title")}</h1>
+              <p className="text-sm text-white/80">{t("earn.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -173,8 +175,8 @@ export default function Earn() {
         {/* Progress Section — green = system/progress */}
         <div className={CARD_BASE}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold text-white">Your Progress</span>
-            <span className="text-sm font-bold text-white">{weeklyTickets} / {WEEKLY_MAX} tickets</span>
+            <span className="text-sm font-bold text-white">{t("common.progress")}</span>
+            <span className="text-sm font-bold text-white">{weeklyTickets} / {WEEKLY_MAX} {t("common.tickets")}</span>
           </div>
           <div className="h-3 rounded-full overflow-hidden bg-white/10">
             <div

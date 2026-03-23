@@ -1,8 +1,8 @@
 {
   "nav": {
     "home": "Beranda",
-    "earn": "Earn",
-    "rank": "Rank",
+    "earn": "Kumpulkan",
+    "rank": "Peringkat",
     "invite": "Undang",
     "radar": "Radar",
     "campaigns": "Kampanye",
@@ -48,11 +48,358 @@
     "huntPromoTitle": "Berburu Promo di Sekitarmu",
     "mustLogin": "Anda harus masuk."
   },
+  "common": {
+    "loading": "Memuat...",
+    "back": "Kembali",
+    "close": "Tutup",
+    "cancel": "Batal",
+    "done": "Selesai",
+    "view": "Lihat",
+    "processing": "Memproses...",
+    "tryAgain": "Coba Lagi",
+    "scanAgain": "Pindai Lagi",
+    "retake": "Ambil Ulang",
+    "submit": "Kirim",
+    "approve": "Setujui",
+    "reject": "Tolak",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "error": "Error",
+    "success": "Berhasil",
+    "tickets": "tiket",
+    "ticket": "tiket",
+    "progress": "Progres"
+  },
+  "home": {
+    "liveBadge": "LIVE",
+    "notifications": {
+      "empty": "Tidak ada notifikasi.",
+      "title": "Notifikasi"
+    },
+    "uploadReceipt": "Upload Struk",
+    "uploadReceiptReward": "+1 Tiket",
+    "shareDiscount": "Bagikan Diskon",
+    "shareDiscountHint": "+2 Tiket · Terlihat di peta",
+    "levelBadge": "Level {{level}} · Pemburu Struk",
+    "scanReceiptCta": "Pindai Struk Belanja",
+    "scanRedLabelCta": "Bagikan Promo Label Merah",
+    "dailyProgress": "Progres Harian",
+    "receiptsToday": "Struk hari ini",
+    "deals": "Promo",
+    "nearbyDeals": "Promo Terdekat",
+    "noDealsNearby": "Belum ada promo terdekat.",
+    "beFirstToShare": "Jadilah yang pertama membagikan promo label merah di areamu!",
+    "liveDeals": "Promo Live",
+    "km": "km",
+    "m": "m",
+    "scanCount": "{{count}} pindaian",
+    "ticketCount": "{{count}} tiket",
+    "weeklyTickets": "Tiket Mingguan",
+    "cuanBalance": "Saldo Cuan",
+    "receiptHunter": "Pemburu Struk"
+  },
+  "scanner": {
+    "select": {
+      "title": "Apa yang ingin kamu pindai?",
+      "receiptTitle": "Struk Belanja Biasa",
+      "receiptSubtitle": "Struk supermarket atau toko apa pun",
+      "receiptRemaining": "Sisa {{remaining}} hari ini",
+      "redLabelTitle": "Label Merah / Diskon Lokal",
+      "redLabelSubtitle": "Obral khusus, label potongan harga",
+      "redLabelBadge": "+3 tiket",
+      "dailyLimitReached": "Batas harian tercapai",
+      "redLabelRemaining": "Sisa {{count}} pindaian hari ini",
+      "earnTicket": "Dapat +1 tiket"
+    },
+    "camera": {
+      "receiptMode": "📍 Pindai Struk",
+      "redLabelMode": "🧾 Pindai Label Merah"
+    },
+    "preview": {
+      "title": "Pratinjau Struk",
+      "hint": "Periksa kejernihan sebelum kirim."
+    },
+    "form": {
+      "title": "Detail Label Merah",
+      "locationWarning": "⚠ Lokasi tidak tersedia. Peta memakai posisi default. Kamu tetap bisa mengirim.",
+      "productPlaceholder": "Nama produk *",
+      "storePlaceholder": "Nama toko / alamat *",
+      "pricePlaceholder": "Harga (Rp)",
+      "discountPlaceholder": "Diskon (%)",
+      "submitRedLabel": "Posting ke Peta (+3 Tiket)"
+    },
+    "success": {
+      "nice": "Mantap! 🎉",
+      "ticketsAdded": "+{{count}} tiket ditambahkan",
+      "dailyLimitTitle": "Batas Harian Tercapai",
+      "dailyLimitBody": "Kamu sudah mencapai {{limit}} tiket struk hari ini. Kembali besok!",
+      "streak": "🔥 Rangkaian ×{{count}}",
+      "scanReceived": "Struk diterima!"
+    },
+    "error": {
+      "uploadGeneric": "Unggah gagal. Coba lagi.",
+      "cameraPermission": "Tidak bisa mengakses kamera. Izinkan akses kamera.",
+      "duplicateImageToday": "Gambar ini sudah diunggah hari ini.",
+      "imageTooSmall": "Gambar terlalu kecil. Ambil foto struk yang jelas.",
+      "imageTooLarge": "File terlalu besar (maks 15 MB). Coba lagi.",
+      "requiredFields": "Nama produk dan alamat toko wajib diisi.",
+      "locationRequired": "Lokasi tidak tersedia. Aktifkan izin GPS."
+    },
+    "toast": {
+      "dailyLimitReached": "Batas harian tercapai, coba lagi besok.",
+      "redLabelDailyLimit": "Batas label merah harian tercapai (maks {{max}} per hari)",
+      "duplicateReceipt": "Struk ini sudah pernah diunggah.",
+      "ticketsEarned": "Kamu mendapat +{{count}} tiket 🎉",
+      "scanNoTickets": "Struk diterima! Batas tiket harian tercapai (0 tiket hari ini)",
+      "redLabelTickets": "Kamu mendapat +3 tiket 🔥"
+    },
+    "processing": "Mengunggah..."
+  },
+  "earn": {
+    "title": "Kumpulkan Tiket",
+    "subtitle": "Selesaikan tugas untuk tiket undian mingguan",
+    "weeklyLimit": "Batas tiket mingguan tercapai",
+    "dailyMission": {
+      "title": "Misi Harian",
+      "subtitle": "Upload struk untuk selesaikan misi harian",
+      "completed": "Misi selesai! 🎉",
+      "progress": "{{current}}/{{total}} struk"
+    },
+    "receiptSection": {
+      "title": "Pindai Struk",
+      "subtitle": "Dapat 1 tiket per struk yang disetujui",
+      "limit": "Maks {{limit}} per hari",
+      "todayCount": "{{count}}/{{limit}} hari ini",
+      "cta": "Pindai Sekarang"
+    },
+    "watchAds": {
+      "title": "Tonton Iklan",
+      "subtitle": "Dapatkan tiket instan",
+      "rule": "Tonton 5 video untuk 1 tiket",
+      "ready": "Siap dapat hadiah!",
+      "moreToGo": "Tinggal {{count}} lagi",
+      "watching": "Menonton...",
+      "dailyLimit": "Batas harian tercapai",
+      "cta": "Tonton Iklan"
+    },
+    "surveys": {
+      "title": "Selesaikan Survei",
+      "subtitle": "Dapatkan tiket langsung",
+      "rule": "Hingga 2 tiket per survei",
+      "empty": "Tidak ada survei saat ini.",
+      "emptyHint": "Cek lagi nanti!",
+      "bestOffer": "🔥 Penawaran Terbaik",
+      "fallbackTitle": "Survei BitLabs",
+      "tickets2": "🎟️ 2 TIKET",
+      "tickets1": "🎟️ 1 TIKET",
+      "start": "MULAI"
+    }
+  },
+  "shake": {
+    "title": "Lucky Shake",
+    "subtitle": "Goyang ponselmu untuk tiket bonus!",
+    "rule": "Menang 1–5 tiket instan",
+    "ready": "🎯 Goyanganmu siap — semoga beruntung!",
+    "lockedHint": "Goyangan berikutnya saat hitung mundur nol",
+    "countdown": {
+      "nextDraw": "Undian berikutnya dalam",
+      "days": "Hari",
+      "hours": "Jam",
+      "min": "Menit",
+      "sec": "Detik"
+    },
+    "cta": {
+      "shakeNow": "Goyang Sekarang",
+      "locked": "Terkunci — Tunggu Undian"
+    },
+    "modal": {
+      "title": "Lucky Shake!",
+      "body": "Goyang ponselmu. Dapat 1–5 tiket!",
+      "orTap": "Atau ketuk tombol di bawah",
+      "tapToShake": "Ketuk untuk Goyang",
+      "won": "Kamu menang {{count}} tiket!",
+      "congrats": "Selamat! 🎉"
+    },
+    "toast": {
+      "waitCountdown": "Kembali saat hitung mundur mencapai nol!",
+      "alreadyUsed": "Sudah dipakai periode ini. Kembali minggu depan!",
+      "weeklyLimit": "Batas tiket mingguan tercapai.",
+      "loginToPlay": "Masuk untuk bermain",
+      "unlockOnZero": "Goyanganmu terbuka saat hitung mundur nol!",
+      "unsupportedDevice": "Perangkat tidak didukung. Coba di ponsel.",
+      "sensorPermission": "Izin sensor diperlukan untuk Lucky Shake.",
+      "failed": "Gagal"
+    }
+  },
+  "weeklyDraw": {
+    "title": "Undian Mingguan",
+    "subtitle": "Undian lotere mingguan setiap Minggu pukul 21:00 WIB",
+    "prizePool": "Total Hadiah",
+    "nextDraw": "Undian Berikutnya",
+    "nextDrawTime": "Minggu 21:00 WIB",
+    "countdown": "Hitung Mundur",
+    "totalTickets": "TOTAL TIKET MINGGU INI",
+    "lastWinner": "Pemenang Terakhir",
+    "noWinner": "Belum ada pemenang",
+    "loading": "Memuat...",
+    "userId": "ID Pengguna",
+    "draw": "Undian",
+    "prize": "Hadiah",
+    "earnMore": "Dapatkan Lebih Banyak Tiket"
+  },
+  "weeklyReward": {
+    "cardTitle": "Hadiah Mingguan",
+    "headline": "Menangkan Voucher Belanja Rp100.000",
+    "subhead": "5 pemenang setiap minggu",
+    "poolLabel": "Total Hadiah Mingguan",
+    "poolValue": "5 × voucher Rp100.000",
+    "rule": "Setiap 10 tiket = 1 entri undian mingguan",
+    "youHave": "Kamu punya",
+    "ticketsWord": "tiket",
+    "entriesWord": "entri",
+    "lotteryChances": "peluang undian",
+    "nextEntryDone": "Ambang entri tercapai!",
+    "nextEntryNeedMore": "{{needed}} tiket lagi untuk entri berikutnya",
+    "nextEntryFooter": "Dapatkan {{needed}} tiket lagi untuk 1 entri tambahan",
+    "countdownLabel": "Undian berikutnya dalam",
+    "viewWinners": "Lihat Pemenang",
+    "earnMore": "Dapatkan Lebih Banyak Tiket",
+    "amount": "Rp100.000",
+    "winners": {
+      "title": "Pemenang Hadiah",
+      "prizeLabel": "Voucher belanja Rp100.000",
+      "empty": "Belum ada pemenang"
+    }
+  },
+  "leaderboard": {
+    "title": "Papan Peringkat",
+    "subtitle": "Pemburu struk terbaik minggu ini",
+    "weeklyTickets": "Tiket Mingguan",
+    "receipts": "Struk",
+    "rank": "Peringkat",
+    "you": "Kamu",
+    "empty": "Belum ada pemburu minggu ini.",
+    "loading": "Memuat peringkat...",
+    "error": "Gagal memuat peringkat.",
+    "topHunters": "Pemburu Terbaik",
+    "myPosition": "Posisiku"
+  },
+  "invite": {
+    "title": "Undang Teman",
+    "subtitle": "Undang teman dan dapatkan tiket bonus",
+    "referralCode": "Kode Referralmu",
+    "copied": "Tersalin!",
+    "copy": "Salin",
+    "share": "Bagikan",
+    "howItWorks": "Cara Kerja",
+    "step1": "Bagikan kode referralmu ke teman",
+    "step2": "Teman mendaftar dan upload struk pertama",
+    "step3": "Kalian berdua mendapat tiket bonus!",
+    "friendsInvited": "Teman Diundang",
+    "totalEarned": "Total Didapat",
+    "inviteMore": "Undang Teman Lagi",
+    "shareMessage": "Gabung StrukCuan dan dapatkan hadiah dari struk belanjamu! Pakai kode aku: {{code}}",
+    "noCode": "Membuat kodemu..."
+  },
+  "receiptHistory": {
+    "title": "Riwayat Struk",
+    "subtitle": "Lihat status verifikasi semua struk yang kamu kirim.",
+    "empty": "Belum ada struk yang kamu upload.",
+    "status": {
+      "approved": "Disetujui",
+      "rejected": "Ditolak",
+      "pending": "Menunggu"
+    },
+    "noStoreName": "Tanpa nama toko",
+    "total": "Total",
+    "loading": "Memuat struk...",
+    "error": "Gagal memuat riwayat struk."
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "profile": "Profil",
+    "display": "Tampilan",
+    "notifications": "Notifikasi",
+    "language": "Bahasa / Language",
+    "country": "Negara",
+    "account": "Akun",
+    "darkMode": "Mode Gelap",
+    "lightMode": "Mode Terang",
+    "changeTheme": "Ganti tampilan aplikasi",
+    "pushNotifications": "Push Notifications",
+    "pushNotifDesc": "Notifikasi promo & hadiah",
+    "redAlertDesc": "Alert Promo Merah dalam radius 3-5km dikirim via Push Notification (bukan SMS/WhatsApp) — gratis untuk kamu!",
+    "adminPanel": "Panel Admin",
+    "adminPanelDesc": "Persetujuan struk dan promo",
+    "cuanDashboard": "Cuan Dashboard",
+    "cuanDashboardDesc": "Toples tiket, statistik & Hall of Fame",
+    "logout": "Keluar",
+    "deleteAccount": "Hapus Akun",
+    "deleteAccountDesc": "Semua datamu akan dihapus permanen",
+    "deleteConfirmTitle": "Hapus Akun Secara Permanen",
+    "deleteConfirmBody": "Tindakan ini tidak dapat dibatalkan. Semua struk, tiket, dan riwayat hadiahmu akan dihapus.",
+    "deleteConfirmPrompt": "Untuk konfirmasi, ketik DELETE di bawah:",
+    "deleteConfirmPlaceholder": "DELETE",
+    "deleting": "Menghapus...",
+    "deleted": "Akun dihapus.",
+    "deleteFailed": "Gagal menghapus akun. Coba lagi.",
+    "receiptHistory": "Riwayat Struk",
+    "receiptHistoryDesc": "Lihat struk yang kamu upload"
+  },
+  "cuanDashboard": {
+    "title": "Cuan Dashboard",
+    "weeklyJar": "Toples Tiket Mingguan",
+    "weeklyMax": "{{count}}/{{max}}",
+    "dailyInfo": "Harian: {{receipts}} Struk + {{deals}} Promo = {{total}} Tiket",
+    "stats": "Statistik Pribadi",
+    "scannedReceipts": "Struk Dipindai",
+    "sharedDeals": "Promo Dibagikan",
+    "totalReward": "Total Hadiah",
+    "hallOfFame": "Pemburu Beruntung Minggu Lalu",
+    "noWinners": "Belum ada pemenang — jadilah yang pertama minggu ini!",
+    "prizePerWinner": "Rp {{amount}} pemenang",
+    "titles": {
+      "legend": "Pemburu Legenda 🔥",
+      "silver": "Pemburu Perak",
+      "bronze": "Pemburu Perunggu"
+    },
+    "rewards": "Hadiah",
+    "surveys": "Survei"
+  },
+  "map": {
+    "title": "Radar",
+    "subtitle": "Promo live di sekitarmu",
+    "shareRedLabel": "Bagikan Label Merah",
+    "shareRedLabelHint": "Temukan promo bagus? Bagikan!",
+    "noDeals": "Belum ada promo terdekat.",
+    "loading": "Memuat promo...",
+    "locationRequired": "Lokasi diperlukan untuk menampilkan promo terdekat.",
+    "enableLocation": "Aktifkan Lokasi",
+    "filter": {
+      "all": "Semua",
+      "redLabel": "Label Merah",
+      "verified": "Terverifikasi"
+    },
+    "deal": {
+      "expired": "Kadaluarsa",
+      "expiresIn": "Kadaluarsa dalam {{time}}",
+      "distance": "Jarak {{distance}}",
+      "navigate": "Navigasi",
+      "verified": "Terverifikasi",
+      "redLabel": "Label Merah"
+    }
+  },
   "rewards": {
     "title": "Hadiah",
     "buy": "Beli",
     "codeTitle": "Kode Digital Anda",
-    "codeDesc": "Salin kode di bawah dan gunakan di situs terkait."
+    "codeDesc": "Salin kode di bawah dan gunakan di situs terkait.",
+    "balance": "Saldo Cuanmu",
+    "available": "Tersedia untuk ditukar",
+    "empty": "Belum ada hadiah tersedia.",
+    "loading": "Memuat hadiah...",
+    "redeemSuccess": "Hadiah berhasil ditukar!",
+    "insufficientCuan": "Cuan tidak cukup."
   },
   "surveys": "Survei",
   "surveys.title": "Pusat Survei",
@@ -72,9 +419,83 @@
     "comingSoon": "Segera hadir!",
     "radarScanning": "Radar sedang mencari peluang baru di wilayah ini."
   },
-  "common": {
-    "loading": "Memuat...",
-    "back": "Kembali",
-    "close": "Tutup"
+  "footer": {
+    "copyright": "© 2026 StrukCuan",
+    "promoRules": "Aturan Promo",
+    "contact": "Kontak"
+  },
+  "time": {
+    "days": "Hari",
+    "hours": "Jam",
+    "min": "Menit",
+    "sec": "Detik",
+    "justNow": "Baru saja",
+    "minutesAgo": "{{count}} mnt lalu",
+    "hoursAgo": "{{count}} jam lalu",
+    "daysAgo": "{{count}} hari lalu"
+  },
+  "language": {
+    "en": "English",
+    "id": "Indonesia",
+    "switchTo": "Ganti ke {{label}}"
+  },
+  "promo": {
+    "title": "Promo",
+    "dailyAdsProgress": "Progres Iklan Harian",
+    "totalRewardText": "Total hadiah: 3 Tiket",
+    "tierRule": "Tonton 5, 10, 17 video → dapat 1 tiket per tier",
+    "tier": "Tier {{num}}",
+    "tierProgress": "{{current}}/{{target}} video",
+    "done": "Selesai",
+    "watchAd": "Tonton Iklan",
+    "watching": "Menonton...",
+    "dailyLimitReached": "Batas harian tercapai. Kembali besok.",
+    "dailyLimitToast": "Batas harian tercapai ({{max}} video). Kembali besok."
+  },
+  "onboarding": {
+    "welcome": "Selamat Datang di StrukCuan",
+    "tagline": "Pindai struk. Menangkan hadiah. Setiap minggu.",
+    "step1Title": "Pindai Strukmu",
+    "step1Body": "Upload struk belanjaanmu untuk mendapatkan tiket undian mingguan.",
+    "step2Title": "Bagikan Promo Label Merah",
+    "step2Body": "Temukan promo bagus? Bagikan di peta dan dapat tiket bonus.",
+    "step3Title": "Menangkan Hadiah Mingguan",
+    "step3Body": "Setiap minggu, 5 pemburu beruntung menang voucher Rp100.000.",
+    "getStarted": "Mulai",
+    "alreadyHaveAccount": "Sudah punya akun?",
+    "login": "Masuk"
+  },
+  "admin": {
+    "title": "Panel Admin",
+    "subtitle": "Persetujuan struk dan promo",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "receipts": "Struk",
+      "deals": "Promo"
+    },
+    "receipts": {
+      "title": "Struk Menunggu",
+      "colUser": "Pengguna",
+      "colReceipt": "Struk",
+      "colToday": "Hari ini",
+      "colDate": "Tanggal",
+      "colAction": "Aksi",
+      "loading": "Memuat...",
+      "error": "Gagal memuat struk",
+      "empty": "Tidak ada struk menunggu.",
+      "review": "Tinjau",
+      "previousToday": "Struk sebelumnya hari ini",
+      "cuanLabel": "Cuan",
+      "ticketLabel": "Tiket",
+      "approveWithRewards": "Setujui (+{{cuan}} cuan, +{{ticket}} tiket)",
+      "reject": "Tolak",
+      "noAccess": "Anda tidak memiliki akses ke halaman ini.",
+      "backHome": "Kembali ke beranda"
+    }
+  },
+  "notFound": {
+    "title": "Halaman Tidak Ditemukan",
+    "subtitle": "Halaman yang kamu cari tidak ada.",
+    "backHome": "Kembali ke beranda"
   }
 }

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Ticket, Receipt, MapPin, Coins, Trophy, Flame, Award, Gift, ClipboardList } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -16,10 +17,10 @@ import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 const WEEKLY_MAX = 42;
 const DAILY_PROMO_LIMIT = 3;
 
-function getTitle(tickets: number): string {
-  if (tickets >= 30) return "Efsane Avcı 🔥";
-  if (tickets >= 15) return "Gümüş Avcı";
-  return "Bronz Avcı";
+function getTitle(tickets: number, t: (key: string) => string): string {
+  if (tickets >= 30) return t("cuanDashboard.titles.legend");
+  if (tickets >= 15) return t("cuanDashboard.titles.silver");
+  return t("cuanDashboard.titles.bronze");
 }
 
 function formatDisplayName(nickname: string | null | undefined, userId: string): string {
@@ -30,6 +31,7 @@ function formatDisplayName(nickname: string | null | undefined, userId: string):
 
 
 export default function CuanDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
   const countryCode = user?.countryCode ?? "ID";
@@ -49,7 +51,7 @@ export default function CuanDashboard() {
   const totalReceipts = stats?.total_receipts ?? 0;
   const cuan = stats?.cuan ?? 0;
   const displayName = formatDisplayName(user?.nickname ?? stats?.nickname, user?.id ?? "");
-  const title = getTitle(weeklyTickets);
+  const title = getTitle(weeklyTickets, t);
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
 
   const winners = lotteryWinners.slice(0, 5);
@@ -57,7 +59,7 @@ export default function CuanDashboard() {
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
       <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
-      <PageHeader title="Cuan Dashboard" onBack={() => navigate(-1)} />
+      <PageHeader title={t("cuanDashboard.title")} onBack={() => navigate(-1)} />
 
       {/* Ödüller + Anket */}
       <div className="mx-4 mt-2 flex gap-2">
@@ -67,7 +69,7 @@ export default function CuanDashboard() {
           className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30 transition-colors"
         >
           <Gift size={18} />
-          Ödüller
+          {t("cuanDashboard.rewards")}
         </button>
         <button
           type="button"
@@ -75,7 +77,7 @@ export default function CuanDashboard() {
           className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm bg-white/40 border border-white/50 text-emerald-700 hover:bg-white/50 transition-colors backdrop-blur-xl"
         >
           <ClipboardList size={18} />
-          Survei
+          {t("cuanDashboard.surveys")}
         </button>
       </div>
 
@@ -84,7 +86,7 @@ export default function CuanDashboard() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Ticket size={20} className="text-amber-500" />
-            <span className="font-display font-bold text-foreground">Haftalık Bilet Kavanozu</span>
+            <span className="font-display font-bold text-foreground">{t("cuanDashboard.weeklyJar")}</span>
           </div>
           <span className="text-sm font-bold text-amber-600">
             {weeklyTickets}/{WEEKLY_MAX}
@@ -92,7 +94,7 @@ export default function CuanDashboard() {
         </div>
         <Progress value={progressPercent} className="h-4 bg-amber-500/20" />
         <p className="mt-2 text-[10px] text-muted-foreground">
-          Günlük: {DAILY_RECEIPT_LIMIT} Fiş + {DAILY_PROMO_LIMIT} İndirim = 6 Bilet
+          {t("cuanDashboard.dailyInfo", { receipts: DAILY_RECEIPT_LIMIT, deals: DAILY_PROMO_LIMIT, total: 6 })}
         </p>
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-500/20 px-3 py-2">
           <Flame size={16} className="text-red-500" />
@@ -103,7 +105,7 @@ export default function CuanDashboard() {
       {/* Kişisel İstatistikler */}
       <div className="mx-4 mt-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-          Kişisel İstatistikler
+          {t("cuanDashboard.stats")}
         </h2>
         <div className="card-radar rounded-2xl overflow-hidden">
           <div className="flex items-center gap-3 p-4 border-b border-border">
@@ -121,19 +123,19 @@ export default function CuanDashboard() {
             <div className="p-4 text-center">
               <Receipt size={20} className="mx-auto mb-1 text-green-500" />
               <p className="font-display text-lg font-bold text-foreground">{totalReceipts}</p>
-              <p className="text-[10px] text-muted-foreground">Taranan Fiş</p>
+              <p className="text-[10px] text-muted-foreground">{t("cuanDashboard.scannedReceipts")}</p>
             </div>
             <div className="p-4 text-center">
               <MapPin size={20} className="mx-auto mb-1 text-red-500" />
               <p className="font-display text-lg font-bold text-foreground">{dealsCount}</p>
-              <p className="text-[10px] text-muted-foreground">Paylaşılan İndirim</p>
+              <p className="text-[10px] text-muted-foreground">{t("cuanDashboard.sharedDeals")}</p>
             </div>
             <div className="p-4 text-center">
               <Coins size={20} className="mx-auto mb-1 text-amber-500" />
               <p className="font-display text-lg font-bold text-foreground">
                 {formatCurrency(cuan, countryCode)}
               </p>
-              <p className="text-[10px] text-muted-foreground">Toplam Ödül</p>
+              <p className="text-[10px] text-muted-foreground">{t("cuanDashboard.totalReward")}</p>
             </div>
           </div>
         </div>
@@ -143,7 +145,7 @@ export default function CuanDashboard() {
       <div className="mx-4 mt-6">
         <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
           <Trophy size={14} className="text-amber-500" />
-          Geçen Haftanın Şanslıları
+          {t("cuanDashboard.hallOfFame")}
         </h2>
         <div className="card-radar rounded-2xl overflow-hidden border-amber-500/20">
           <div className="p-3 border-b border-amber-500/20 bg-amber-500/10">
@@ -153,7 +155,7 @@ export default function CuanDashboard() {
           </div>
           {winners.length === 0 ? (
             <p className="px-4 py-6 text-center text-xs text-muted-foreground">
-              Henüz kazanan yok — bu hafta ilk sen ol!
+              {t("cuanDashboard.noWinners")}
             </p>
           ) : (
             <ul className="divide-y divide-border">

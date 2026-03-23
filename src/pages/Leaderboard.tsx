@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/hooks/useUserStats";
@@ -11,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 export default function Leaderboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading } = useUser();
   const { data: leaderboard = [], isLoading: leaderboardLoading, error } = useLeaderboard(user?.id, 50);
@@ -38,7 +40,7 @@ export default function Leaderboard() {
         className="fixed inset-0 -z-10"
         style={{ background: PREMIUM_PAGE_BACKGROUND }}
       />
-      <PageHeader title="Leaderboard" onBack={() => navigate(-1)} />
+      <PageHeader title={t("leaderboard.title")} onBack={() => navigate(-1)} />
 
       <div className="mx-4 mt-4">
         {leaderboardLoading && (
@@ -51,7 +53,7 @@ export default function Leaderboard() {
 
         {error && (
           <div className="rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive">
-            Failed to load leaderboard
+            {t("leaderboard.error")}
           </div>
         )}
 
@@ -80,12 +82,12 @@ export default function Leaderboard() {
                     {row.nickname || "Anonim"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    Level {row.level ?? 1} · {row.total_receipts} receipts
+                    Level {row.level ?? 1} · {row.total_receipts} {t("leaderboard.receipts")}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-primary">
-                    {row.tiket ?? 0} tickets
+                    {row.tiket ?? 0} {t("common.tickets")}
                   </p>
                 </div>
               </div>

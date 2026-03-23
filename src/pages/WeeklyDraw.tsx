@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Ticket, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -57,6 +58,7 @@ function useCountdown(targetDate: Date) {
 }
 
 export default function WeeklyDraw() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const nextDraw = getNextDrawTime();
   const { days, hours, minutes, seconds } = useCountdown(nextDraw);
@@ -73,17 +75,17 @@ export default function WeeklyDraw() {
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative overflow-hidden">
       <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
 
-      <PageHeader title="Weekly Draw" onBack={() => navigate(-1)} />
+      <PageHeader title={t("weeklyDraw.title")} onBack={() => navigate(-1)} />
 
       {/* Header card */}
       <div className="relative mx-4 mt-4 overflow-hidden rounded-xl p-5" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
         <div className="relative z-10">
           <h1 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
             <Trophy className="h-6 w-6 text-primary" />
-            Weekly Draw
+            {t("weeklyDraw.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Weekly lottery draw every Sunday at 21:00 WIB
+            {t("weeklyDraw.subtitle")}
           </p>
         </div>
       </div>
@@ -94,7 +96,7 @@ export default function WeeklyDraw() {
           <div className="relative z-10 space-y-5">
             {/* Prize Pool */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prize Pool</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("weeklyDraw.prizePool")}</p>
               <p className="text-2xl font-display font-bold text-primary">
                 Rp {PRIZE_POOL_TOTAL.toLocaleString("id-ID")}
               </p>
@@ -102,21 +104,21 @@ export default function WeeklyDraw() {
 
             {/* Next Draw */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Draw</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("weeklyDraw.nextDraw")}</p>
               <p className="text-lg font-display font-semibold text-white">
-                Sunday 21:00 WIB
+                {t("weeklyDraw.nextDrawTime")}
               </p>
             </div>
 
             {/* Countdown */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Countdown</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{t("weeklyDraw.countdown")}</p>
               <div className="flex gap-2">
                 {[
-                  { label: "Days", value: days },
-                  { label: "Hours", value: hours },
-                  { label: "Min", value: minutes },
-                  { label: "Sec", value: seconds },
+                  { label: t("time.days"), value: days },
+                  { label: t("time.hours"), value: hours },
+                  { label: t("time.min"), value: minutes },
+                  { label: t("time.sec"), value: seconds },
                 ].map(({ label, value }) => (
                   <div
                     key={label}
@@ -133,7 +135,7 @@ export default function WeeklyDraw() {
 
             {/* Total Tickets This Week */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TOTAL TICKETS THIS WEEK</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("weeklyDraw.totalTickets")}</p>
               <p className="text-xl font-display font-bold text-white">
                 {ticketsLoading ? "..." : totalTickets ?? 0}
               </p>
@@ -141,23 +143,23 @@ export default function WeeklyDraw() {
 
             {/* Last Winner */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Last Winner</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{t("weeklyDraw.lastWinner")}</p>
               {winnerLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <p className="text-sm text-muted-foreground">{t("weeklyDraw.loading")}</p>
               ) : lastWinner ? (
                 <div className="rounded-lg bg-gradient-to-b from-amber-500/10 to-amber-600/10 border border-amber-400/30 p-4">
                   <div className="flex justify-between items-center gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">User ID</p>
+                      <p className="text-xs text-muted-foreground">{t("weeklyDraw.userId")}</p>
                       <p className="font-display font-bold text-amber-300 truncate">
                         {lastWinner.user_id ?? "—"}
                       </p>
                       {lastWinner.draw_date && (
-                        <p className="text-xs text-muted-foreground mt-1">Draw: {lastWinner.draw_date}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t("weeklyDraw.draw")}: {lastWinner.draw_date}</p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-muted-foreground">Prize</p>
+                      <p className="text-xs text-muted-foreground">{t("weeklyDraw.prize")}</p>
                       <p className="font-display font-bold text-amber-300">
                         Rp {(lastWinner.prize_amount ?? lastWinner.prize ?? PRIZE_PER_WINNER).toLocaleString()}
                       </p>
@@ -165,7 +167,7 @@ export default function WeeklyDraw() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No winner yet</p>
+                <p className="text-sm text-muted-foreground">{t("weeklyDraw.noWinner")}</p>
               )}
             </div>
 
@@ -176,7 +178,7 @@ export default function WeeklyDraw() {
               className={gradientBtn}
             >
               <Ticket size={18} />
-              Earn More Tickets
+              {t("weeklyDraw.earnMore")}
               <ChevronRight size={18} />
             </button>
           </div>

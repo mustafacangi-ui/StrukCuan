@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
+import { useTranslation } from "react-i18next";
 import { X, Camera, RotateCcw, Receipt, Tag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
@@ -20,7 +21,7 @@ import {
   RED_LABELS_TODAY_KEY,
 } from "@/hooks/useUploadLimits";
 
-const USER_FACING_ERROR = "Upload failed. Please try again.";
+const USER_FACING_ERROR = "scanner.error.uploadGeneric";
 
 export type CameraMode = "receipt" | "red_label";
 
@@ -44,6 +45,7 @@ interface CameraScannerProps {
 }
 
 export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const createReceipt = useCreateReceipt();
   const createDeal = useCreateDeal();
@@ -115,8 +117,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       } catch (e) {
         console.error("Camera error:", e);
         if (mounted) {
-          setError("Cannot access camera. Please allow camera permission.");
-          setStep("error");
+        setError(t("scanner.error.cameraPermission"));
+        setStep("error");
         }
       }
     };
@@ -133,7 +135,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
   const handleSelectTypePre = useCallback((type: CameraMode) => {
     if (type === "receipt" && nextReceiptTickets === 0) return;
     if (type === "red_label" && redLabelTodayCount >= MAX_RED_LABELS_PER_DAY) {
-      toast.error(`Daily red label limit reached (max ${MAX_RED_LABELS_PER_DAY} per day)`);
+      toast.error(t("scanner.toast.redLabelDailyLimit", { max: MAX_RED_LABELS_PER_DAY }));
       return;
     }
     setSelectedType(type);
@@ -158,8 +160,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
       const hash = await hashBlob(blob);
       if (wasDuplicateToday(String(userId), hash)) {
-        setError("This image was already uploaded today.");
-        setStep("error");
+      setError(t("scanner.error.duplicateImageToday"));
+      setStep("error");
         return;
       }
 
@@ -195,10 +197,10 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
   // ── Görüntü doğrulama (boyut + JPEG magic bytes) ─────────────────────────
   function validateImageFile(blob: Blob): void {
     if (blob.size < 20_000) {
-      throw new Error("Görüntü çok küçük. Lütfen gerçek bir fiş fotoğrafı çekin.");
+      throw new Error(t("scanner.error.imageTooSmall"));
     }
     if (blob.size > 15_000_000) {
-      throw new Error("Dosya çok büyük (max 15 MB). Lütfen tekrar deneyin.");
+      throw new Error(t("scanner.error.imageTooLarge"));
     }
   }
 
@@ -273,7 +275,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
           return;
         }
         if (isDuplicateReceiptError(dbErr)) {
-          toast.error("Bu fiş daha önce yüklendi.");
+          toast.error(t("scanner.toast.duplicateReceipt"));
           setStep("preview");
           return;
         }
@@ -290,10 +292,10 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
       setTicketsAwarded(earnedTickets);
       if (earnedTickets > 0) {
-        toast.success(`You earned +${earnedTickets} ticket${earnedTickets !== 1 ? "s" : ""} 🎉`);
+        toast.success(t("scanner.toast.ticketsEarned", { count: earnedTickets }));
         setScanStreak((s) => s + 1);
       } else {
-        toast.info("Scan received! Daily ticket limit reached (0 tickets today)");
+        toast.info(t("scanner.toast.scanNoTickets"));
       }
       setStep("success");
     } catch (e) {
@@ -319,7 +321,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
     const { product_name, store, price, discount } = redLabelForm;
     if (!product_name.trim() || !store.trim()) {
       submitLockRef.current = false;
-      setError("Product name and store address are required.");
+      setError(t("scanner.error.requiredFields"));
       return;
     }
 
@@ -351,7 +353,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       const lat = Number(location?.lat);
       const lng = Number(location?.lng);
       if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        setError("Location unavailable. Please enable GPS permission.");
+        setError(t("scanner.error.locationRequired"));
         setStep("error");
         return;
       }
@@ -373,7 +375,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["user_stats"] });
       queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
-      toast.success("You earned +3 tickets 🔥");
+      toast.success(t("scanner.toast.redLabelTickets"));
 
       if (userId && pendingHash) markHashUsed(String(userId), pendingHash);
       setPendingHash(null);
@@ -387,7 +389,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       setStep("success");
     } catch (e) {
       console.error("[CameraScanner] Red Label upload error:", e);
-      setError((e as Error)?.message ?? USER_FACING_ERROR);
+      setError((e as Error)?.message ?? t(USER_FACING_ERROR));
       setStep("error");
     } finally {
       submitLockRef.current = false;
@@ -416,7 +418,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
             >
               <X size={22} />
             </button>
-            <span className="text-sm font-semibold text-white">What are you scanning?</span>
+            <span className="text-sm font-semibold text-white">{t("scanner.select.title")}</span>
             <div className="w-10" />
           </div>
 
@@ -445,8 +447,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                     <Receipt size={22} className="text-[#00E676]" />
                   </div>
                   <div>
-                    <p className="font-bold text-white text-[15px]">Normal Grocery Receipt</p>
-                    <p className="text-xs text-white/50 mt-0.5">Any supermarket or store receipt</p>
+                    <p className="font-bold text-white text-[15px]">{t("scanner.select.receiptTitle")}</p>
+                    <p className="text-xs text-white/50 mt-0.5">{t("scanner.select.receiptSubtitle")}</p>
                   </div>
                 </div>
                 <span
@@ -466,7 +468,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                 </p>
               ) : (
                 <p className="text-[11px] text-[#00E676]/60 mt-1 ml-1">
-                  {getRemainingReceiptsToday(todayCount)} left today — earn +1 ticket
+                  {t("scanner.select.receiptRemaining", { remaining: getRemainingReceiptsToday(todayCount) })} — {t("scanner.select.earnTicket")}
                 </p>
               )}
             </button>
@@ -490,8 +492,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                     <Tag size={22} className="text-[#ff7070]" />
                   </div>
                   <div>
-                    <p className="font-bold text-white text-[15px]">Red Label / Local Discount</p>
-                    <p className="text-xs text-white/50 mt-0.5">Special sale, price-off label</p>
+                    <p className="font-bold text-white text-[15px]">{t("scanner.select.redLabelTitle")}</p>
+                    <p className="text-xs text-white/50 mt-0.5">{t("scanner.select.redLabelSubtitle")}</p>
                   </div>
                 </div>
                 <span
@@ -502,14 +504,14 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
                     border: "1px solid rgba(255,68,68,0.3)",
                   }}
                 >
-                  +3 tickets
+                  {t("scanner.select.redLabelBadge")}
                 </span>
               </div>
               {redLabelTodayCount >= MAX_RED_LABELS_PER_DAY ? (
-                <p className="text-[11px] text-white/40 mt-1 ml-1">Daily limit reached</p>
+                <p className="text-[11px] text-white/40 mt-1 ml-1">{t("scanner.select.dailyLimitReached")}</p>
               ) : (
                 <p className="text-[11px] text-red-400/60 mt-1 ml-1">
-                  {MAX_RED_LABELS_PER_DAY - redLabelTodayCount} scan{MAX_RED_LABELS_PER_DAY - redLabelTodayCount !== 1 ? "s" : ""} remaining today
+                  {t("scanner.select.redLabelRemaining", { count: MAX_RED_LABELS_PER_DAY - redLabelTodayCount })}
                 </p>
               )}
             </button>
@@ -540,7 +542,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               <X size={24} />
             </button>
             <span className="text-sm font-medium text-white">
-              {isRedLabel ? "📍 Scan Red Label" : "🧾 Scan Receipt"}
+              {isRedLabel ? t("scanner.camera.redLabelMode") : t("scanner.camera.receiptMode")}
             </span>
             <div className="w-10" />
           </div>
@@ -577,7 +579,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
             >
               <RotateCcw size={24} />
             </button>
-            <span className="text-sm font-medium text-white">Receipt preview</span>
+            <span className="text-sm font-medium text-white">{t("scanner.preview.title")}</span>
             <button
               onClick={handleClose}
               className="rounded-full bg-black/50 p-2 text-white"
@@ -591,14 +593,14 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
           <div className="absolute bottom-0 left-0 right-0 p-4 pb-10 bg-black/40">
             {/* Issue 3: helpful hint text */}
             <p className="text-center text-xs text-white/50 mb-3">
-              Check clarity before submitting.
+              {t("scanner.preview.hint")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleRetake}
                 className="flex-1 rounded-xl border border-white/20 bg-black/50 py-3.5 text-sm font-medium text-white"
               >
-                Retake
+                {t("common.retake")}
               </button>
               <button
                 onClick={handleSubmitReceipt}
@@ -615,7 +617,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               >
                 {receiptAtTicketLimit
                   ? DAILY_LIMIT_ERROR
-                  : `Submit — +${nextReceiptTickets} ticket${nextReceiptTickets !== 1 ? "s" : ""} (${getRemainingReceiptsToday(todayCount)} left) 🎉`
+                  : t("scanner.form.submitRedLabel") + ` — +${nextReceiptTickets} 🎉`
                 }
               </button>
             </div>
@@ -627,7 +629,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       {step === "form" && previewUrl && isRedLabel && (
         <div className="absolute inset-0 flex flex-col bg-black overflow-y-auto">
           <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <span className="text-sm font-semibold text-white">Red Label Details</span>
+            <span className="text-sm font-semibold text-white">{t("scanner.form.title")}</span>
             <button
               onClick={handleClose}
               className="rounded-full bg-black/50 p-2 text-white"
@@ -644,34 +646,34 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
             />
             {locationError && (
               <div className="mb-3 rounded-lg border border-amber-500/50 bg-amber-500/20 p-3 text-xs text-amber-200">
-                ⚠ Location unavailable. The map will use a default position. You can still submit.
+                {t("scanner.form.locationWarning")}
               </div>
             )}
             <div className="space-y-3">
               <input
                 type="text"
-                placeholder="Product name *"
+                placeholder={t("scanner.form.productPlaceholder")}
                 value={redLabelForm.product_name}
                 onChange={(e) => setRedLabelForm((f) => ({ ...f, product_name: e.target.value }))}
                 className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
               />
               <input
                 type="text"
-                placeholder="Store name / address *"
+                placeholder={t("scanner.form.storePlaceholder")}
                 value={redLabelForm.store}
                 onChange={(e) => setRedLabelForm((f) => ({ ...f, store: e.target.value }))}
                 className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
               />
               <input
                 type="text"
-                placeholder="Price (Rp)"
+                placeholder={t("scanner.form.pricePlaceholder")}
                 value={redLabelForm.price}
                 onChange={(e) => setRedLabelForm((f) => ({ ...f, price: e.target.value }))}
                 className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
               />
               <input
                 type="text"
-                placeholder="Discount (%)"
+                placeholder={t("scanner.form.discountPlaceholder")}
                 value={redLabelForm.discount}
                 onChange={(e) => setRedLabelForm((f) => ({ ...f, discount: e.target.value }))}
                 className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-white/50"
@@ -683,13 +685,13 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               onClick={handleRetake}
               className="flex-1 rounded-xl border border-white/40 bg-black/50 py-3 text-sm font-medium text-white"
             >
-              Retake
+              {t("common.retake")}
             </button>
             <button
               onClick={handleSubmitRedLabel}
               className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white"
             >
-              Post to Map (+3 Tickets)
+              {t("scanner.form.submitRedLabel")}
             </button>
           </div>
         </div>
@@ -700,7 +702,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
             <div className="mb-4 h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />
-            <p className="text-white font-medium">Uploading...</p>
+            <p className="text-white font-medium">{t("scanner.processing")}</p>
           </div>
         </div>
       )}
@@ -725,13 +727,13 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
               onClick={() => { setStep(mode ? "camera" : "select"); setError(null); }}
               className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white"
             >
-              Try Again
+              {t("common.tryAgain")}
             </button>
             <button
               onClick={handleClose}
               className="rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold text-white"
             >
-              Close
+              {t("common.close")}
             </button>
           </div>
         </div>
@@ -757,6 +759,7 @@ function SuccessCelebration({
   streak,
   ticketsAwarded,
 }: SuccessCelebrationProps) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const limitReached = !isRedLabel && ticketsAwarded === 0;
 
@@ -836,7 +839,7 @@ function SuccessCelebration({
 
         {/* Headline */}
         <p className="text-3xl font-extrabold text-white mb-2" style={{ letterSpacing: "-0.5px" }}>
-          {limitReached ? "Scan Received!" : "Nice! 🎉"}
+          {limitReached ? t("scanner.success.scanReceived") : t("scanner.success.nice")}
         </p>
 
         {/* Ticket reward / limit message */}
@@ -845,16 +848,14 @@ function SuccessCelebration({
           style={{ color: accentColor, textShadow: `0 0 16px ${accentGlow}` }}
         >
           {limitReached
-            ? "Daily Limit Reached"
-            : `+${ticketsAwarded} ticket${ticketsAwarded !== 1 ? "s" : ""} added`}
+            ? t("scanner.success.dailyLimitTitle")
+            : t("scanner.success.ticketsAdded", { count: ticketsAwarded })}
         </p>
 
         {/* Daily limit explanation */}
         {limitReached && (
           <p className="text-sm text-white/50 mb-4 leading-relaxed">
-            You've reached {DAILY_RECEIPT_LIMIT} receipt tickets today.
-            <br />
-            Come back tomorrow for more!
+            {t("scanner.success.dailyLimitBody", { limit: DAILY_RECEIPT_LIMIT })}
           </p>
         )}
 
@@ -868,7 +869,7 @@ function SuccessCelebration({
               textShadow: "0 0 10px rgba(255,183,0,0.5)",
             }}
           >
-            🔥 Streak ×{streak}
+            {t("scanner.success.streak", { count: streak })}
           </div>
         )}
 
@@ -883,7 +884,7 @@ function SuccessCelebration({
             animation: "scan-again-glow 2.2s ease-in-out infinite",
           }}
         >
-          Scan Again
+          {t("common.scanAgain")}
         </button>
 
         {/* Secondary — Done */}
@@ -892,7 +893,7 @@ function SuccessCelebration({
           className="w-full py-2.5 text-sm font-medium rounded-xl"
           style={{ color: "rgba(255,255,255,0.32)" }}
         >
-          Done
+          {t("common.done")}
         </button>
       </div>
     </div>

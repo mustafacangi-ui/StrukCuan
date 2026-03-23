@@ -48,11 +48,358 @@
     "huntPromoTitle": "Hunt Promos Near You",
     "mustLogin": "You must log in."
   },
+  "common": {
+    "loading": "Loading...",
+    "back": "Back",
+    "close": "Close",
+    "cancel": "Cancel",
+    "done": "Done",
+    "view": "View",
+    "processing": "Processing...",
+    "tryAgain": "Try Again",
+    "scanAgain": "Scan Again",
+    "retake": "Retake",
+    "submit": "Submit",
+    "approve": "Approve",
+    "reject": "Reject",
+    "save": "Save",
+    "delete": "Delete",
+    "error": "Error",
+    "success": "Success",
+    "tickets": "tickets",
+    "ticket": "ticket",
+    "progress": "Progress"
+  },
+  "home": {
+    "liveBadge": "LIVE",
+    "notifications": {
+      "empty": "No notifications.",
+      "title": "Notifications"
+    },
+    "uploadReceipt": "Upload Receipt",
+    "uploadReceiptReward": "+1 Ticket",
+    "shareDiscount": "Share Discount",
+    "shareDiscountHint": "+2 Tickets · Visible on map",
+    "levelBadge": "Level {{level}} · Receipt Hunter",
+    "scanReceiptCta": "Scan Grocery Receipt",
+    "scanRedLabelCta": "Share Red Label Deal",
+    "dailyProgress": "Daily Progress",
+    "receiptsToday": "Receipts today",
+    "deals": "Deals",
+    "nearbyDeals": "Nearby Deals",
+    "noDealsNearby": "No deals nearby yet.",
+    "beFirstToShare": "Be the first to share a red-label deal in your area!",
+    "liveDeals": "Live Deals",
+    "km": "km",
+    "m": "m",
+    "scanCount": "{{count}} scans",
+    "ticketCount": "{{count}} tickets",
+    "weeklyTickets": "Weekly Tickets",
+    "cuanBalance": "Cuan Balance",
+    "receiptHunter": "Receipt Hunter"
+  },
+  "scanner": {
+    "select": {
+      "title": "What are you scanning?",
+      "receiptTitle": "Normal Grocery Receipt",
+      "receiptSubtitle": "Any supermarket or store receipt",
+      "receiptRemaining": "{{remaining}} left today",
+      "redLabelTitle": "Red Label / Local Discount",
+      "redLabelSubtitle": "Special sale, price-off label",
+      "redLabelBadge": "+3 tickets",
+      "dailyLimitReached": "Daily limit reached",
+      "redLabelRemaining": "{{count}} scan(s) remaining today",
+      "earnTicket": "Earn +1 ticket"
+    },
+    "camera": {
+      "receiptMode": "📍 Scan Receipt",
+      "redLabelMode": "🧾 Scan Red Label"
+    },
+    "preview": {
+      "title": "Receipt Preview",
+      "hint": "Check clarity before submitting."
+    },
+    "form": {
+      "title": "Red Label Details",
+      "locationWarning": "⚠ Location unavailable. The map will use a default position. You can still submit.",
+      "productPlaceholder": "Product name *",
+      "storePlaceholder": "Store name / address *",
+      "pricePlaceholder": "Price (Rp)",
+      "discountPlaceholder": "Discount (%)",
+      "submitRedLabel": "Post to Map (+3 Tickets)"
+    },
+    "success": {
+      "nice": "Nice! 🎉",
+      "ticketsAdded": "+{{count}} ticket(s) added",
+      "dailyLimitTitle": "Daily Limit Reached",
+      "dailyLimitBody": "You've reached {{limit}} receipt tickets today. Come back tomorrow for more!",
+      "streak": "🔥 Streak ×{{count}}",
+      "scanReceived": "Scan received!"
+    },
+    "error": {
+      "uploadGeneric": "Upload failed. Please try again.",
+      "cameraPermission": "Cannot access camera. Please allow camera permission.",
+      "duplicateImageToday": "This image was already uploaded today.",
+      "imageTooSmall": "Image is too small. Please take a real receipt photo.",
+      "imageTooLarge": "File is too large (max 15 MB). Please try again.",
+      "requiredFields": "Product name and store address are required.",
+      "locationRequired": "Location unavailable. Please enable GPS permission."
+    },
+    "toast": {
+      "dailyLimitReached": "Daily limit reached, try again tomorrow.",
+      "redLabelDailyLimit": "Daily red label limit reached (max {{max}} per day)",
+      "duplicateReceipt": "This receipt was already uploaded.",
+      "ticketsEarned": "You earned +{{count}} ticket(s) 🎉",
+      "scanNoTickets": "Scan received! Daily ticket limit reached (0 tickets today)",
+      "redLabelTickets": "You earned +3 tickets 🔥"
+    },
+    "processing": "Uploading..."
+  },
+  "earn": {
+    "title": "Earn Tickets",
+    "subtitle": "Complete tasks to earn tickets for the weekly draw",
+    "weeklyLimit": "Weekly ticket limit reached",
+    "dailyMission": {
+      "title": "Daily Mission",
+      "subtitle": "Upload receipts to complete your daily mission",
+      "completed": "Mission completed! 🎉",
+      "progress": "{{current}}/{{total}} receipts"
+    },
+    "receiptSection": {
+      "title": "Scan Receipt",
+      "subtitle": "Earn 1 ticket per approved receipt",
+      "limit": "Max {{limit}} per day",
+      "todayCount": "{{count}}/{{limit}} today",
+      "cta": "Scan Now"
+    },
+    "watchAds": {
+      "title": "Watch Ads",
+      "subtitle": "Earn tickets instantly",
+      "rule": "Watch 5 videos to earn 1 ticket",
+      "ready": "Ready to earn!",
+      "moreToGo": "{{count}} more to go",
+      "watching": "Watching...",
+      "dailyLimit": "Daily limit reached",
+      "cta": "Watch Ad"
+    },
+    "surveys": {
+      "title": "Complete Surveys",
+      "subtitle": "Earn tickets directly",
+      "rule": "Up to 2 tickets per survey",
+      "empty": "No surveys available right now.",
+      "emptyHint": "Check back later!",
+      "bestOffer": "🔥 Best Offer",
+      "fallbackTitle": "BitLabs Survey",
+      "tickets2": "🎟️ 2 TICKETS",
+      "tickets1": "🎟️ 1 TICKET",
+      "start": "START"
+    }
+  },
+  "shake": {
+    "title": "Lucky Shake",
+    "subtitle": "Shake your phone to win bonus tickets!",
+    "rule": "Win 1 to 5 tickets instantly",
+    "ready": "🎯 Your shake is ready — good luck!",
+    "lockedHint": "Next shake unlocks when countdown hits zero",
+    "countdown": {
+      "nextDraw": "Next draw in",
+      "days": "Days",
+      "hours": "Hours",
+      "min": "Min",
+      "sec": "Sec"
+    },
+    "cta": {
+      "shakeNow": "Shake Now",
+      "locked": "Locked — Wait for Draw"
+    },
+    "modal": {
+      "title": "Lucky Shake!",
+      "body": "Shake your phone. Get 1–5 tickets!",
+      "orTap": "Or tap the button below",
+      "tapToShake": "Tap to Shake",
+      "won": "You won {{count}} ticket(s)!",
+      "congrats": "Congratulations! 🎉"
+    },
+    "toast": {
+      "waitCountdown": "Come back when the countdown reaches zero!",
+      "alreadyUsed": "Already used this period. Come back next week!",
+      "weeklyLimit": "Weekly ticket limit reached.",
+      "loginToPlay": "Log in to play",
+      "unlockOnZero": "Your shake unlocks when the countdown hits zero!",
+      "unsupportedDevice": "Device not supported. Try on mobile.",
+      "sensorPermission": "Sensor permission required for Lucky Shake.",
+      "failed": "Failed"
+    }
+  },
+  "weeklyDraw": {
+    "title": "Weekly Draw",
+    "subtitle": "Weekly lottery draw every Sunday at 21:00 WIB",
+    "prizePool": "Prize Pool",
+    "nextDraw": "Next Draw",
+    "nextDrawTime": "Sunday 21:00 WIB",
+    "countdown": "Countdown",
+    "totalTickets": "TOTAL TICKETS THIS WEEK",
+    "lastWinner": "Last Winner",
+    "noWinner": "No winner yet",
+    "loading": "Loading...",
+    "userId": "User ID",
+    "draw": "Draw",
+    "prize": "Prize",
+    "earnMore": "Earn More Tickets"
+  },
+  "weeklyReward": {
+    "cardTitle": "Weekly Reward",
+    "headline": "Win a Rp100,000 Shopping Voucher",
+    "subhead": "5 winners every week",
+    "poolLabel": "Weekly Prize Pool",
+    "poolValue": "5 × Rp100,000 vouchers",
+    "rule": "Each 10 tickets = 1 entry in the weekly draw",
+    "youHave": "You have",
+    "ticketsWord": "tickets",
+    "entriesWord": "entries",
+    "lotteryChances": "lottery chances",
+    "nextEntryDone": "Entry threshold reached!",
+    "nextEntryNeedMore": "{{needed}} more ticket(s) for next entry",
+    "nextEntryFooter": "Earn {{needed}} more ticket(s) to unlock 1 more entry",
+    "countdownLabel": "Next draw in",
+    "viewWinners": "View Winners",
+    "earnMore": "Earn More Tickets",
+    "amount": "Rp100,000",
+    "winners": {
+      "title": "Prize Winners",
+      "prizeLabel": "Rp100,000 shopping voucher",
+      "empty": "No winners yet"
+    }
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Top receipt hunters this week",
+    "weeklyTickets": "Weekly Tickets",
+    "receipts": "Receipts",
+    "rank": "Rank",
+    "you": "You",
+    "empty": "No hunters yet this week.",
+    "loading": "Loading leaderboard...",
+    "error": "Failed to load leaderboard.",
+    "topHunters": "Top Hunters",
+    "myPosition": "My Position"
+  },
+  "invite": {
+    "title": "Invite Friends",
+    "subtitle": "Invite friends and earn bonus tickets",
+    "referralCode": "Your Referral Code",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "share": "Share",
+    "howItWorks": "How It Works",
+    "step1": "Share your referral code with friends",
+    "step2": "Friend signs up and uploads their first receipt",
+    "step3": "Both of you earn bonus tickets!",
+    "friendsInvited": "Friends Invited",
+    "totalEarned": "Total Earned",
+    "inviteMore": "Invite More Friends",
+    "shareMessage": "Join StrukCuan and earn rewards by scanning your grocery receipts! Use my code: {{code}}",
+    "noCode": "Generating your code..."
+  },
+  "receiptHistory": {
+    "title": "Receipt History",
+    "subtitle": "View the verification status of all your uploaded receipts.",
+    "empty": "No receipts uploaded yet.",
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending"
+    },
+    "noStoreName": "No store name",
+    "total": "Total",
+    "loading": "Loading receipts...",
+    "error": "Failed to load receipt history."
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "display": "Display",
+    "notifications": "Notifications",
+    "language": "Bahasa / Language",
+    "country": "Country",
+    "account": "Account",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "changeTheme": "Change app appearance",
+    "pushNotifications": "Push Notifications",
+    "pushNotifDesc": "Promo & reward notifications",
+    "redAlertDesc": "Red Promo alerts within 3-5km radius are sent via Push Notification (not SMS/WhatsApp) — free for you!",
+    "adminPanel": "Admin Panel",
+    "adminPanelDesc": "Receipt and deal approval",
+    "cuanDashboard": "Cuan Dashboard",
+    "cuanDashboardDesc": "Ticket jar, stats & Hall of Fame",
+    "logout": "Logout",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDesc": "All your data will be permanently deleted",
+    "deleteConfirmTitle": "Permanently Delete Account",
+    "deleteConfirmBody": "This action cannot be undone. All your receipts, tickets and reward history will be deleted.",
+    "deleteConfirmPrompt": "To confirm, type DELETE below:",
+    "deleteConfirmPlaceholder": "DELETE",
+    "deleting": "Deleting...",
+    "deleted": "Account deleted.",
+    "deleteFailed": "Could not delete account. Please try again.",
+    "receiptHistory": "Receipt History",
+    "receiptHistoryDesc": "View your uploaded receipts"
+  },
+  "cuanDashboard": {
+    "title": "Cuan Dashboard",
+    "weeklyJar": "Weekly Ticket Jar",
+    "weeklyMax": "{{count}}/{{max}}",
+    "dailyInfo": "Daily: {{receipts}} Receipts + {{deals}} Deals = {{total}} Tickets",
+    "stats": "Personal Stats",
+    "scannedReceipts": "Scanned Receipts",
+    "sharedDeals": "Shared Deals",
+    "totalReward": "Total Reward",
+    "hallOfFame": "Last Week's Lucky Hunters",
+    "noWinners": "No winners yet — be the first this week!",
+    "prizePerWinner": "Rp {{amount}} winner",
+    "titles": {
+      "legend": "Legend Hunter 🔥",
+      "silver": "Silver Hunter",
+      "bronze": "Bronze Hunter"
+    },
+    "rewards": "Rewards",
+    "surveys": "Surveys"
+  },
+  "map": {
+    "title": "Radar",
+    "subtitle": "Live deals near you",
+    "shareRedLabel": "Share Red Label",
+    "shareRedLabelHint": "Found a great deal? Share it!",
+    "noDeals": "No deals nearby yet.",
+    "loading": "Loading deals...",
+    "locationRequired": "Location required to show nearby deals.",
+    "enableLocation": "Enable Location",
+    "filter": {
+      "all": "All",
+      "redLabel": "Red Label",
+      "verified": "Verified"
+    },
+    "deal": {
+      "expired": "Expired",
+      "expiresIn": "Expires in {{time}}",
+      "distance": "{{distance}} away",
+      "navigate": "Navigate",
+      "verified": "Verified",
+      "redLabel": "Red Label"
+    }
+  },
   "rewards": {
     "title": "Rewards",
     "buy": "Buy",
     "codeTitle": "Your Digital Code",
-    "codeDesc": "Copy the code below and use it on the relevant site."
+    "codeDesc": "Copy the code below and use it on the relevant site.",
+    "balance": "Your Cuan Balance",
+    "available": "Available to redeem",
+    "empty": "No rewards available yet.",
+    "loading": "Loading rewards...",
+    "redeemSuccess": "Reward redeemed!",
+    "insufficientCuan": "Not enough Cuan."
   },
   "surveys": "Surveys",
   "surveys.title": "Survey Center",
@@ -72,9 +419,84 @@
     "comingSoon": "Coming soon!",
     "radarScanning": "Radar is scanning for new opportunities in this region."
   },
-  "common": {
-    "loading": "Loading...",
-    "back": "Back",
-    "close": "Close"
+  "footer": {
+    "copyright": "© 2026 StrukCuan",
+    "promoRules": "Promo Rules",
+    "contact": "Contact"
+  },
+  "time": {
+    "days": "Days",
+    "hours": "Hours",
+    "min": "Min",
+    "sec": "Sec",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "language": {
+    "en": "English",
+    "id": "Indonesian",
+    "switchTo": "Switch to {{label}}"
+  },
+  "promo": {
+    "title": "Promo",
+    "dailyAdsProgress": "Daily Ads Progress",
+    "totalReward": "Total reward: <strong>3 Tickets</strong>",
+    "totalRewardText": "Total reward: 3 Tickets",
+    "tierRule": "Watch 5, 10, 17 videos → earn 1 ticket per tier",
+    "tier": "Tier {{num}}",
+    "tierProgress": "{{current}}/{{target}} videos",
+    "done": "Done",
+    "watchAd": "Watch Ad",
+    "watching": "Watching...",
+    "dailyLimitReached": "Daily limit reached. Come back tomorrow.",
+    "dailyLimitToast": "Daily limit reached ({{max}} videos). Come back tomorrow."
+  },
+  "onboarding": {
+    "welcome": "Welcome to StrukCuan",
+    "tagline": "Scan receipts. Win rewards. Every week.",
+    "step1Title": "Scan Your Receipt",
+    "step1Body": "Upload your grocery receipts to earn tickets for the weekly lottery.",
+    "step2Title": "Share Red Label Deals",
+    "step2Body": "Found a great deal? Share it on the map and earn bonus tickets.",
+    "step3Title": "Win Weekly Prizes",
+    "step3Body": "Every week, 5 lucky hunters win Rp100,000 vouchers.",
+    "getStarted": "Get Started",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Log in"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "subtitle": "Receipt and deal approval",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "receipts": "Receipts",
+      "deals": "Deals"
+    },
+    "receipts": {
+      "title": "Pending Receipts",
+      "colUser": "User",
+      "colReceipt": "Receipt",
+      "colToday": "Today",
+      "colDate": "Date",
+      "colAction": "Action",
+      "loading": "Loading...",
+      "error": "Failed to load receipts",
+      "empty": "No pending receipts.",
+      "review": "Review",
+      "previousToday": "Previous receipts today",
+      "cuanLabel": "Cuan",
+      "ticketLabel": "Ticket",
+      "approveWithRewards": "Approve (+{{cuan}} cuan, +{{ticket}} ticket)",
+      "reject": "Reject",
+      "noAccess": "You don't have access to this page.",
+      "backHome": "Back to home"
+    }
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "The page you're looking for doesn't exist.",
+    "backHome": "Go back home"
   }
 }

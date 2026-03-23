@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Award, X, Gift } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -7,6 +8,7 @@ import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import { getCountdownParts, pad } from "@/lib/weeklyCountdown";
 
 export default function WeeklyRewardCard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
   const { data: ticketCount = 0 } = useUserTickets(user?.id);
@@ -57,12 +59,12 @@ export default function WeeklyRewardCard() {
             </button>
             <div className="flex items-center gap-3 mb-1">
               <Award size={16} className="text-[#00FF88]" />
-              <h3 className="font-display text-base font-bold text-white">Prize Winners</h3>
+              <h3 className="font-display text-base font-bold text-white">{t("weeklyReward.winners.title")}</h3>
             </div>
-            <p className="text-xs text-white/80 mb-4">Rp100,000 Shopping Voucher</p>
+            <p className="text-xs text-white/80 mb-4">{t("weeklyReward.winners.prizeLabel")}</p>
             <div className="flex flex-col gap-3 max-h-64 overflow-y-auto">
               {winners.length === 0 ? (
-                <p className="text-xs text-white/80">No winners yet</p>
+                <p className="text-xs text-white/80">{t("weeklyReward.winners.empty")}</p>
               ) : (
                 winners.map((w, i) => (
                   <div
@@ -78,7 +80,7 @@ export default function WeeklyRewardCard() {
                         <p className="text-[10px] text-white/80">{formatDate(w.draw_date)}</p>
                       </div>
                     </div>
-                    <span className="font-display text-[11px] font-bold text-[#00FF88]">Rp100,000</span>
+                    <span className="font-display text-[11px] font-bold text-[#00FF88]">{t("weeklyReward.amount")}</span>
                   </div>
                 ))
               )}
@@ -138,15 +140,15 @@ export default function WeeklyRewardCard() {
             </div>
           </div>
 
-          <h2 className="font-display text-sm font-bold text-white">Weekly Reward</h2>
+          <h2 className="font-display text-sm font-bold text-white">{t("weeklyReward.cardTitle")}</h2>
         </div>
 
-        <p className="font-display text-lg font-bold text-white">Win a Rp100,000 Shopping Voucher</p>
-        <p className="text-xs text-white/80 mt-0.5">5 winners every week</p>
+        <p className="font-display text-lg font-bold text-white">{t("weeklyReward.headline")}</p>
+        <p className="text-xs text-white/80 mt-0.5">{t("weeklyReward.subhead")}</p>
 
         <div className="mt-4 p-4 rounded-xl bg-black/40 border border-white/20 backdrop-blur-lg shadow-2xl ring-1 ring-white/10">
-          <p className="text-[10px] text-white/80">Weekly Prize Pool</p>
-          <p className="font-display text-sm font-bold text-[#00FF88]">5 × Rp100,000 vouchers</p>
+          <p className="text-[10px] text-white/80">{t("weeklyReward.poolLabel")}</p>
+          <p className="font-display text-sm font-bold text-[#00FF88]">{t("weeklyReward.poolValue")}</p>
         </div>
 
         {/* ── Ticket → Entry system ────────────────────────────── */}
@@ -162,16 +164,16 @@ export default function WeeklyRewardCard() {
             className="text-[10px] mb-3 font-medium"
             style={{ color: "rgba(255,255,255,0.38)" }}
           >
-            Each 10 tickets = 1 entry in the weekly draw
+            {t("weeklyReward.rule")}
           </p>
 
           {/* Ticket count */}
           <div className="flex items-baseline gap-1.5 mb-1">
-            <span className="font-display text-[12px] text-white/55">You have</span>
+            <span className="font-display text-[12px] text-white/55">{t("weeklyReward.youHave")}</span>
             <span className="font-display text-[20px] font-extrabold text-white tabular-nums">
               {ticketCount}
             </span>
-            <span className="font-display text-[12px] text-white/55">tickets</span>
+            <span className="font-display text-[12px] text-white/55">{t("weeklyReward.ticketsWord")}</span>
           </div>
 
           {/* Entries — the number that matters */}
@@ -188,10 +190,10 @@ export default function WeeklyRewardCard() {
             </span>
             <div>
               <p className="font-display text-[14px] font-bold text-white leading-tight">
-                entries
+                {t("weeklyReward.entriesWord")}
               </p>
               <p className="text-[10px] leading-tight" style={{ color: "rgba(255,255,255,0.42)" }}>
-                lottery chances
+                {t("weeklyReward.lotteryChances")}
               </p>
             </div>
           </div>
@@ -201,8 +203,8 @@ export default function WeeklyRewardCard() {
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)" }}>
                 {remainingTickets === 0
-                  ? "Entry threshold reached!"
-                  : `${ticketsNeeded} more ticket${ticketsNeeded !== 1 ? "s" : ""} for next entry`}
+                  ? t("weeklyReward.nextEntryDone")
+                  : t("weeklyReward.nextEntryNeedMore", { needed: ticketsNeeded })}
               </span>
               <span
                 className="text-[11px] font-bold tabular-nums"
@@ -231,20 +233,20 @@ export default function WeeklyRewardCard() {
                 className="text-[9px] mt-1.5"
                 style={{ color: "rgba(255,255,255,0.3)" }}
               >
-                Earn {ticketsNeeded} more ticket{ticketsNeeded !== 1 ? "s" : ""} to unlock 1 more entry
+                {t("weeklyReward.nextEntryFooter", { needed: ticketsNeeded })}
               </p>
             )}
           </div>
         </div>
 
         <div className="mt-4">
-          <p className="text-[10px] text-white/80 mb-2">Next draw in</p>
+          <p className="text-[10px] text-white/80 mb-2">{t("weeklyReward.countdownLabel")}</p>
           <div className="flex gap-3 items-stretch">
             {[
-              { val: pad(timeLeft.days), label: "Days" },
-              { val: pad(timeLeft.hours), label: "Hours" },
-              { val: pad(timeLeft.minutes), label: "Min" },
-              { val: pad(timeLeft.seconds), label: "Sec" },
+              { val: pad(timeLeft.days), label: t("time.days") },
+              { val: pad(timeLeft.hours), label: t("time.hours") },
+              { val: pad(timeLeft.minutes), label: t("time.min") },
+              { val: pad(timeLeft.seconds), label: t("time.sec") },
             ].map((block) => (
               <div key={block.label} className="flex flex-1 flex-col items-center justify-center rounded-xl bg-black/40 border border-white/20 py-3 px-2 min-w-0 backdrop-blur-lg shadow-2xl ring-1 ring-white/10">
                 <span className="font-display text-base font-bold text-white tabular-nums leading-tight">{block.val}</span>
@@ -259,13 +261,13 @@ export default function WeeklyRewardCard() {
           className="mt-4 w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3.5 min-h-[48px] font-display font-bold text-sm text-white transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]"
         >
           <Award size={16} />
-          View Winners
+          {t("weeklyReward.viewWinners")}
         </button>
         <button
           onClick={() => navigate("/earn")}
           className="mt-2 w-full flex items-center justify-center gap-3 rounded-xl border border-white/20 bg-black/40 py-2.5 font-display font-bold text-xs text-white transition-all hover:bg-black/50 backdrop-blur-lg shadow-2xl ring-1 ring-white/10"
         >
-          Earn More Tickets
+          {t("weeklyReward.earnMore")}
         </button>
       </div>
     </>

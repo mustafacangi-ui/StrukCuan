@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Moon, Sun, Bell, BellOff, LogOut, Shield, Phone, MapPin, Trophy, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 const Settings = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading, logout, refreshUser, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
   const updateCountry = useUpdateCountry();
@@ -41,10 +43,10 @@ const Settings = () => {
     try {
       const { error } = await supabase.rpc("delete_my_account");
       if (error) throw error;
-      toast.success("Hesabınız silindi.");
+      toast.success(t("settings.deleted"));
       navigate("/", { replace: true });
     } catch (e) {
-      toast.error((e as Error)?.message ?? "Hesap silinemedi. Lütfen tekrar deneyin.");
+      toast.error((e as Error)?.message ?? t("settings.deleteFailed"));
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -57,7 +59,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
       <div className="fixed inset-0 -z-10" style={{ background: PREMIUM_PAGE_BACKGROUND }} />
-      <PageHeader title="Settings" onBack={() => navigate(-1)} />
+      <PageHeader title={t("settings.title")} onBack={() => navigate(-1)} />
 
       {/* Profile card */}
       <div className="mx-4 mt-4 rounded-xl p-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
@@ -83,7 +85,7 @@ const Settings = () => {
                 <div className="flex items-center gap-1 mt-0.5">
                   <Shield size={10} className="text-primary" />
                   <span className="text-[10px] font-bold text-primary glow-green-text">
-                    Level {user?.level || 1} · Receipt Hunter
+                    {t("home.levelBadge", { level: user?.level || 1 })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
@@ -96,10 +98,10 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Dil Seçici */}
+      {/* Language Selector */}
       <div className="mx-4 mt-4">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
-          Bahasa / Language
+          {t("settings.language")}
         </p>
         <LanguageSelector variant="pills" />
       </div>
@@ -112,9 +114,9 @@ const Settings = () => {
             try {
               await updateCountry.mutateAsync(code);
               await refreshUser();
-              toast.success("Ülke güncellendi");
+              toast.success(t("common.success"));
             } catch {
-              toast.error("Güncellenemedi");
+              toast.error(t("common.error"));
             }
           }}
           disabled={updateCountry.isPending}
@@ -131,8 +133,8 @@ const Settings = () => {
             <ShieldCheck size={20} className="text-primary" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-display font-bold text-foreground">Admin Panel</p>
-            <p className="text-[10px] text-muted-foreground">Fiş ve indirim onaylama</p>
+            <p className="font-display font-bold text-foreground">{t("settings.adminPanel")}</p>
+            <p className="text-[10px] text-muted-foreground">{t("settings.adminPanelDesc")}</p>
           </div>
         </button>
       )}
@@ -146,21 +148,21 @@ const Settings = () => {
           <Trophy size={20} className="text-amber-600" />
         </div>
         <div className="flex-1 text-left">
-          <p className="font-display font-bold text-foreground">Cuan Dashboard</p>
-          <p className="text-[10px] text-muted-foreground">Bilet kavanozu, istatistikler & Hall of Fame</p>
+          <p className="font-display font-bold text-foreground">{t("settings.cuanDashboard")}</p>
+          <p className="text-[10px] text-muted-foreground">{t("settings.cuanDashboardDesc")}</p>
         </div>
       </button>
 
       {/* Settings sections */}
       <div className="mx-4 mt-5">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Tampilan</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">{t("settings.display")}</p>
         <div className="rounded-xl p-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {theme === "dark" ? <Moon size={16} className="text-primary" /> : <Sun size={16} className="text-primary" />}
               <div>
-                <p className="text-sm font-semibold text-foreground">Mode {theme === "dark" ? "Gelap" : "Terang"}</p>
-                <p className="text-[10px] text-muted-foreground">Ganti tampilan aplikasi</p>
+                <p className="text-sm font-semibold text-foreground">{theme === "dark" ? t("settings.darkMode") : t("settings.lightMode")}</p>
+                <p className="text-[10px] text-muted-foreground">{t("settings.changeTheme")}</p>
               </div>
             </div>
             <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
@@ -169,14 +171,14 @@ const Settings = () => {
       </div>
 
       <div className="mx-4 mt-4">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Notifikasi</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">{t("settings.notifications")}</p>
         <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {pushNotifications ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
               <div>
-                <p className="text-sm font-semibold text-foreground">Push Notifications</p>
-                <p className="text-[10px] text-muted-foreground">Notifikasi promo & hadiah</p>
+                <p className="text-sm font-semibold text-foreground">{t("settings.pushNotifications")}</p>
+                <p className="text-[10px] text-muted-foreground">{t("settings.pushNotifDesc")}</p>
               </div>
             </div>
             <Switch checked={pushNotifications} onCheckedChange={togglePushNotifications} />
@@ -185,8 +187,7 @@ const Settings = () => {
             <div className="flex items-start gap-2">
               <MapPin size={12} className="text-neon-red mt-0.5 shrink-0" />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Alert <span className="font-semibold text-neon-red">Promo Merah</span> dalam radius 3-5km dikirim via{" "}
-                <span className="font-semibold text-foreground">Push Notification</span> (bukan SMS/WhatsApp) — gratis untuk kamu!
+                {t("settings.redAlertDesc")}
               </p>
             </div>
           </div>
@@ -194,7 +195,7 @@ const Settings = () => {
       </div>
 
       <div className="mx-4 mt-4">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Akun</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">{t("settings.account")}</p>
         <div className="space-y-2">
           <button
             onClick={handleLogout}
@@ -202,7 +203,7 @@ const Settings = () => {
             style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             <LogOut size={16} className="text-destructive" />
-            <span className="text-sm font-semibold text-destructive">Keluar</span>
+            <span className="text-sm font-semibold text-destructive">{t("settings.logout")}</span>
           </button>
 
           <button
@@ -212,8 +213,8 @@ const Settings = () => {
           >
             <Trash2 size={16} className="text-red-500" />
             <div className="text-left">
-              <p className="text-sm font-semibold text-red-500">Hesabı Sil</p>
-              <p className="text-[10px] text-muted-foreground">Tüm verileriniz kalıcı olarak silinir</p>
+              <p className="text-sm font-semibold text-red-500">{t("settings.deleteAccount")}</p>
+              <p className="text-[10px] text-muted-foreground">{t("settings.deleteAccountDesc")}</p>
             </div>
           </button>
         </div>
@@ -225,19 +226,19 @@ const Settings = () => {
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "rgba(15,15,25,0.98)", border: "1px solid rgba(220,38,38,0.4)" }}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={20} className="text-red-500 shrink-0" />
-              <h3 className="font-display font-bold text-foreground">Hesabı Kalıcı Sil</h3>
+              <h3 className="font-display font-bold text-foreground">{t("settings.deleteConfirmTitle")}</h3>
             </div>
             <p className="text-xs text-muted-foreground mb-1">
-              Bu işlem geri alınamaz. Tüm fişleriniz, biletleriniz ve ödül geçmişiniz silinir.
+              {t("settings.deleteConfirmBody")}
             </p>
             <p className="text-xs text-muted-foreground mb-4">
-              Onaylamak için aşağıya <span className="font-bold text-red-400">DELETE</span> yazın:
+              {t("settings.deleteConfirmPrompt")} <span className="font-bold text-red-400">DELETE</span>
             </p>
             <input
               type="text"
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
-              placeholder="DELETE"
+              placeholder={t("settings.deleteConfirmPlaceholder")}
               className="w-full rounded-lg border border-red-500/40 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-red-500 mb-4"
             />
             <div className="flex gap-2">
@@ -245,14 +246,14 @@ const Settings = () => {
                 onClick={() => { setShowDeleteConfirm(false); setDeleteInput(""); }}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold bg-secondary text-foreground"
               >
-                İptal
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleteInput !== "DELETE" || isDeleting}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold bg-red-600 text-white disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isDeleting ? "Siliniyor..." : "Hesabı Sil"}
+                {isDeleting ? t("settings.deleting") : t("settings.deleteAccount")}
               </button>
             </div>
           </div>

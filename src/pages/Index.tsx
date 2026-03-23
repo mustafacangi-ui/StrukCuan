@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bell, Settings, ChevronRight } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -287,6 +288,7 @@ function PhoneHero() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, session, isOnboarded, requireLogin } = useUser();
@@ -411,12 +413,12 @@ const Index = () => {
               <path d="M6 4v12M14 4v12" stroke="#ff7070" strokeWidth="1" strokeDasharray="2 2" />
               <circle cx="10" cy="10" r="2" fill="#ff7070" />
             </svg>
-            <span
-              className="font-bold text-[13px] text-[#ff7070] relative z-10"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              {ticketCount} Tickets
-            </span>
+              <span
+                className="font-bold text-[13px] text-[#ff7070] relative z-10"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                {ticketCount} {t("common.tickets")}
+              </span>
           </div>
 
           {/* LIVE pill */}
@@ -473,7 +475,7 @@ const Index = () => {
                 >
                   <div className="max-h-60 overflow-y-auto py-2">
                     {notifications.length === 0 ? (
-                      <p className="px-4 py-3 text-[11px] text-white/50">No notifications.</p>
+                      <p className="px-4 py-3 text-[11px] text-white/50">{t("home.notifications.empty")}</p>
                     ) : (
                       notifications.slice(0, 10).map((n) => (
                         <div key={n.id} className="px-4 py-2.5 border-b last:border-b-0" style={{ borderColor: "rgba(155,92,255,0.1)" }}>
@@ -590,10 +592,10 @@ const Index = () => {
                         {_entries}
                       </span>
                       <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.38)" }}>
-                        {_entries === 1 ? "entry" : "entries"}
+                        {t("weeklyReward.entriesWord")}
                       </span>
                       <span className="text-[9px] ml-auto tabular-nums" style={{ color: "rgba(255,255,255,0.3)" }}>
-                        {_remaining}/10 → next
+                        {_remaining}/10 → {t("weeklyReward.entriesWord")}
                       </span>
                     </div>
                     <div
@@ -611,7 +613,7 @@ const Index = () => {
                       />
                     </div>
                     <p className="text-[8px] mt-0.5" style={{ color: "rgba(255,255,255,0.22)" }}>
-                      {ticketCount} tickets · {_needed} more for next entry
+                      {ticketCount} {t("common.tickets")} · {t("weeklyReward.nextEntryNeedMore", { needed: _needed })}
                     </p>
                   </div>
                 );
@@ -655,12 +657,12 @@ const Index = () => {
                   display: "inline-block",
                 }}
               />
-              <span
-                className="text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: "#9b5cff" }}
-              >
-                Live Deal Radar
-              </span>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-[0.12em]"
+                  style={{ color: "#9b5cff" }}
+                >
+                  {t("home.liveDeals")}
+                </span>
             </div>
 
             {/* Headline — 3-line hierarchy */}
@@ -796,7 +798,7 @@ const Index = () => {
                 className="text-[13px] font-extrabold uppercase tracking-[0.1em]"
                 style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Syne', sans-serif" }}
               >
-                Nearby Deals
+                {t("home.nearbyDeals")}
               </h2>
             </div>
             <button
@@ -816,7 +818,7 @@ const Index = () => {
                 border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
-              <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>No deals nearby yet</p>
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>{t("home.noDealsNearby")}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -950,10 +952,10 @@ const Index = () => {
               className="text-[15px] font-extrabold text-white mb-1 leading-tight"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
-              Share Struk Label Merah
+              {t("home.scanRedLabelCta")}
             </p>
             <p className="text-[11.5px] leading-snug mb-2.5" style={{ color: "rgba(255,255,255,0.52)" }}>
-              Upload struk diskon label merah untuk mendapatkan 3 tiket bonus!
+              {t("scanner.select.redLabelSubtitle")}
             </p>
             {/* Reward badge — green to emphasise high value */}
             <span
@@ -983,7 +985,7 @@ const Index = () => {
               className="text-[13px] font-extrabold uppercase tracking-[0.1em]"
               style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Syne', sans-serif" }}
             >
-              Weekly Reward
+              {t("weeklyReward.cardTitle")}
             </h2>
           </div>
         </div>

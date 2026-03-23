@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +22,7 @@ async function fetchUserReceipts(userId: string): Promise<ReceiptRow[]> {
 }
 
 export default function ReceiptHistory() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useUser();
   const userId = user?.id;
@@ -40,11 +42,11 @@ export default function ReceiptHistory() {
   const formatStatus = (status: string) => {
     switch (status) {
       case "approved":
-        return "Disetujui";
+        return t("receiptHistory.status.approved");
       case "rejected":
-        return "Ditolak";
+        return t("receiptHistory.status.rejected");
       default:
-        return "Menunggu";
+        return t("receiptHistory.status.pending");
     }
   };
 
@@ -62,10 +64,10 @@ export default function ReceiptHistory() {
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-8">
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <h1 className="font-display text-lg font-bold text-foreground">
-          Receipt History
+          {t("receiptHistory.title")}
         </h1>
         <p className="mt-1 text-[10px] text-muted-foreground">
-          Lihat status verifikasi semua struk yang kamu kirim.
+          {t("receiptHistory.subtitle")}
         </p>
       </div>
 
@@ -87,13 +89,13 @@ export default function ReceiptHistory() {
 
         {error && (
           <div className="rounded-xl border border-destructive/30 bg-card p-4 text-xs text-destructive">
-            Failed to load receipt history.
+            {t("receiptHistory.error")}
           </div>
         )}
 
         {!isLoading && !error && receipts.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground text-center">
-            Belum ada struk yang kamu upload.
+            {t("receiptHistory.empty")}
           </div>
         )}
 
@@ -105,10 +107,10 @@ export default function ReceiptHistory() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-xs font-semibold text-foreground">
-                  {r.store || "Tanpa nama toko"}
+                  {r.store || t("receiptHistory.noStoreName")}
                 </p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">
-                  Total: {r.total ?? "-"} ·{" "}
+                  {t("receiptHistory.total")}: {r.total ?? "-"} ·{" "}
                   {new Date(r.created_at).toLocaleString()}
                 </p>
               </div>
