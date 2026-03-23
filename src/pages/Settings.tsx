@@ -7,6 +7,7 @@ import { useUpdateCountry } from "@/hooks/useUpdateCountry";
 import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
 import { CountrySelector } from "@/components/CountrySelector";
+import LanguageSelector from "@/components/LanguageSelector";
 import BottomNav from "@/components/BottomNav";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +96,15 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Ülke Seçici - Test için */}
+      {/* Dil Seçici */}
+      <div className="mx-4 mt-4">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+          Bahasa / Language
+        </p>
+        <LanguageSelector variant="pills" />
+      </div>
+
+      {/* Ülke Seçici */}
       <div className="mx-4 mt-4">
         <CountrySelector
           value={user?.countryCode ?? "ID"}

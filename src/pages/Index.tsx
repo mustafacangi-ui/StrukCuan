@@ -11,6 +11,7 @@ import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 // ── Always-visible chrome (keep eager) ───────────────────────────────────────
 import BottomNav from "@/components/BottomNav";
+import LanguageSelector from "@/components/LanguageSelector";
 
 // ── Lazy-loaded: only downloaded when actually needed ────────────────────────
 // CameraScanner: ~60 KB chunk — only when user taps Scan
@@ -485,6 +486,9 @@ const Index = () => {
                 </div>
               )}
             </div>
+
+            {/* Language switcher */}
+            <LanguageSelector variant="compact" />
 
             {/* Settings */}
             <button
