@@ -3,7 +3,7 @@ import confetti from "canvas-confetti";
 import { X, Camera, RotateCcw, Receipt, Tag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
-import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount, isDailyLimitError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
+import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount, isDailyLimitError, isDuplicateReceiptError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
 import { useCreateDeal } from "@/hooks/useCreateDeal";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { grantDealTickets } from "@/hooks/useGrantDealTickets";
@@ -192,6 +192,16 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
     setStep(mode ? "camera" : "select");
   }, [previewUrl, mode]);
 
+  // ── Görüntü doğrulama (boyut + JPEG magic bytes) ─────────────────────────
+  function validateImageFile(blob: Blob): void {
+    if (blob.size < 20_000) {
+      throw new Error("Görüntü çok küçük. Lütfen gerçek bir fiş fotoğrafı çekin.");
+    }
+    if (blob.size > 15_000_000) {
+      throw new Error("Dosya çok büyük (max 15 MB). Lütfen tekrar deneyin.");
+    }
+  }
+
   // ── Receipt submit (Issue 2: daily ticket cap) ────────────────────────────
   const handleSubmitReceipt = useCallback(async () => {
     if (!capturedBlob || !userId) return;
@@ -219,6 +229,16 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         return;
       }
 
+      // Dosya boyutu + format doğrulama
+      try {
+        validateImageFile(capturedBlob);
+      } catch (validErr) {
+        submitLockRef.current = false;
+        setError((validErr as Error).message);
+        setStep("error");
+        return;
+      }
+
       const file        = new File([capturedBlob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" });
       const storagePath = `${String(userId)}/${Date.now()}.jpg`;
 
@@ -243,11 +263,17 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
           store: null,
           total: null,
           receiptIndexToday,
+          imageHash: pendingHash ?? undefined,
         });
       } catch (dbErr) {
         console.error("[CameraScanner] Receipt DB insert failed:", dbErr);
         if (isDailyLimitError(dbErr)) {
           toast.error(DAILY_LIMIT_ERROR);
+          setStep("preview");
+          return;
+        }
+        if (isDuplicateReceiptError(dbErr)) {
+          toast.error("Bu fiş daha önce yüklendi.");
           setStep("preview");
           return;
         }

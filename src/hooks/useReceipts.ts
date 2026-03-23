@@ -29,6 +29,13 @@ export function isDailyLimitError(e: unknown): boolean {
   return msg.includes("daily limit");
 }
 
+/** Detects server-side duplicate receipt rejection. */
+export function isDuplicateReceiptError(e: unknown): boolean {
+  if (!e || typeof e !== "object") return false;
+  const err = e as { message?: string };
+  return String(err?.message ?? "").includes("DUPLICATE_RECEIPT");
+}
+
 async function fetchPendingReceipts(): Promise<ReceiptRow[]> {
   const { data, error } = await supabase
     .from("receipts")
@@ -167,6 +174,7 @@ export interface CreateReceiptInput {
   store?: string | null;
   total?: number | null;
   receiptIndexToday?: number | null;
+  imageHash?: string | null;
 }
 
 /** Response from create_receipt RPC. remaining = 3 - (count + 1). */
@@ -188,6 +196,7 @@ export function useCreateReceipt() {
         p_store: input.store != null ? String(input.store) : null,
         p_total: input.total != null ? Number(input.total) : null,
         p_receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
+        p_image_hash: input.imageHash ?? null,
       };
       const { data, error } = await supabase.rpc("create_receipt", params);
 

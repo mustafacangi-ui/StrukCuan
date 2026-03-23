@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Moon, Sun, Bell, BellOff, LogOut, Shield, User, Phone, MapPin, Trophy, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Moon, Sun, Bell, BellOff, LogOut, Shield, Phone, MapPin, Trophy, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -11,12 +11,16 @@ import BottomNav from "@/components/BottomNav";
 import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, isOnboarded, isLoading, logout, refreshUser, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
   const updateCountry = useUpdateCountry();
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -28,6 +32,23 @@ const Settings = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/home");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteInput !== "DELETE") return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      toast.success("Hesabınız silindi.");
+      navigate("/", { replace: true });
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Hesap silinemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setDeleteInput("");
+    }
   };
 
   if (!isOnboarded && !isLoading) return null;
@@ -165,15 +186,69 @@ const Settings = () => {
 
       <div className="mx-4 mt-4">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Akun</p>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl border border-destructive/30 p-4"
-          style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
-        >
-          <LogOut size={16} className="text-destructive" />
-          <span className="text-sm font-semibold text-destructive">Keluar</span>
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 rounded-xl p-4"
+            style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
+          >
+            <LogOut size={16} className="text-destructive" />
+            <span className="text-sm font-semibold text-destructive">Keluar</span>
+          </button>
+
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center gap-3 rounded-xl p-4"
+            style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)" }}
+          >
+            <Trash2 size={16} className="text-red-500" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-red-500">Hesabı Sil</p>
+              <p className="text-[10px] text-muted-foreground">Tüm verileriniz kalıcı olarak silinir</p>
+            </div>
+          </button>
+        </div>
       </div>
+
+      {/* Hesap silme onay modalı */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "rgba(15,15,25,0.98)", border: "1px solid rgba(220,38,38,0.4)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <h3 className="font-display font-bold text-foreground">Hesabı Kalıcı Sil</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">
+              Bu işlem geri alınamaz. Tüm fişleriniz, biletleriniz ve ödül geçmişiniz silinir.
+            </p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Onaylamak için aşağıya <span className="font-bold text-red-400">DELETE</span> yazın:
+            </p>
+            <input
+              type="text"
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value)}
+              placeholder="DELETE"
+              className="w-full rounded-lg border border-red-500/40 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-red-500 mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeleteInput(""); }}
+                className="flex-1 rounded-lg py-2.5 text-sm font-semibold bg-secondary text-foreground"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteInput !== "DELETE" || isDeleting}
+                className="flex-1 rounded-lg py-2.5 text-sm font-semibold bg-red-600 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? "Siliniyor..." : "Hesabı Sil"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
