@@ -12,7 +12,7 @@ import { RadarProvider } from "@/contexts/RadarContext";
 import Index from "./pages/Index";
 import PostLoginRedirect from "./components/PostLoginRedirect";
 import ReferralCapture from "./components/ReferralCapture";
-import { EarnErrorBoundary } from "./components/EarnErrorBoundary";
+import { EarnErrorBoundary, PageErrorBoundary } from "./components/EarnErrorBoundary";
 
 // ── Lazy — only download when the user navigates there ───────────────────────
 const Map           = lazy(() => import("./pages/Map"));
@@ -65,13 +65,13 @@ const App = () => (
                 <Route path="/onboarding"  element={<Onboarding />} />
                 <Route path="/promo"       element={<Promo />} />
                 <Route path="/earn"        element={<EarnErrorBoundary><Earn /></EarnErrorBoundary>} />
-                <Route path="/weekly-draw" element={<WeeklyDraw />} />
+                <Route path="/weekly-draw" element={<PageErrorBoundary label="WeeklyDraw"><WeeklyDraw /></PageErrorBoundary>} />
                 <Route path="/invite"      element={<Invite />} />
                 <Route path="/upload"      element={<Navigate to="/" replace />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/leaderboard" element={<PageErrorBoundary label="Leaderboard"><Leaderboard /></PageErrorBoundary>} />
                 <Route path="/rank"        element={<Navigate to="/leaderboard" replace />} />
                 <Route path="/settings"    element={<Settings />} />
-                <Route path="/cuan"        element={<CuanDashboard />} />
+                <Route path="/cuan"        element={<PageErrorBoundary label="CuanDashboard"><CuanDashboard /></PageErrorBoundary>} />
                 <Route path="/rewards"     element={<Rewards />} />
                 <Route path="/surveys"     element={<Surveys />} />
                 <Route path="/privacy"     element={<Privacy />} />
@@ -79,7 +79,7 @@ const App = () => (
                 <Route path="/promo-rules" element={<PromoRules />} />
                 <Route path="/contact"     element={<Contact />} />
                 <Route path="/admin"       element={<Admin />} />
-                <Route path="/receipts"    element={<ReceiptHistory />} />
+                <Route path="/receipts"    element={<PageErrorBoundary label="ReceiptHistory"><ReceiptHistory /></PageErrorBoundary>} />
                 <Route path="*"            element={<NotFound />} />
               </Routes>
             </Suspense>

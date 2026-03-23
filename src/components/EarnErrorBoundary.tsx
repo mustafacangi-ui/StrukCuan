@@ -2,6 +2,7 @@ import { Component, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  label?: string;
 }
 
 interface State {
@@ -9,6 +10,44 @@ interface State {
   retryKey: number;
 }
 
+export class PageErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, retryKey: 0 };
+  }
+
+  static getDerivedStateFromError(): Partial<State> {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error(`[${this.props.label ?? "Page"}] Error boundary caught:`, error);
+  }
+
+  handleRetry = () => {
+    this.setState((s) => ({ hasError: false, retryKey: s.retryKey + 1 }));
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+          <p className="text-muted-foreground font-medium text-center">Bir hata oluştu.</p>
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="mt-3 px-4 py-2 rounded-xl bg-primary/20 text-primary text-sm font-medium"
+          >
+            Yeniden dene
+          </button>
+        </div>
+      );
+    }
+    return <div key={this.state.retryKey}>{this.props.children}</div>;
+  }
+}
+
+/** Backwards-compatible alias used by /earn route */
 export class EarnErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

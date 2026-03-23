@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -19,8 +21,15 @@ async function fetchUserReceipts(userId: string): Promise<ReceiptRow[]> {
 }
 
 export default function ReceiptHistory() {
-  const { user } = useUser();
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useUser();
   const userId = user?.id;
+
+  useEffect(() => {
+    if (!authLoading && !userId) {
+      navigate("/", { replace: true, state: { requireLogin: "receipts" } });
+    }
+  }, [authLoading, userId, navigate]);
 
   const { data: receipts = [], isLoading, error } = useQuery({
     queryKey: ["user_receipts", userId],

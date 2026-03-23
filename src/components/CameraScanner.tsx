@@ -280,14 +280,19 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         setError(err?.message ?? "Upload failed. Please try again.");
         setStep("error");
       }
+    } finally {
+      submitLockRef.current = false;
     }
   }, [capturedBlob, userId, todayCount, pendingHash, createReceipt, previewUrl, nextReceiptTickets]);
 
   // ── Red Label submit ──────────────────────────────────────────────────────
   const handleSubmitRedLabel = useCallback(async () => {
     if (!capturedBlob || !userId) return;
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     const { product_name, store, price, discount } = redLabelForm;
     if (!product_name.trim() || !store.trim()) {
+      submitLockRef.current = false;
       setError("Product name and store address are required.");
       return;
     }
@@ -358,6 +363,8 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       console.error("[CameraScanner] Red Label upload error:", e);
       setError((e as Error)?.message ?? USER_FACING_ERROR);
       setStep("error");
+    } finally {
+      submitLockRef.current = false;
     }
   }, [capturedBlob, userId, pendingHash, redLabelForm, createDeal, location, previewUrl, queryClient]);
 

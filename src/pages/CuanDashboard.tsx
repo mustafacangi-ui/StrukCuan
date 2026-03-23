@@ -28,13 +28,6 @@ function formatDisplayName(nickname: string | null | undefined, userId: string):
   return `CuanHunter_#${shortId.toUpperCase()}`;
 }
 
-const MOCK_WINNERS = [
-  { id: 1, winner_user_id: "mock1", nickname: "CuanHunter_#A1B2C3", reward_amount: 100000 },
-  { id: 2, winner_user_id: "mock2", nickname: "CuanHunter_#D4E5F6", reward_amount: 100000 },
-  { id: 3, winner_user_id: "mock3", nickname: "Siti_Receipt", reward_amount: 100000 },
-  { id: 4, winner_user_id: "mock4", nickname: "CuanHunter_#789ABC", reward_amount: 100000 },
-  { id: 5, winner_user_id: "mock5", nickname: "Budi_Promo", reward_amount: 100000 },
-];
 
 export default function CuanDashboard() {
   const navigate = useNavigate();
@@ -59,7 +52,7 @@ export default function CuanDashboard() {
   const title = getTitle(weeklyTickets);
   const progressPercent = Math.min(100, (weeklyTickets / WEEKLY_MAX) * 100);
 
-  const winners = lotteryWinners.length >= 5 ? lotteryWinners.slice(0, 5) : MOCK_WINNERS;
+  const winners = lotteryWinners.slice(0, 5);
 
   return (
     <div className="min-h-screen max-w-[420px] mx-auto pb-28 relative">
@@ -158,27 +151,33 @@ export default function CuanDashboard() {
               {countryCode === "DE" ? "10€ kazanan şanslı avcılar" : "100.000 Rp kazanan şanslı avcılar"}
             </p>
           </div>
-          <ul className="divide-y divide-border">
-            {winners.map((w, i) => {
-              const winner = w as { id?: number; winner_user_id?: string; nickname?: string; reward_amount?: number };
-              const name = formatDisplayName(winner.nickname, winner.winner_user_id ?? String(winner.id ?? i));
-              const reward = winner.reward_amount ?? 100000;
-              return (
-                <li key={winner.id ?? i} className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/30 font-bold text-amber-700 text-xs">
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground truncate">{name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Rp {reward.toLocaleString("id-ID")}
-                    </p>
-                  </div>
-                  <Award size={16} className="text-amber-500 shrink-0" />
-                </li>
-              );
-            })}
-          </ul>
+          {winners.length === 0 ? (
+            <p className="px-4 py-6 text-center text-xs text-muted-foreground">
+              Henüz kazanan yok — bu hafta ilk sen ol!
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {winners.map((w, i) => {
+                const winner = w as { id?: number; winner_user_id?: string; nickname?: string; reward_amount?: number };
+                const name = formatDisplayName(winner.nickname, winner.winner_user_id ?? String(winner.id ?? i));
+                const reward = winner.reward_amount ?? 100000;
+                return (
+                  <li key={winner.id ?? i} className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/30 font-bold text-amber-700 text-xs">
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">{name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Rp {reward.toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                    <Award size={16} className="text-amber-500 shrink-0" />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
 

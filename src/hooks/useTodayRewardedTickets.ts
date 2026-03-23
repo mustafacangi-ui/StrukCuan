@@ -6,9 +6,9 @@ import { useUser } from "@/contexts/UserContext";
 
 export const TODAY_REWARDED_TICKETS_QUERY_KEY = ["todayRewardedTickets"] as const;
 
-/** Ad reward system: 5 videos = 1 ticket. Max 5 ads/day. */
+/** Ad reward system: tiers at 5, 10, 17 ads → 1 ticket each. Max 17 ads/day. */
 export const ADS_PER_TICKET = 5;
-export const MAX_ADS_PER_DAY = 5;
+export const MAX_ADS_PER_DAY = 17;
 export const MAX_TICKETS_PER_DAY = 1;
 export const FIRST_TICKET_AT = 5;
 export const SECOND_TICKET_AT = 10;

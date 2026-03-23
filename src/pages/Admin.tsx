@@ -24,7 +24,15 @@ export default function Admin() {
     );
   }
 
-  if (!isLoading && !isAdmin) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-muted-foreground text-center">Bu sayfaya erişim yetkiniz yok.</p>

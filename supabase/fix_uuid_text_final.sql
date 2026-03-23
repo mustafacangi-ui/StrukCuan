@@ -36,6 +36,7 @@ create table if not exists public.user_stats (
   nickname       text,
   referral_code  text,
   country_code   text,
+  is_admin       boolean   not null default false,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
@@ -47,6 +48,7 @@ alter table public.user_stats add column if not exists current_streak  integer  
 alter table public.user_stats add column if not exists last_upload_date date;
 alter table public.user_stats add column if not exists nickname        text;
 alter table public.user_stats add column if not exists country_code    text;
+alter table public.user_stats add column if not exists is_admin        boolean   not null default false;
 alter table public.user_stats add column if not exists updated_at      timestamptz default now();
 
 -- user_stats.user_id TEXT ise UUID'ye çevir
@@ -346,8 +348,9 @@ create policy "Users select own receipts"
 
 drop policy if exists "User stats select" on public.user_stats;
 drop policy if exists "Users can read own user_stats" on public.user_stats;
+-- authenticated users can read all stats (needed for leaderboard); anon cannot
 create policy "User stats select"
-  on public.user_stats for select to anon, authenticated using (true);
+  on public.user_stats for select to authenticated using (true);
 
 drop policy if exists "Daily missions own" on public.daily_missions;
 create policy "Daily missions own"

@@ -9,15 +9,15 @@ import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const PRIZE_POOL_TOTAL = 500_000;
 const PRIZE_PER_WINNER = 100_000;
-/** Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC */
+/** Get next Sunday 21:00 Jakarta (WIB). Jakarta = UTC+7, so 21:00 WIB = 14:00 UTC.
+ *  Draw window: 14:00–17:00 UTC Sunday. After 17:00 UTC, countdown rolls to next Sunday. */
 function getNextDrawTime(): Date {
   const now = new Date();
   const day = now.getUTCDay();
   const hour = now.getUTCHours();
-  const minute = now.getUTCMinutes();
 
   let daysToAdd = (7 - day) % 7;
-  if (daysToAdd === 0 && (hour > 14 || (hour === 14 && minute >= 0))) {
+  if (daysToAdd === 0 && hour >= 17) {
     daysToAdd = 7;
   }
 
