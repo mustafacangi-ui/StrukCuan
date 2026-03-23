@@ -9,7 +9,37 @@
 -- Tüm karşılaştırmalar ::text cast ile yapılır
 -- =============================================================================
 
--- 1) ESKI FONKSİYON İMZALARINI TEMİZLE
+-- 1) KOLON ADI DÜZELTMESİ: "image" → "image_url"
+-- Bazı migration'larda receipts.image olarak oluşturuldu, doğrusu image_url
+do $$
+begin
+  -- Eğer image_url kolonu yoksa ve image kolonu varsa, rename et
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'receipts' and column_name = 'image'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'receipts' and column_name = 'image_url'
+  ) then
+    alter table public.receipts rename column image to image_url;
+    raise notice 'receipts.image renamed to image_url';
+  end if;
+
+  -- Eğer ikisi de yoksa, image_url ekle
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'receipts' and column_name = 'image_url'
+  ) then
+    alter table public.receipts add column image_url text;
+    raise notice 'receipts.image_url column added';
+  end if;
+end;
+$$;
+
+-- receipt_index_today kolonu da yoksa ekle
+alter table public.receipts add column if not exists receipt_index_today integer;
+
+-- 2) ESKI FONKSİYON İMZALARINI TEMİZLE
 drop function if exists public.create_receipt(text, text, text, integer, integer);
 drop function if exists public.create_receipt(uuid, text, text, integer, integer);
 drop function if exists public.get_receipts_today_count(text);
