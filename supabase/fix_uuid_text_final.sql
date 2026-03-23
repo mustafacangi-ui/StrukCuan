@@ -36,10 +36,23 @@ begin
 end;
 $$;
 
--- Eksik kolonları ekle (idempotent - varsa hata vermez)
+-- receipts tablosundaki tüm eksik kolonları ekle (idempotent)
 alter table public.receipts add column if not exists store text;
 alter table public.receipts add column if not exists total numeric;
 alter table public.receipts add column if not exists receipt_index_today integer;
+
+-- status kolonu: enum varsa text olarak ekle, sonra default ayarla
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'receipts' and column_name = 'status'
+  ) then
+    alter table public.receipts add column status text not null default 'pending';
+    raise notice 'receipts.status column added as text';
+  end if;
+end;
+$$;
 
 -- 2) ESKI FONKSİYON İMZALARINI TEMİZLE
 drop function if exists public.create_receipt(text, text, text, integer, integer);
