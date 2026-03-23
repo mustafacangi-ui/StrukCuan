@@ -291,7 +291,9 @@
     "hallOfFame": "Pemenang Undian",
     "winner": "Pemenang",
     "topHunters": "Pemburu Terbaik",
-    "myPosition": "Posisiku"
+    "myPosition": "Posisiku",
+    "noWinnersYet": "Belum ada pemenang undian — undian pertama segera hadir!",
+    "anonymous": "Anonim"
   },
   "invite": {
     "title": "Undang",

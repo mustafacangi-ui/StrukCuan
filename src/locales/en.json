@@ -291,7 +291,9 @@
     "hallOfFame": "Draw Winners",
     "winner": "Winner",
     "topHunters": "Top Hunters",
-    "myPosition": "My Position"
+    "myPosition": "My Position",
+    "noWinnersYet": "No draw winners yet — first draw coming soon!",
+    "anonymous": "Anonymous"
   },
   "invite": {
     "title": "Invite",
