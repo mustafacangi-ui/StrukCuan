@@ -44,7 +44,7 @@ If users return to **`*.vercel.app/?code=...`** after Google or email login, Sup
 
 In **Supabase Dashboard** → **Authentication** → **URL Configuration**:
 
-- Set **Site URL** to: `https://www.strukcuan.com`  
+- Set **Site URL** to: `https://www.strukcuan.com` (full URL with `https://`, not `www.strukcuan.com` alone — otherwise redirects become `*.supabase.co/www.strukcuan.com` and show `requested path is invalid`).  
   (Do **not** leave the default `https://struk-cuan.vercel.app` here.)
 
 ### 2) Redirect URLs
@@ -62,7 +62,7 @@ Optional (only if you still test on Vercel directly):
 
 In **Vercel** → Project → **Settings** → **Environment Variables** (Production):
 
-- `VITE_APP_URL` = `https://www.strukcuan.com`
+- `VITE_APP_URL` = `https://www.strukcuan.com` (**must** start with `https://`; if you save `www.strukcuan.com` only, magic links break with `supabase.co/www.strukcuan.com?code=...`)
 
 Redeploy after saving so the client bundle bakes in the correct canonical URL for `signInWithOAuth` / `emailRedirectTo`.
 

@@ -1,10 +1,15 @@
 /**
  * Canonical public URL (no trailing slash).
- * Set VITE_APP_URL in Vercel Production = https://www.strukcuan.com so OAuth/email redirects never use the default Vercel host.
+ * MUST include https:// — if you use "www.strukcuan.com" only, Supabase treats it as a path and opens
+ * https://PROJECT.supabase.co/www.strukcuan.com?code=... → {"error":"requested path is invalid"}
  */
 function normalizeOrigin(url: string): string {
-  const t = url.trim().replace(/\/+$/, "");
-  return t || "https://www.strukcuan.com";
+  let t = url.trim().replace(/\/+$/, "");
+  if (!t) return "https://www.strukcuan.com";
+  if (!/^https?:\/\//i.test(t)) {
+    t = `https://${t.replace(/^\/+/, "")}`;
+  }
+  return t;
 }
 
 const envApp =
