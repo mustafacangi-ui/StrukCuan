@@ -1,22 +1,30 @@
 /**
- * Production app URL. The app runs ONLY on this domain.
- * OAuth redirects, invite links, and shared URLs always use this.
+ * Canonical public URL (no trailing slash).
+ * Set VITE_APP_URL in Vercel Production = https://www.strukcuan.com so OAuth/email redirects never use the default Vercel host.
  */
-export const APP_URL = "https://www.strukcuan.com";
+function normalizeOrigin(url: string): string {
+  const t = url.trim().replace(/\/+$/, "");
+  return t || "https://www.strukcuan.com";
+}
 
-/** Hostnames that must redirect to APP_URL (auth runs only on production) */
+const envApp =
+  typeof import.meta.env.VITE_APP_URL === "string" ? import.meta.env.VITE_APP_URL : "";
+
+export const APP_URL = normalizeOrigin(envApp || "https://www.strukcuan.com");
+
+/** Hostnames that must redirect to APP_URL before the SPA runs (see main.tsx) */
 export const REDIRECT_HOSTS = ["struk-cuan.vercel.app", "strukcuan.com"];
 
 /**
- * OAuth redirect URL. On localhost: ALWAYS return current origin (port included).
- * NEVER redirect to production on localhost - enables local testing.
- * Returns e.g. http://localhost:8080 or http://localhost:5173
+ * Where Supabase sends the user after Google OAuth / magic link (must be listed in Supabase Redirect URLs + match Site URL domain).
+ * Localhost: current origin only.
+ * Production: always APP_URL (canonical www), never *.vercel.app — even if someone opened the preview URL by mistake.
  */
 export function getAuthRedirectUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0") {
-      return window.location.origin; // includes port: http://localhost:8080
+      return window.location.origin;
     }
   }
   return APP_URL;
