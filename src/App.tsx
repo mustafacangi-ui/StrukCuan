@@ -33,6 +33,7 @@ const NotFound      = lazy(() => import("./pages/NotFound"));
 const Onboarding    = lazy(() => import("./pages/Onboarding"));
 const Admin         = lazy(() => import("./pages/Admin"));
 const ReceiptHistory = lazy(() => import("./pages/ReceiptHistory"));
+const LoginSheet = lazy(() => import("./components/LoginSheet"));
 
 // Minimal dark spinner shown while a lazy page chunk is downloading
 function PageLoader() {
@@ -55,6 +56,10 @@ const App = () => (
           <BrowserRouter>
             <ReferralCapture />
             <PostLoginRedirect />
+            {/* Global login modal — same UX on home, rank, invite, etc. */}
+            <Suspense fallback={null}>
+              <LoginSheet />
+            </Suspense>
             {/* Single Suspense boundary — handles all lazy route chunks */}
             <Suspense fallback={<PageLoader />}>
               <Routes>

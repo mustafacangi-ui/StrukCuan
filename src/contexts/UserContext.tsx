@@ -17,7 +17,10 @@ export interface UserData {
   countryCode?: string;
 }
 
-type PendingAction = "camera" | "profile" | null;
+/** Where to send the user after a successful login from the global LoginSheet */
+export type LoginRedirectAction = "camera" | "profile" | "rank" | "invite";
+
+type PendingAction = LoginRedirectAction | null;
 
 interface UserContextType {
   user: UserData | null;
@@ -37,7 +40,7 @@ interface UserContextType {
   togglePushNotifications: () => void;
   showLoginSheet: boolean;
   pendingAction: PendingAction;
-  requireLogin: (action: PendingAction) => void;
+  requireLogin: (action: LoginRedirectAction) => void;
   dismissLogin: () => void;
   authMode: "phone" | "email";
   setAuthMode: (mode: "phone" | "email") => void;
@@ -298,7 +301,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [session, buildUserFromSession]);
 
-  const requireLogin = useCallback(async (action: PendingAction) => {
+  const requireLogin = useCallback(async (action: LoginRedirectAction) => {
     setPendingAction(action);
     // Localhost: zorunlu anonim giriş - hiçbir yere yönlendirmeden arka planda signInAnonymously
     if (IS_LOCALHOST) {

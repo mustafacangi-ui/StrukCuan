@@ -19,8 +19,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 const CameraScanner   = lazy(() => import("@/components/CameraScanner"));
 // WeeklyRewardCard: below the fold, deferred until visible
 const WeeklyRewardCard = lazy(() => import("@/components/WeeklyRewardCard"));
-// LoginSheet + LegalFooter: rarely/never needed on first paint
-const LoginSheet      = lazy(() => import("@/components/LoginSheet"));
+// LegalFooter: below the fold
 const LegalFooter     = lazy(() => import("@/components/LegalFooter"));
 
 
@@ -1000,7 +999,6 @@ const Index = () => {
         </section>
 
         <Suspense fallback={null}><LegalFooter /></Suspense>
-        <Suspense fallback={null}><LoginSheet /></Suspense>
         <BottomNav />
 
         {scannerMode && (

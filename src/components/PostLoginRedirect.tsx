@@ -16,6 +16,10 @@ const PostLoginRedirect = () => {
       navigate("/home", { state: { openCamera: true } });
     } else if (pendingAction === "profile") {
       navigate("/settings");
+    } else if (pendingAction === "rank") {
+      navigate("/leaderboard", { replace: true });
+    } else if (pendingAction === "invite") {
+      navigate("/invite", { replace: true });
     }
     dismissLogin();
   }, [session, pendingAction, navigate, dismissLogin]);

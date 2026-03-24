@@ -14,7 +14,7 @@ import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 export default function Invite() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, isOnboarded, isLoading } = useUser();
+  const { user, isOnboarded, isLoading, requireLogin } = useUser();
   const { data: referralCode, isLoading: codeLoading, ensureReferralCode, fallbackCode } = useReferralCode(user?.id);
   const { data: friendsJoined = 0 } = useReferralCount(user?.id);
 
@@ -22,10 +22,8 @@ export default function Invite() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isOnboarded) {
-      navigate("/onboarding", { replace: true });
-    }
-  }, [isLoading, isOnboarded, navigate]);
+    if (!isOnboarded) requireLogin("invite");
+  }, [isLoading, isOnboarded, requireLogin]);
 
   // Ensure referral_code exists when we have user but no code from DB
   useEffect(() => {
@@ -115,8 +113,6 @@ export default function Invite() {
       }
     }
   };
-
-  if (!isOnboarded && !isLoading) return null;
 
   return (
     <div className="min-h-screen pb-28 max-w-[420px] mx-auto relative">

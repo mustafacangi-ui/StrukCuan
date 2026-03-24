@@ -42,16 +42,14 @@ const RANK_STYLES = [
 export default function Leaderboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOnboarded, isLoading } = useUser();
+  const { user, isOnboarded, isLoading, requireLogin } = useUser();
   const { data: leaderboard = [], isLoading: leaderboardLoading, error } = useLeaderboard(user?.id, 50);
   const { data: winners = [] } = useLotteryWinners(5);
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isOnboarded) navigate("/onboarding", { replace: true });
-  }, [isLoading, isOnboarded, navigate]);
-
-  if (!isOnboarded && !isLoading) return null;
+    if (!isOnboarded) requireLogin("rank");
+  }, [isLoading, isOnboarded, requireLogin]);
 
   const realWinners = winners.filter((w) => w.winner_name && w.winner_name !== "—");
 
