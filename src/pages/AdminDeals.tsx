@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
   usePendingDeals,
   useApproveDeal,
   useRejectDeal,
-  type PendingDeal,
 } from "@/hooks/useAdminDeals";
 
 function useUserNicknames(userIds: string[]) {
@@ -26,15 +27,8 @@ function useUserNicknames(userIds: string[]) {
   });
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const today = new Date();
-  const isToday = d.toDateString() === today.toDateString();
-  if (isToday) return "Bugün";
-  return d.toLocaleDateString();
-}
-
 export default function AdminDeals() {
+  const { t } = useTranslation();
   const { data: deals = [], isLoading, error } = usePendingDeals();
   const approve = useApproveDeal();
   const reject = useRejectDeal();
@@ -42,22 +36,32 @@ export default function AdminDeals() {
   const userIds = [...new Set(deals.filter((d) => d.user_id).map((d) => d.user_id!))];
   const { data: nicknames = new Map() } = useUserNicknames(userIds);
 
+  const formatDate = (dateStr: string): string => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const isToday = d.toDateString() === today.toDateString();
+    if (isToday) return t("admin.deals.today");
+    return d.toLocaleDateString();
+  };
+
   return (
     <div className="p-4">
       <div className="mb-4">
-        <h2 className="font-display font-bold text-foreground">Bekleyen İndirimler</h2>
-        <p className="text-[10px] text-muted-foreground">{deals.length} pending</p>
+        <h2 className="font-display font-bold text-foreground">{t("admin.deals.title")}</h2>
+        <p className="text-[10px] text-muted-foreground">
+          {t("admin.deals.pendingCount", { count: deals.length })}
+        </p>
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
         {isLoading && (
-          <div className="p-8 text-center text-muted-foreground">Yükleniyor...</div>
+          <div className="p-8 text-center text-muted-foreground">{t("admin.deals.loading")}</div>
         )}
         {error && (
-          <div className="p-4 text-center text-destructive">Yüklenemedi</div>
+          <div className="p-4 text-center text-destructive">{t("admin.deals.loadError")}</div>
         )}
         {!isLoading && !error && deals.length === 0 && (
-          <div className="p-8 text-center text-muted-foreground">Bekleyen indirim yok.</div>
+          <div className="p-8 text-center text-muted-foreground">{t("admin.deals.empty")}</div>
         )}
         {!isLoading && !error && deals.length > 0 && (
           <div className="overflow-x-auto">
@@ -65,22 +69,22 @@ export default function AdminDeals() {
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    Kullanıcı
+                    {t("admin.deals.colUser")}
                   </th>
                   <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    Ürün
+                    {t("admin.deals.colProduct")}
                   </th>
                   <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    Mağaza
+                    {t("admin.deals.colStore")}
                   </th>
                   <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    Görsel
+                    {t("admin.deals.colImage")}
                   </th>
                   <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    Tarih
+                    {t("admin.deals.colDate")}
                   </th>
                   <th className="text-right px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase">
-                    İşlem
+                    {t("admin.deals.colAction")}
                   </th>
                 </tr>
               </thead>
@@ -101,9 +105,7 @@ export default function AdminDeals() {
                         {d.discount != null ? ` · %${d.discount}` : ""}
                       </p>
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {d.store || "-"}
-                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{d.store || "-"}</td>
                     <td className="px-3 py-2">
                       <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0">
                         {d.image ? (
@@ -126,18 +128,30 @@ export default function AdminDeals() {
                     <td className="px-3 py-2 text-right">
                       <div className="flex gap-2 justify-end">
                         <button
-                          onClick={() => approve.mutate(d.id)}
+                          type="button"
+                          onClick={() =>
+                            approve.mutate(d.id, {
+                              onSuccess: () => toast.success(t("admin.toast.dealApproved")),
+                              onError: () => toast.error(t("admin.toast.dealActionFailed")),
+                            })
+                          }
                           disabled={approve.isPending || reject.isPending}
                           className="rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                         >
-                          {approve.isPending ? "..." : "Onayla"}
+                          {approve.isPending ? "..." : t("common.approve")}
                         </button>
                         <button
-                          onClick={() => reject.mutate(d.id)}
+                          type="button"
+                          onClick={() =>
+                            reject.mutate(d.id, {
+                              onSuccess: () => toast.success(t("admin.toast.dealRejected")),
+                              onError: () => toast.error(t("admin.toast.dealActionFailed")),
+                            })
+                          }
                           disabled={approve.isPending || reject.isPending}
                           className="rounded-lg border border-destructive/50 px-3 py-1.5 text-[10px] font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
                         >
-                          {reject.isPending ? "..." : "Reddet"}
+                          {reject.isPending ? "..." : t("common.reject")}
                         </button>
                       </div>
                     </td>

@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { DEALS_QUERY_KEY } from "./useDeals";
 
 export interface PendingDeal {
-  id: number;
+  id: number | string;
   lat: number;
   lng: number;
   product_name?: string | null;
@@ -42,8 +42,10 @@ export function usePendingDeals() {
 export function useApproveDeal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (dealId: number) => {
-      const { error } = await supabase.rpc("approve_deal", { p_deal_id: dealId });
+    mutationFn: async (dealId: number | string) => {
+      const id = typeof dealId === "string" ? Number(dealId) : dealId;
+      if (!Number.isFinite(id)) throw new Error("Invalid deal id");
+      const { error } = await supabase.rpc("approve_deal", { p_deal_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -55,8 +57,10 @@ export function useApproveDeal() {
 export function useRejectDeal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (dealId: number) => {
-      const { error } = await supabase.rpc("reject_deal", { p_deal_id: dealId });
+    mutationFn: async (dealId: number | string) => {
+      const id = typeof dealId === "string" ? Number(dealId) : dealId;
+      if (!Number.isFinite(id)) throw new Error("Invalid deal id");
+      const { error } = await supabase.rpc("reject_deal", { p_deal_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

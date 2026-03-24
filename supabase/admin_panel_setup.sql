@@ -19,7 +19,7 @@ declare
   v_is_admin boolean;
 begin
   select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats where user_id = auth.uid()::text;
+  from public.user_stats where user_id = auth.uid();
   if not v_is_admin then
     raise exception 'Unauthorized: admin only';
   end if;
@@ -36,7 +36,7 @@ declare
   v_is_admin boolean;
 begin
   select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats where user_id = auth.uid()::text;
+  from public.user_stats where user_id = auth.uid();
   if not v_is_admin then
     raise exception 'Unauthorized: admin only';
   end if;

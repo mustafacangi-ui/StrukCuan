@@ -234,7 +234,7 @@ export function useApproveReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (receiptId: number) => {
+    mutationFn: async (receiptId: string | number) => {
       const { error } = await supabase.rpc("approve_receipt", {
         p_receipt_id: receiptId,
       });
@@ -291,7 +291,7 @@ export function useRejectReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (receiptId: number) => {
+    mutationFn: async (receiptId: string | number) => {
       const { error } = await supabase.rpc("reject_receipt", {
         p_receipt_id: receiptId,
       });

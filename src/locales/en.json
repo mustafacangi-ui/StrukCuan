@@ -500,11 +500,33 @@
     "subtitle": "Receipt and deal approval",
     "tabs": {
       "dashboard": "Dashboard",
-      "receipts": "Receipts",
-      "deals": "Deals"
+      "receipts": "Receipt approval",
+      "deals": "Deal approval"
+    },
+    "dashboard": {
+      "intro": "Use the Receipt approval or Deal approval tab above to review pending items.",
+      "receiptCardTitle": "Receipt approval",
+      "receiptCardDesc": "Approve pending receipts",
+      "dealCardTitle": "Deal approval",
+      "dealCardDesc": "Approve pending map deals"
+    },
+    "deals": {
+      "title": "Pending deals",
+      "pendingCount": "{{count}} pending",
+      "loading": "Loading...",
+      "loadError": "Could not load",
+      "empty": "No pending deals.",
+      "colUser": "User",
+      "colProduct": "Product",
+      "colStore": "Store",
+      "colImage": "Image",
+      "colDate": "Date",
+      "colAction": "Action",
+      "today": "Today"
     },
     "receipts": {
-      "title": "Pending Receipts",
+      "title": "Pending receipts",
+      "subtitle": "{{count}} pending · Tap Review to moderate",
       "colUser": "User",
       "colReceipt": "Receipt",
       "colToday": "Today",
@@ -514,13 +536,24 @@
       "error": "Failed to load receipts",
       "empty": "No pending receipts.",
       "review": "Review",
+      "modalSubtitle": "Receipt {{index}}/3 today · {{datetime}}",
       "previousToday": "Previous receipts today",
+      "viewThumb": "View",
       "cuanLabel": "Cuan",
       "ticketLabel": "Ticket",
       "approveWithRewards": "Approve (+{{cuan}} cuan, +{{ticket}} ticket)",
       "reject": "Reject",
       "noAccess": "You don't have access to this page.",
-      "backHome": "Back to home"
+      "backHome": "Back to home",
+      "close": "Close"
+    },
+    "toast": {
+      "dealApproved": "Deal approved",
+      "dealRejected": "Deal rejected",
+      "dealActionFailed": "Could not update deal. Check admin access or try again.",
+      "receiptApproved": "Receipt approved",
+      "receiptRejected": "Receipt rejected",
+      "receiptActionFailed": "Could not update receipt. Run DB migration admin_receipts_deals_fix.sql if this persists."
     }
   },
   "notFound": {

@@ -35,12 +35,12 @@ export default function Admin() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <p className="text-muted-foreground text-center">Bu sayfaya erişim yetkiniz yok.</p>
+        <p className="text-muted-foreground text-center">{t("admin.receipts.noAccess")}</p>
         <button
           onClick={() => navigate("/home")}
           className="mt-4 text-primary font-semibold hover:underline"
         >
-          Ana sayfaya dön
+          {t("admin.receipts.backHome")}
         </button>
       </div>
     );
@@ -58,8 +58,8 @@ export default function Admin() {
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <div className="flex-1">
-            <h1 className="font-display text-lg font-bold text-foreground">Admin Panel</h1>
-            <p className="text-[10px] text-muted-foreground">Fiş ve indirim onaylama</p>
+            <h1 className="font-display text-lg font-bold text-foreground">{t("admin.title")}</h1>
+            <p className="text-[10px] text-muted-foreground">{t("admin.subtitle")}</p>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export default function Admin() {
             }`}
           >
             <LayoutDashboard size={16} />
-            Dashboard
+            {t("admin.tabs.dashboard")}
           </button>
           <button
             onClick={() => setTab("receipts")}
@@ -81,7 +81,7 @@ export default function Admin() {
             }`}
           >
             <Receipt size={16} />
-            Fiş Onayı
+            {t("admin.tabs.receipts")}
           </button>
           <button
             onClick={() => setTab("deals")}
@@ -90,7 +90,7 @@ export default function Admin() {
             }`}
           >
             <MapPin size={16} />
-            İndirim Onayı
+            {t("admin.tabs.deals")}
           </button>
         </div>
       </div>
@@ -101,10 +101,7 @@ export default function Admin() {
           <div className="p-4 space-y-4">
             <div className="rounded-xl border border-border bg-card p-4">
               <h2 className="font-display font-bold text-foreground mb-2">{t("auth.welcome")}</h2>
-              <p className="text-sm text-muted-foreground">
-                Sol menüden <strong>Fiş Onayı</strong> veya <strong>İndirim Onayı</strong> sekmesine geçerek
-                bekleyen onayları yönetebilirsiniz.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("admin.dashboard.intro")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -112,16 +109,16 @@ export default function Admin() {
                 className="rounded-xl border-2 border-border p-4 text-left hover:border-primary/50 hover:bg-primary/5 transition-colors"
               >
                 <Receipt size={24} className="text-primary mb-2" />
-                <p className="font-semibold text-foreground">Fiş Onayı</p>
-                <p className="text-[10px] text-muted-foreground">Bekleyen fişleri onayla</p>
+                <p className="font-semibold text-foreground">{t("admin.dashboard.receiptCardTitle")}</p>
+                <p className="text-[10px] text-muted-foreground">{t("admin.dashboard.receiptCardDesc")}</p>
               </button>
               <button
                 onClick={() => setTab("deals")}
                 className="rounded-xl border-2 border-border p-4 text-left hover:border-primary/50 hover:bg-primary/5 transition-colors"
               >
                 <MapPin size={24} className="text-red-500 mb-2" />
-                <p className="font-semibold text-foreground">İndirim Onayı</p>
-                <p className="text-[10px] text-muted-foreground">Bekleyen indirimleri onayla</p>
+                <p className="font-semibold text-foreground">{t("admin.dashboard.dealCardTitle")}</p>
+                <p className="text-[10px] text-muted-foreground">{t("admin.dashboard.dealCardDesc")}</p>
               </button>
             </div>
           </div>

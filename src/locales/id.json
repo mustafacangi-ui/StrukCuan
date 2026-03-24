@@ -499,11 +499,33 @@
     "subtitle": "Persetujuan struk dan promo",
     "tabs": {
       "dashboard": "Dashboard",
-      "receipts": "Struk",
-      "deals": "Promo"
+      "receipts": "Persetujuan struk",
+      "deals": "Persetujuan promo"
+    },
+    "dashboard": {
+      "intro": "Gunakan tab Persetujuan struk atau Persetujuan promo di atas untuk meninjau item yang menunggu.",
+      "receiptCardTitle": "Persetujuan struk",
+      "receiptCardDesc": "Setujui struk yang menunggu",
+      "dealCardTitle": "Persetujuan promo",
+      "dealCardDesc": "Setujui promo di peta yang menunggu"
+    },
+    "deals": {
+      "title": "Promo menunggu",
+      "pendingCount": "{{count}} menunggu",
+      "loading": "Memuat...",
+      "loadError": "Gagal memuat",
+      "empty": "Tidak ada promo menunggu.",
+      "colUser": "Pengguna",
+      "colProduct": "Produk",
+      "colStore": "Toko",
+      "colImage": "Gambar",
+      "colDate": "Tanggal",
+      "colAction": "Aksi",
+      "today": "Hari ini"
     },
     "receipts": {
-      "title": "Struk Menunggu",
+      "title": "Struk menunggu",
+      "subtitle": "{{count}} menunggu · Ketuk Tinjau untuk moderasi",
       "colUser": "Pengguna",
       "colReceipt": "Struk",
       "colToday": "Hari ini",
@@ -513,13 +535,24 @@
       "error": "Gagal memuat struk",
       "empty": "Tidak ada struk menunggu.",
       "review": "Tinjau",
+      "modalSubtitle": "Struk {{index}}/3 hari ini · {{datetime}}",
       "previousToday": "Struk sebelumnya hari ini",
+      "viewThumb": "Lihat",
       "cuanLabel": "Cuan",
       "ticketLabel": "Tiket",
       "approveWithRewards": "Setujui (+{{cuan}} cuan, +{{ticket}} tiket)",
       "reject": "Tolak",
       "noAccess": "Anda tidak memiliki akses ke halaman ini.",
-      "backHome": "Kembali ke beranda"
+      "backHome": "Kembali ke beranda",
+      "close": "Tutup"
+    },
+    "toast": {
+      "dealApproved": "Promo disetujui",
+      "dealRejected": "Promo ditolak",
+      "dealActionFailed": "Gagal memperbarui promo. Periksa akses admin atau coba lagi.",
+      "receiptApproved": "Struk disetujui",
+      "receiptRejected": "Struk ditolak",
+      "receiptActionFailed": "Gagal memperbarui struk. Jalankan migrasi SQL admin_receipts_deals_fix.sql jika masih terjadi."
     }
   },
   "notFound": {
