@@ -3,9 +3,10 @@
 -- Prerequisites: receipts.id = uuid, user_stats.user_id = uuid, upsert_user_ticket(uuid, int, int).
 --
 -- Admin access (deal + receipt RPCs + optional client):
---   A) public.user_stats.is_admin = true for your user_id, OR
---   B) Supabase Dashboard → Authentication → user → User Metadata / App metadata:
---      add JSON key "is_admin": true under App metadata (raw_app_meta_data).
+--   A) public.user_stats.is_admin = true for your user, OR
+--   B) Dashboard → Authentication → user → App metadata: { "is_admin": true }
+--   Do NOT paste placeholder text as UUID — use real User UID or run set_admin_by_email.sql
+--   (replace the email string with yours; see supabase/set_admin_by_email.sql).
 --   VITE_ADMIN_IDS alone does NOT grant RPC access (dev-only UI bypass in the app).
 
 -- ─────────────────────────────────────────────────────────────────────────────
