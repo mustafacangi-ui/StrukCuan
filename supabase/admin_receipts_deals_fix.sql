@@ -5,8 +5,9 @@
 -- Admin access (deal + receipt RPCs + optional client):
 --   A) public.user_stats.is_admin = true for your user, OR
 --   B) Dashboard → Authentication → user → App metadata: { "is_admin": true }
---   Do NOT paste placeholder text as UUID — use real User UID or run set_admin_by_email.sql
---   (replace the email string with yours; see supabase/set_admin_by_email.sql).
+--   Do NOT paste placeholder text as UUID — use real User UID, or run:
+--   bootstrap_admin_complete.sql (user_stats + auth app_metadata, one email), or
+--   set_admin_by_email.sql (user_stats only).
 --   VITE_ADMIN_IDS alone does NOT grant RPC access (dev-only UI bypass in the app).
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +87,16 @@ begin
   end if;
 end;
 $$;
+
+grant execute on function public.approve_deal(bigint) to authenticated;
+grant execute on function public.reject_deal(bigint) to authenticated;
+
+-- Deals: explicit UPDATE for admins (belt-and-suspenders if RLS affects RPC edge cases)
+drop policy if exists "Admins update deals" on public.deals;
+create policy "Admins update deals"
+  on public.deals for update to authenticated
+  using ( public.get_is_admin() )
+  with check ( public.get_is_admin() );
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3) Receipt approve/reject — UUID id (parallel to legacy bigint overloads)
