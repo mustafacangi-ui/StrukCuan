@@ -1,6 +1,51 @@
 -- Admin: receipt UUID RPCs + RLS so admins can list all pending receipts.
 -- Also normalizes is_admin checks for UUID user_stats (run in Supabase SQL Editor).
 -- Prerequisites: receipts.id = uuid, user_stats.user_id = uuid, upsert_user_ticket(uuid, int, int).
+--
+-- Admin access (deal + receipt RPCs + optional client):
+--   A) public.user_stats.is_admin = true for your user_id, OR
+--   B) Supabase Dashboard → Authentication → user → User Metadata / App metadata:
+--      add JSON key "is_admin": true under App metadata (raw_app_meta_data).
+--   VITE_ADMIN_IDS alone does NOT grant RPC access (dev-only UI bypass in the app).
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0) Single source: admin = user_stats.is_admin OR auth app_metadata.is_admin
+-- ─────────────────────────────────────────────────────────────────────────────
+create or replace function public.get_is_admin()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_stats boolean;
+  v_meta boolean;
+begin
+  if v_uid is null then
+    return false;
+  end if;
+
+  select coalesce(us.is_admin, false) into v_stats
+  from public.user_stats us
+  where us.user_id::text = v_uid::text
+  limit 1;
+
+  if coalesce(v_stats, false) then
+    return true;
+  end if;
+
+  select coalesce((u.raw_app_meta_data->>'is_admin')::boolean, false)
+  into v_meta
+  from auth.users u
+  where u.id = v_uid;
+
+  return coalesce(v_meta, false);
+end;
+$$;
+
+grant execute on function public.get_is_admin() to authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1) RLS: admins can read all receipts (OR with existing "own receipts" policy)
@@ -8,27 +53,15 @@
 drop policy if exists "Admins select all receipts" on public.receipts;
 create policy "Admins select all receipts"
   on public.receipts for select to authenticated
-  using (
-    exists (
-      select 1 from public.user_stats u
-      where u.user_id = auth.uid()
-        and coalesce(u.is_admin, false) = true
-    )
-  );
+  using ( public.get_is_admin() );
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2) Deal RPCs: match user_stats.user_id as uuid (works if column is uuid)
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function public.approve_deal(p_deal_id bigint)
 returns void language plpgsql security definer set search_path = public as $$
-declare
-  v_is_admin boolean;
 begin
-  select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats
-  where user_id = auth.uid();
-
-  if not coalesce(v_is_admin, false) then
+  if not public.get_is_admin() then
     raise exception 'Unauthorized: admin only';
   end if;
 
@@ -41,14 +74,8 @@ $$;
 
 create or replace function public.reject_deal(p_deal_id bigint)
 returns void language plpgsql security definer set search_path = public as $$
-declare
-  v_is_admin boolean;
 begin
-  select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats
-  where user_id = auth.uid();
-
-  if not coalesce(v_is_admin, false) then
+  if not public.get_is_admin() then
     raise exception 'Unauthorized: admin only';
   end if;
 
@@ -78,13 +105,8 @@ declare
   v_cur integer;
   v_add integer;
   i integer;
-  v_is_admin boolean;
 begin
-  select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats
-  where user_id = auth.uid();
-
-  if not coalesce(v_is_admin, false) then
+  if not public.get_is_admin() then
     raise exception 'Unauthorized: admin only';
   end if;
 
@@ -138,14 +160,8 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_is_admin boolean;
 begin
-  select coalesce(is_admin, false) into v_is_admin
-  from public.user_stats
-  where user_id = auth.uid();
-
-  if not coalesce(v_is_admin, false) then
+  if not public.get_is_admin() then
     raise exception 'Unauthorized: admin only';
   end if;
 

@@ -550,7 +550,7 @@
     "toast": {
       "dealApproved": "Deal approved",
       "dealRejected": "Deal rejected",
-      "dealActionFailed": "Could not update deal. Check admin access or try again.",
+      "dealActionFailed": "Could not update deal. In Supabase: set user_stats.is_admin = true for your user, or add App metadata {\"is_admin\":true}, and run admin_receipts_deals_fix.sql (includes get_is_admin).",
       "receiptApproved": "Receipt approved",
       "receiptRejected": "Receipt rejected",
       "receiptActionFailed": "Could not update receipt. Run DB migration admin_receipts_deals_fix.sql if this persists."

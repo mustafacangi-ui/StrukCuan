@@ -549,7 +549,7 @@
     "toast": {
       "dealApproved": "Promo disetujui",
       "dealRejected": "Promo ditolak",
-      "dealActionFailed": "Gagal memperbarui promo. Periksa akses admin atau coba lagi.",
+      "dealActionFailed": "Gagal memperbarui promo. Di Supabase: set user_stats.is_admin = true untuk user Anda, atau tambah App metadata {\"is_admin\":true}, lalu jalankan admin_receipts_deals_fix.sql (berisi get_is_admin).",
       "receiptApproved": "Struk disetujui",
       "receiptRejected": "Struk ditolak",
       "receiptActionFailed": "Gagal memperbarui struk. Jalankan migrasi SQL admin_receipts_deals_fix.sql jika masih terjadi."
