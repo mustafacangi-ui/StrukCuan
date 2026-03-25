@@ -89,7 +89,7 @@ export default function WeeklyRewardCard() {
         </div>
       )}
 
-      <div className="mx-4 rounded-2xl p-6 bg-black/40 backdrop-blur-lg border border-white/20 shadow-2xl ring-1 ring-white/10">
+      <div className="mx-4 rounded-2xl p-6 bg-card border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-2xl dark:ring-1 dark:ring-white/10">
         <div className="flex items-center gap-3 mb-3">
           {/* ── Animated gift icon ── */}
           <div className="relative flex-shrink-0 w-9 h-9">
@@ -140,45 +140,34 @@ export default function WeeklyRewardCard() {
             </div>
           </div>
 
-          <h2 className="font-display text-sm font-bold text-white">{t("weeklyReward.cardTitle")}</h2>
+          <h2 className="font-display text-sm font-bold text-foreground">{t("weeklyReward.cardTitle")}</h2>
         </div>
 
-        <p className="font-display text-lg font-bold text-white">{t("weeklyReward.headline")}</p>
-        <p className="text-xs text-white/80 mt-0.5">{t("weeklyReward.subhead")}</p>
+        <p className="font-display text-lg font-bold text-foreground">{t("weeklyReward.headline")}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t("weeklyReward.subhead")}</p>
 
-        <div className="mt-4 p-4 rounded-xl bg-black/40 border border-white/20 backdrop-blur-lg shadow-2xl ring-1 ring-white/10">
-          <p className="text-[10px] text-white/80">{t("weeklyReward.poolLabel")}</p>
+        <div className="mt-4 p-4 rounded-xl bg-muted/80 border border-border dark:bg-black/40 dark:border-white/20 dark:backdrop-blur-lg dark:shadow-2xl dark:ring-1 dark:ring-white/10">
+          <p className="text-[10px] text-muted-foreground">{t("weeklyReward.poolLabel")}</p>
           <p className="font-display text-sm font-bold text-[#00FF88]">{t("weeklyReward.poolValue")}</p>
         </div>
 
         {/* ── Ticket → Entry system ────────────────────────────── */}
-        <div
-          className="mt-4 rounded-xl p-4 relative overflow-hidden"
-          style={{
-            background: "rgba(0,0,0,0.28)",
-            border: "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
+        <div className="mt-4 rounded-xl p-4 relative overflow-hidden bg-muted/60 border border-border dark:bg-black/40 dark:border-white/[0.07]">
           {/* Rule — subtle helper text */}
-          <p
-            className="text-[10px] mb-3 font-medium"
-            style={{ color: "rgba(255,255,255,0.38)" }}
-          >
-            {t("weeklyReward.rule")}
-          </p>
+          <p className="text-[10px] mb-3 font-medium text-muted-foreground">{t("weeklyReward.rule")}</p>
 
           {/* Ticket count */}
           <div className="flex items-baseline gap-1.5 mb-1">
-            <span className="font-display text-[12px] text-white/55">{t("weeklyReward.youHave")}</span>
-            <span className="font-display text-[20px] font-extrabold text-white tabular-nums">
+            <span className="font-display text-[12px] text-muted-foreground">{t("weeklyReward.youHave")}</span>
+            <span className="font-display text-[20px] font-extrabold text-foreground tabular-nums">
               {ticketCount}
             </span>
-            <span className="font-display text-[12px] text-white/55">{t("weeklyReward.ticketsWord")}</span>
+            <span className="font-display text-[12px] text-muted-foreground">{t("weeklyReward.ticketsWord")}</span>
           </div>
 
           {/* Entries — the number that matters */}
           <div className="flex items-center gap-2.5 mb-4">
-            <span className="text-[13px] text-white/30">=</span>
+            <span className="text-[13px] text-muted-foreground/70">=</span>
             <span
               className="font-display text-[32px] font-extrabold leading-none tabular-nums"
               style={{
@@ -189,50 +178,35 @@ export default function WeeklyRewardCard() {
               {entries}
             </span>
             <div>
-              <p className="font-display text-[14px] font-bold text-white leading-tight">
+              <p className="font-display text-[14px] font-bold text-foreground leading-tight">
                 {t("weeklyReward.entriesWord")}
               </p>
-              <p className="text-[10px] leading-tight" style={{ color: "rgba(255,255,255,0.42)" }}>
-                {t("weeklyReward.lotteryChances")}
-              </p>
+              <p className="text-[10px] leading-tight text-muted-foreground">{t("weeklyReward.lotteryChances")}</p>
             </div>
           </div>
 
           {/* Progress to next entry */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+              <span className="text-[11px] text-muted-foreground">
                 {remainingTickets === 0
                   ? t("weeklyReward.nextEntryDone")
                   : t("weeklyReward.nextEntryNeedMore", { needed: ticketsNeeded })}
               </span>
-              <span
-                className="text-[11px] font-bold tabular-nums"
-                style={{ color: "#00E676" }}
-              >
+              <span className="text-[11px] font-bold tabular-nums text-primary">
                 {remainingTickets}&thinsp;/&thinsp;10
               </span>
             </div>
 
-            <div
-              className="h-2 rounded-full overflow-hidden"
-              style={{ background: "rgba(255,255,255,0.07)" }}
-            >
+            <div className="h-2 rounded-full overflow-hidden bg-muted dark:bg-white/[0.07]">
               <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${nextEntryPct}%`,
-                  background: "linear-gradient(90deg,#00E676,#00c853)",
-                  boxShadow: "0 0 8px rgba(0,230,118,0.5)",
-                }}
+                className="h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-primary to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.35)] dark:from-[#00E676] dark:to-[#00c853] dark:shadow-[0_0_8px_rgba(0,230,118,0.5)]"
+                style={{ width: `${nextEntryPct}%` }}
               />
             </div>
 
             {remainingTickets > 0 && (
-              <p
-                className="text-[9px] mt-1.5"
-                style={{ color: "rgba(255,255,255,0.3)" }}
-              >
+              <p className="text-[9px] mt-1.5 text-muted-foreground/80">
                 {t("weeklyReward.nextEntryFooter", { needed: ticketsNeeded })}
               </p>
             )}
@@ -240,7 +214,7 @@ export default function WeeklyRewardCard() {
         </div>
 
         <div className="mt-4">
-          <p className="text-[10px] text-white/80 mb-2">{t("weeklyReward.countdownLabel")}</p>
+          <p className="text-[10px] text-muted-foreground mb-2">{t("weeklyReward.countdownLabel")}</p>
           <div className="flex gap-3 items-stretch">
             {[
               { val: pad(timeLeft.days), label: t("time.days") },
@@ -248,9 +222,14 @@ export default function WeeklyRewardCard() {
               { val: pad(timeLeft.minutes), label: t("time.min") },
               { val: pad(timeLeft.seconds), label: t("time.sec") },
             ].map((block) => (
-              <div key={block.label} className="flex flex-1 flex-col items-center justify-center rounded-xl bg-black/40 border border-white/20 py-3 px-2 min-w-0 backdrop-blur-lg shadow-2xl ring-1 ring-white/10">
-                <span className="font-display text-base font-bold text-white tabular-nums leading-tight">{block.val}</span>
-                <span className="text-[9px] text-white/80 uppercase mt-1">{block.label}</span>
+              <div
+                key={block.label}
+                className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border bg-muted/70 py-3 px-2 min-w-0 dark:bg-black/40 dark:border-white/20 dark:backdrop-blur-lg dark:shadow-2xl dark:ring-1 dark:ring-white/10"
+              >
+                <span className="font-display text-base font-bold text-foreground tabular-nums leading-tight">
+                  {block.val}
+                </span>
+                <span className="text-[9px] text-muted-foreground uppercase mt-1">{block.label}</span>
               </div>
             ))}
           </div>
@@ -258,14 +237,14 @@ export default function WeeklyRewardCard() {
 
         <button
           onClick={() => setShowWinners(true)}
-          className="mt-4 w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3.5 min-h-[48px] font-display font-bold text-sm text-white transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+          className="mt-4 w-full flex items-center justify-center gap-3 rounded-xl bg-primary py-3.5 min-h-[48px] font-display font-bold text-sm text-primary-foreground transition-all hover:opacity-95 dark:bg-gradient-to-r dark:from-violet-500 dark:to-pink-500 dark:hover:shadow-[0_0_20px_rgba(139,92,246,0.3)]"
         >
           <Award size={16} />
           {t("weeklyReward.viewWinners")}
         </button>
         <button
           onClick={() => navigate("/earn")}
-          className="mt-2 w-full flex items-center justify-center gap-3 rounded-xl border border-white/20 bg-black/40 py-2.5 font-display font-bold text-xs text-white transition-all hover:bg-black/50 backdrop-blur-lg shadow-2xl ring-1 ring-white/10"
+          className="mt-2 w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-muted/80 py-2.5 font-display font-bold text-xs text-foreground transition-all hover:bg-muted dark:border-white/20 dark:bg-black/40 dark:text-white dark:hover:bg-black/50 dark:backdrop-blur-lg dark:shadow-2xl dark:ring-1 dark:ring-white/10"
         >
           {t("weeklyReward.earnMore")}
         </button>

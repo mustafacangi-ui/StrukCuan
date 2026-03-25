@@ -20,12 +20,7 @@ export default function LanguageSelector({ variant = "pills", className = "" }: 
         type="button"
         onClick={() => setAppLanguage(next.code as AppLang)}
         title={`Switch to ${next.label}`}
-        className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none ${className}`}
-        style={{
-          background: "rgba(155,92,255,0.10)",
-          border: "1px solid rgba(155,92,255,0.22)",
-          color: "rgba(255,255,255,0.85)",
-        }}
+        className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none bg-primary/10 border border-primary/25 text-foreground dark:bg-[rgba(155,92,255,0.10)] dark:border-[rgba(155,92,255,0.22)] dark:text-white/85 ${className}`}
       >
         <span className="text-[15px] leading-none">{active.flag}</span>
         <span className="leading-none">{active.code.toUpperCase()}</span>

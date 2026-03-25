@@ -55,37 +55,47 @@
     --sidebar-ring: 160 100% 45%;
   }
 
+  /* Light — white cards, sky wash, navy text (#1A2B48 / #506680), blue CTA (#3B82F6) */
   .light {
-    --background: 0 0% 97%;
-    --foreground: 0 0% 10%;
+    --background: 210 40% 98%;
+    --foreground: 218 47% 19%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 218 47% 19%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 218 47% 19%;
 
-    --primary: 270 65% 55%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 92%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 218 47% 19%;
 
-    --muted: 0 0% 92%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 210 35% 94%;
+    --muted-foreground: 213 24% 41%;
 
-    --accent: 0 85% 55%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 85% 55%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 85%;
-    --input: 0 0% 85%;
-    --ring: 270 65% 55%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
 
-    --violet: 270 65% 55%;
-    --neon-red: 0 85% 55%;
+    --violet: 217 91% 60%;
+    --pink: 24 95% 53%;
+    --neon-red: 0 72% 51%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 218 47% 19%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 218 47% 19%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -95,10 +105,19 @@
   }
 
   body {
-    background: #0A0E1A;
+    background: hsl(var(--background));
     background-attachment: fixed;
     min-height: 100vh;
     @apply text-foreground font-body antialiased;
+  }
+
+  html.light body {
+    background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 42%, #f8fafc 100%);
+    background-attachment: fixed;
+  }
+
+  html.dark body {
+    background: #0a0e1a;
   }
 
   #root {
@@ -139,8 +158,9 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 
-  .bg-card,
-  [class*="bg-card"] {
+  /* Glass cards — dark mode only; light uses solid white from --card */
+  html.dark .bg-card,
+  html.dark [class*="bg-card"] {
     background: rgba(255, 255, 255, 0.1) !important;
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);

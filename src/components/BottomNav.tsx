@@ -20,7 +20,7 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/8 bg-[#060810]/98 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-xl dark:border-white/8 dark:bg-[#060810]/98">
       <div className="mx-auto flex max-w-[420px] items-center justify-around px-1 py-2.5">
         {navItems.map((item) => {
           const isActive =
@@ -40,8 +40,8 @@ const BottomNav = () => {
                   isCenter
                     ? `p-2.5 ${
                         isActive
-                          ? "bg-[#4ade80] text-[#001a09] shadow-[0_0_18px_rgba(74,222,128,0.6)]"
-                          : "bg-white/20 text-white/90"
+                          ? "bg-[#3B82F6] text-white shadow-[0_4px_14px_rgba(59,130,246,0.45)] dark:bg-[#4ade80] dark:text-[#001a09] dark:shadow-[0_0_18px_rgba(74,222,128,0.6)]"
+                          : "bg-slate-200/80 text-slate-600 dark:bg-white/20 dark:text-white/90"
                       }`
                     : ""
                 }`}
@@ -51,21 +51,21 @@ const BottomNav = () => {
                   className={
                     !isCenter
                       ? isActive
-                        ? "text-[#4ade80]"
-                        : "text-white/90"
+                        ? "text-[#3B82F6] dark:text-[#4ade80]"
+                        : "text-slate-500 dark:text-white/90"
                       : undefined
                   }
                 />
               </span>
               <span
                 className={`text-[10px] font-medium truncate w-full text-center ${
-                  isActive ? "text-[#4ade80]" : "text-white/90"
+                  isActive ? "text-[#1A2B48] dark:text-[#4ade80]" : "text-slate-500 dark:text-white/90"
                 }`}
               >
                 {t(item.labelKey)}
               </span>
               {isCenter && isActive && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[#4ade80] shadow-[0_0_6px_rgba(74,222,128,0.8)]" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[#3B82F6] shadow-[0_0_6px_rgba(59,130,246,0.6)] dark:bg-[#4ade80] dark:shadow-[0_0_6px_rgba(74,222,128,0.8)]" />
               )}
             </button>
           );

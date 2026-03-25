@@ -68,5 +68,16 @@ export const PREMIUM_PAGE_BACKGROUND = `
   linear-gradient(180deg, #0A0E1A 0%, #0C0F22 40%, #080B16 100%)
 `;
 
+/** Light home — soft sky blue → near white (StrukCuan light mockup) */
+export const LIGHT_PAGE_BACKGROUND = `
+  radial-gradient(ellipse 120% 80% at 50% -20%, rgba(147, 197, 253, 0.45) 0%, transparent 55%),
+  linear-gradient(180deg, #dbeafe 0%, #eff6ff 38%, #f8fafc 72%, #ffffff 100%)
+`;
+
 /** Deep navy base color — used for body fallback and BottomNav */
 export const DEEP_NAVY = "#0A0E1A";
+
+/** Light mode UI anchors */
+export const LIGHT_NAVY = "#1A2B48";
+export const LIGHT_SLATE = "#506680";
+export const LIGHT_BLUE = "#3B82F6";
