@@ -35,6 +35,12 @@ export interface CpxSurvey {
   category?: string;
   /** Bazı yanıtlarda anket URL’si doğrudan gelir. */
   href?: string;
+  /** CPX yanıtında alternatif URL alanları (hangisi doluysa açılışta kullanılır). */
+  url?: string;
+  click_url?: string;
+  link?: string;
+  offer_url?: string;
+  transaction_url?: string;
   /** Tahmini süre (dakika); yoksa `loi` kullanılır. */
   estimated_time?: number;
   /** Yerel para tutarı (IDR) — yoksa `payout` yedek olarak kullanılır. */

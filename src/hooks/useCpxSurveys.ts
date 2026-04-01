@@ -75,22 +75,33 @@ export function useCpxSurveys(options: UseCpxSurveysOptions) {
       });
 
       const raw: unknown = await res.json();
-      setDebugMessage(JSON.stringify(raw, null, 2));
-
-      if (!res.ok && isErrorPayload(raw)) {
-        throw new Error(String(raw.error ?? raw.message ?? res.statusText));
-      }
 
       if (!res.ok) {
+        setDebugMessage(JSON.stringify(raw, null, 2));
+        if (isErrorPayload(raw)) {
+          throw new Error(String(raw.error ?? raw.message ?? res.statusText));
+        }
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
 
       if (isErrorPayload(raw)) {
+        setDebugMessage(JSON.stringify(raw, null, 2));
         throw new Error(String(raw.error ?? raw.message ?? "CPX error"));
       }
 
       const data = raw as CpxSurveysJson;
       const list = Array.isArray(data.surveys) ? data.surveys : [];
+      const firstSurveyFull = list[0] ?? null;
+      setDebugMessage(
+        JSON.stringify(
+          {
+            ...data,
+            firstSurveyFull,
+          },
+          null,
+          2
+        )
+      );
       setSurveys(list);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));

@@ -34,11 +34,27 @@ export function formatSurveyAmountIdr(survey: CpxSurvey): string {
   }).format(amount);
 }
 
-/** Anket listesi CPX’ten `href` ile gelmeli; sunucu proxy’si kullanıldığında app_id/hash istemcide yok. */
-export function resolveCpxSurveyHref(survey: CpxSurvey): string {
-  const href = survey.href;
-  if (typeof href === "string" && /^https?:\/\//i.test(href.trim())) {
-    return href.trim();
+function pickHttpUrl(
+  ...candidates: Array<string | number | undefined | null>
+): string {
+  for (const c of candidates) {
+    if (c == null) continue;
+    const t = String(c).trim();
+    if (/^https?:\/\//i.test(t)) return t;
   }
   return "";
+}
+
+/**
+ * CPX anket kartı açılış URL’si — API hangi alanı doldurduysa normalize edilir.
+ */
+export function resolveCpxSurveyHref(survey: CpxSurvey): string {
+  return pickHttpUrl(
+    survey.href,
+    survey.url,
+    survey.click_url,
+    survey.link,
+    survey.offer_url,
+    survey.transaction_url
+  );
 }
