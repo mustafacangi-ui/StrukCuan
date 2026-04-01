@@ -16,6 +16,23 @@ function isValidUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 }
 
+function isSupabaseAuthError(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes("invalid api key") || m.includes("invalid jwt");
+}
+
+/** PostgREST: schema cache / relation bulunamadı (public.users yoksa). */
+function isUsersTableUnavailable(error: { code?: string; message?: string } | null): boolean {
+  if (!error?.message) return false;
+  const m = error.message.toLowerCase();
+  return (
+    m.includes("does not exist") ||
+    m.includes("schema cache") ||
+    error.code === "PGRST205" ||
+    error.code === "42P01"
+  );
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const transId = String(req.query.trans_id ?? "");
@@ -54,13 +71,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const tickets = getTicketCount(survey_loi);
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceKey) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return res.status(500).json({
         success: false,
         message: "Server misconfiguration",
+      });
+    }
+
+    console.log({
+      supabaseUrl: process.env.SUPABASE_URL,
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      serviceRoleKeyPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20),
+    });
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { data: pingData, error: pingError } = await supabase
+      .from("user_stats")
+      .select("user_id")
+      .limit(1);
+
+    console.log({ data: pingData, error: pingError });
+
+    if (pingError) {
+      return res.status(500).json({
+        success: false,
+        message: "Supabase connection failed",
+        error: pingError.message,
       });
     }
 
@@ -71,35 +117,113 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    console.log({
+      receivedUserId: userId,
+      receivedUserIdType: typeof userId,
     });
 
-    const { data: row, error: selectError } = await supabase
+    const { data: existingUserStats, error: existingUserStatsError } = await supabase
       .from("user_stats")
-      .select("total_tickets, weekly_tickets, lifetime_tickets")
+      .select("user_id, total_tickets, weekly_tickets, lifetime_tickets")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (selectError) {
-      console.error("CPX webhook user_stats select:", selectError);
+    if (existingUserStatsError) {
+      console.error("CPX webhook user_stats select:", existingUserStatsError);
+      if (isSupabaseAuthError(existingUserStatsError.message)) {
+        return res.status(500).json({
+          success: false,
+          message: "Supabase connection failed",
+          error: existingUserStatsError.message,
+        });
+      }
       return res.status(500).json({
         success: false,
         message: "Webhook crashed",
-        error: selectError.message,
+        error: existingUserStatsError.message,
       });
     }
 
-    if (!row) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
+    let statsRow = existingUserStats;
+
+    if (!statsRow) {
+      const { data: userInUsers, error: userInUsersError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      console.log({
+        userStatsRowMissing: true,
+        userInUsers,
+        userInUsersError: userInUsersError?.message ?? null,
+        userInUsersErrorCode: userInUsersError?.code ?? null,
       });
+
+      let userExists = Boolean(userInUsers);
+
+      if (!userExists && (isUsersTableUnavailable(userInUsersError) || userInUsersError == null)) {
+        const { data: authData, error: authLookupError } = await supabase.auth.admin.getUserById(userId);
+        console.log({
+          authUserId: authData?.user?.id ?? null,
+          authLookupError: authLookupError?.message ?? null,
+        });
+        userExists = Boolean(authData?.user) && !authLookupError;
+      } else if (!userExists && userInUsersError && !isUsersTableUnavailable(userInUsersError)) {
+        console.error("CPX webhook users table select:", userInUsersError);
+        return res.status(500).json({
+          success: false,
+          message: "Webhook crashed",
+          error: userInUsersError.message,
+        });
+      }
+
+      if (userExists) {
+        const { error: insertError } = await supabase.from("user_stats").insert({
+          user_id: userId,
+          total_tickets: 0,
+          weekly_tickets: 0,
+          lifetime_tickets: 0,
+        });
+
+        if (insertError && insertError.code !== "23505") {
+          console.error("CPX webhook user_stats insert:", insertError);
+          return res.status(500).json({
+            success: false,
+            message: "Webhook crashed",
+            error: insertError.message,
+          });
+        }
+
+        const { data: refetched, error: refetchError } = await supabase
+          .from("user_stats")
+          .select("user_id, total_tickets, weekly_tickets, lifetime_tickets")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (refetchError) {
+          console.error("CPX webhook user_stats refetch:", refetchError);
+          return res.status(500).json({
+            success: false,
+            message: "Webhook crashed",
+            error: refetchError.message,
+          });
+        }
+
+        statsRow = refetched;
+      }
+
+      if (!statsRow) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
     }
 
-    const curTotal = Math.max(0, Number(row.total_tickets ?? 0));
-    const curWeekly = Math.max(0, Number(row.weekly_tickets ?? 0));
-    const curLifetime = Math.max(0, Number(row.lifetime_tickets ?? 0));
+    const curTotal = Math.max(0, Number(statsRow.total_tickets ?? 0));
+    const curWeekly = Math.max(0, Number(statsRow.weekly_tickets ?? 0));
+    const curLifetime = Math.max(0, Number(statsRow.lifetime_tickets ?? 0));
 
     const { error: updateError } = await supabase
       .from("user_stats")
@@ -113,6 +237,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (updateError) {
       console.error("CPX webhook user_stats update:", updateError);
+      if (isSupabaseAuthError(updateError.message)) {
+        return res.status(500).json({
+          success: false,
+          message: "Supabase connection failed",
+          error: updateError.message,
+        });
+      }
       return res.status(500).json({
         success: false,
         message: "Webhook crashed",
