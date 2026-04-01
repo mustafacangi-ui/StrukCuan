@@ -51,36 +51,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const secure_hash = crypto.createHash("md5").update(`${user_id}-${secret}`).digest("hex");
+    const secure_hash = crypto
+      .createHash("md5")
+      .update(`${user_id}-${secret}`)
+      .digest("hex");
 
     const q = new URLSearchParams();
     q.set("app_id", appId);
     q.set("ext_user_id", user_id);
     q.set("secure_hash", secure_hash);
     q.set("output_method", "jsscriptv1");
+
     for (const [k, v] of Object.entries(DEFAULT_LAYOUT_PARAMS)) {
       q.set(k, v);
     }
+
     if (country) {
       q.set("country", country);
     }
+
     q.set("hl", language);
 
     const url = `${CPX_GET_SURVEYS_URL}?${q.toString()}`;
 
     const cpxRes = await fetch(url, {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+      },
     });
 
     if (!cpxRes.ok) {
       throw new Error(`CPX HTTP ${cpxRes.status} ${cpxRes.statusText}`);
     }
 
-    const data: unknown = await cpxRes.json();
-    return res.status(200).json(data);
+    const data = (await cpxRes.json()) as {
+      surveys?: Array<Record<string, unknown>>;
+      [key: string]: unknown;
+    };
+
+    const surveys = Array.isArray(data.surveys) ? data.surveys : [];
+
+    const surveysWithHref = surveys.map((survey) => ({
+      ...survey,
+      href: `https://offers.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${user_id}&secure_hash=${secure_hash}&survey_id=${String(survey.id ?? "")}`,
+    }));
+
+    return res.status(200).json({
+      ...data,
+      surveys: surveysWithHref,
+      firstSurveyFull: surveysWithHref[0] ?? null,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+
     return res.status(500).json({
       success: false,
       message: "CPX fetch failed",
