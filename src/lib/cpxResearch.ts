@@ -7,6 +7,9 @@
 const CPX_GET_SURVEYS_URL = "https://live-api.cpx-research.com/api/get-surveys.php";
 export const CPX_OFFERS_URL = "https://offers.cpx-research.com/index.php";
 
+/** Geçici CPX test: secure_hash query’e eklenmez (app_id + ext_user_id). Canlıya almadan false yapın. */
+const CPX_DEBUG_SKIP_SECURE_HASH = true;
+
 /** CPX `hl` API parametresi — cihaz diline göre seçilir. */
 export type CpxSurveyLanguage = "tr" | "id" | "de" | "en";
 
@@ -100,7 +103,7 @@ function buildGetSurveysSearchParams(params: FetchSurveysParams): URLSearchParam
   for (const [k, v] of Object.entries(DEFAULT_LAYOUT_PARAMS)) {
     q.set(k, v);
   }
-  if (params.secureHash) {
+  if (params.secureHash && !CPX_DEBUG_SKIP_SECURE_HASH) {
     q.set("secure_hash", params.secureHash);
   }
   if (params.email) {
@@ -129,7 +132,7 @@ export function buildCpxSurveyOfferUrl(params: {
   u.searchParams.set("app_id", params.appId);
   u.searchParams.set("ext_user_id", params.extUserId);
   u.searchParams.set("survey_id", params.surveyId);
-  if (params.secureHash) {
+  if (params.secureHash && !CPX_DEBUG_SKIP_SECURE_HASH) {
     u.searchParams.set("secure_hash", params.secureHash);
   }
   if (params.username) {

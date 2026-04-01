@@ -1,16 +1,9 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowUpRight,
-  Clock,
-  Coins,
-  RefreshCw,
-  Ticket,
-  ClipboardList,
-} from "lucide-react";
+import { ArrowUpRight, Clock, Coins, RefreshCw, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 import { useCpxSurveys } from "@/hooks/useCpxSurveys";
 import { getCpxUiLanguage, type CpxSurvey } from "@/lib/cpxResearch";
 import {
@@ -19,7 +12,6 @@ import {
   getTicketCount,
   resolveCpxSurveyHref,
 } from "@/lib/cpxSurveyDisplay";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
 const OPEN_TOAST_MS = 380;
@@ -68,6 +60,7 @@ export function CpxSurveyGrid({
   enabled = true,
   className,
 }: CpxSurveyGridProps) {
+  const { user } = useUser();
   const language = getCpxUiLanguage();
   const isIndonesian = language === "id";
 
@@ -104,7 +97,16 @@ export function CpxSurveyGrid({
     email,
     enabled: canLoad,
     hl: language,
+    userId: user?.id,
   });
+
+  useEffect(() => {
+    console.log({
+      appId,
+      userId: user?.id,
+      enabled,
+    });
+  }, [appId, user?.id, enabled]);
 
   const openingRef = useRef(false);
 
@@ -163,10 +165,6 @@ export function CpxSurveyGrid({
     );
   }
 
-  const showSkeleton = loading && surveys.length === 0;
-  const showError = !!error && !loading && surveys.length === 0;
-  const showEmpty = !loading && !error && surveys.length === 0;
-
   return (
     <section className={cn("w-full", className)}>
       <div className="flex flex-col gap-1 mb-4">
@@ -175,71 +173,26 @@ export function CpxSurveyGrid({
         </h2>
       </div>
 
-      {showError && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-red-500/30 bg-red-950/25 backdrop-blur-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4"
-        >
-          <div className="flex items-start gap-3 flex-1">
-            <div className="rounded-xl bg-red-500/15 p-2 border border-red-500/25">
-              <AlertCircle className="size-5 text-red-400 shrink-0" />
-            </div>
-            <div>
-              <p className="font-display font-semibold text-white">{copy.errorTitle}</p>
-              <p className="text-sm text-white/60 mt-1">{error.message}</p>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void refetch()}
-            className="shrink-0 border-white/20 bg-white/5 text-white hover:bg-white/10"
-          >
-            <RefreshCw className="size-4 mr-2" />
-            {copy.retry}
-          </Button>
-        </motion.div>
-      )}
-
-      {showSkeleton && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-white/10 bg-[#1a0f3c]/40 p-4 pt-10 space-y-4 overflow-hidden"
-            >
-              <Skeleton className="h-5 w-20 rounded-full ml-auto" />
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-10 w-full rounded-xl" />
-            </div>
-          ))}
+      <div className="mb-4 rounded-xl border border-white/15 bg-black/20 p-3 font-mono">
+        <div className="text-xs text-white/70 space-y-1">
+          <div>appId: {String(appId)}</div>
+          <div>userId: {String(user?.id)}</div>
+          <div>enabled: {String(enabled)}</div>
+          <div>loading: {String(loading)}</div>
+          <div>error: {String(error)}</div>
+          <div>survey count: {surveys?.length ?? 0}</div>
         </div>
-      )}
-
-      {showEmpty && !showError && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0f3c]/80 to-[#0d0620]/90 backdrop-blur-xl p-10 text-center"
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-3 border-white/20 bg-white/5 text-white hover:bg-white/10"
+          onClick={() => void refetch()}
         >
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-theme-purple/20 border border-theme-purple/30">
-            <ClipboardList className="size-7 text-theme-purple" />
-          </div>
-          <p className="font-display font-bold text-lg text-white">{copy.emptyTitle}</p>
-          <p className="text-sm text-white/55 mt-2 max-w-sm mx-auto">{copy.emptyDesc}</p>
-          <Button
-            type="button"
-            variant="ghost"
-            className="mt-6 text-theme-pink hover:text-white hover:bg-white/10"
-            onClick={() => void refetch()}
-          >
-            <RefreshCw className="size-4 mr-2" />
-            {copy.retry}
-          </Button>
-        </motion.div>
-      )}
+          <RefreshCw className="size-4 mr-2" />
+          {copy.retry}
+        </Button>
+      </div>
 
       {surveys.length > 0 && (
         <motion.div
