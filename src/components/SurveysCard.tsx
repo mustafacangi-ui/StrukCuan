@@ -1,6 +1,13 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurveyDisplay } from "@/hooks/useBitLabsSurveys";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SurveysCardProps {
   surveys: SurveyDisplay[];
@@ -10,6 +17,7 @@ interface SurveysCardProps {
 
 export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCardProps) {
   const [goldenShaking, setGoldenShaking] = useState(false);
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
 
   const triggerGoldenShake = () => {
     setGoldenShaking(true);
@@ -21,9 +29,21 @@ export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCar
     onSelect(survey);
   };
 
+  const canBrowse = !isLoading && surveys.length > 0;
+
+  const handleCardActivate = () => {
+    if (canBrowse) setIsSurveyModalOpen(true);
+  };
+
+  const handlePickSurvey = (survey: SurveyDisplay, isFeatured: boolean) => {
+    handleStart(survey, isFeatured);
+    setIsSurveyModalOpen(false);
+  };
+
   return (
     <div
-      className="relative overflow-hidden rounded-3xl p-5 bg-zinc-900/60 backdrop-blur-3xl border border-white/10 shadow-2xl animate-shake-mount"
+      onClick={handleCardActivate}
+      className="relative overflow-hidden rounded-3xl p-5 bg-zinc-900/60 backdrop-blur-3xl border border-white/10 shadow-2xl animate-shake-mount cursor-pointer transition-transform hover:scale-[1.01]"
       style={{ boxShadow: "0 0 24px rgba(168,85,247,0.2)" }}
     >
       {/* Ambient overlays */}
@@ -120,6 +140,48 @@ export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCar
           })
         )}
       </div>
+
+      <Button
+        type="button"
+        disabled={isLoading || !canBrowse}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (canBrowse) setIsSurveyModalOpen(true);
+        }}
+        className="relative z-10 mt-4 w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? "Loading..." : canBrowse ? "Browse Surveys" : "No Surveys Available"}
+      </Button>
+
+      <Dialog open={isSurveyModalOpen} onOpenChange={setIsSurveyModalOpen}>
+        <DialogContent
+          className="max-h-[85vh] overflow-y-auto border-white/10 bg-zinc-900/95 text-white sm:max-w-md"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-white">Browse Surveys</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            {surveys.map((survey, index) => {
+              const isFeatured = index === 0;
+              return isFeatured ? (
+                <GoldenSurveyRow
+                  key={survey.id}
+                  survey={survey}
+                  isShaking={goldenShaking}
+                  onStart={() => handlePickSurvey(survey, true)}
+                />
+              ) : (
+                <StandardSurveyRow
+                  key={survey.id}
+                  survey={survey}
+                  onStart={() => handlePickSurvey(survey, false)}
+                />
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -198,7 +260,10 @@ function GoldenSurveyRow({
       {/* Golden START button */}
       <button
         type="button"
-        onClick={onStart}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStart();
+        }}
         className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-[#1a0d00] transition-all duration-200 hover:scale-[1.05] active:scale-[0.96]"
         style={{
           background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
@@ -273,7 +338,10 @@ function StandardSurveyRow({
       {/* Magenta START button */}
       <button
         type="button"
-        onClick={onStart}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStart();
+        }}
         className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0 px-4 py-2 rounded-xl font-display font-bold text-xs text-white transition-all duration-200 hover:scale-[1.06] active:scale-[0.96]"
         style={{
           background: "linear-gradient(135deg, #ec4899 0%, #c026d3 50%, #7c3aed 100%)",
