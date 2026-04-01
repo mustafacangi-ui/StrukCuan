@@ -7,7 +7,7 @@ import {
   processCompletedReward,
   processReversalReward,
   verifyCpxHash,
-} from "../_lib/cpxRewardWebhook";
+} from "../_lib/cpxRewardWebhook.js";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json",
@@ -18,28 +18,68 @@ function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
 
+/** Vercel’de `CPX_WEBHOOK_DEBUG=1` iken hash doğrulamasından önce query/body döner; teşhis sonrası kapatın. */
+function isEarlyDebugEnabled(): boolean {
+  const v = process.env.CPX_WEBHOOK_DEBUG;
+  return v === "1" || v === "true";
+}
+
+function envFlags() {
+  return {
+    hasSecret: !!process.env.CPX_SECRET_KEY,
+    hasSupabaseUrl: !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
+    hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
+}
+
 export default async function handler(request: Request): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    });
-  }
-
-  if (request.method !== "GET" && request.method !== "POST") {
-    return jsonResponse({ success: false, message: "Method not allowed" }, 405);
-  }
-
-  const secret = process.env.CPX_SECRET_KEY;
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   try {
-    const merged = await parseWebhookRequest(request);
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      });
+    }
+
+    if (request.method !== "GET" && request.method !== "POST") {
+      return jsonResponse({ success: false, message: "Method not allowed" }, 405);
+    }
+
+    console.log({
+      hasSecret: !!process.env.CPX_SECRET_KEY,
+      hasSupabaseUrl: !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
+      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+
+    const secret = process.env.CPX_SECRET_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    const { merged, query, body } = await parseWebhookRequest(request);
+
+    if (isEarlyDebugEnabled()) {
+      return jsonResponse(
+        {
+          success: true,
+          debug: {
+            query,
+            body,
+            ...envFlags(),
+          },
+        },
+        200
+      );
+    }
+
+    if (!secret || !supabaseUrl || !serviceKey) {
+      logCpxWebhook("error", { reason: "missing_environment_variables", ...envFlags() });
+      return jsonResponse({ success: false, message: "Missing environment variables" }, 500);
+    }
+
     const payload = normalizeCpxRewardPayload(merged);
 
     if (!payload.trans_id || !payload.user_id || payload.status === "") {
@@ -55,11 +95,6 @@ export default async function handler(request: Request): Promise<Response> {
     if (!verifyCpxHash(payload.trans_id, payload.hash, secret)) {
       logCpxWebhook("invalid_hash", { trans_id: payload.trans_id });
       return jsonResponse({ success: false, message: "Invalid hash" }, 403);
-    }
-
-    if (!supabaseUrl || !serviceKey) {
-      logCpxWebhook("error", { reason: "missing_supabase_env" });
-      return jsonResponse({ success: false, message: "Server misconfiguration" }, 500);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey, {
@@ -116,8 +151,19 @@ export default async function handler(request: Request): Promise<Response> {
 
     logCpxWebhook("error", { reason: "unknown_status", status: payload.status, trans_id: payload.trans_id });
     return jsonResponse({ success: true, message: "OK" }, 200);
-  } catch (e) {
-    logCpxWebhook("error", { reason: "unexpected", error: String(e) });
-    return jsonResponse({ success: false, message: "Internal error" }, 500);
+  } catch (error) {
+    console.error("CPX webhook fatal error:", error);
+    logCpxWebhook("error", {
+      reason: "fatal",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return jsonResponse(
+      {
+        success: false,
+        message: "Webhook crashed",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 }

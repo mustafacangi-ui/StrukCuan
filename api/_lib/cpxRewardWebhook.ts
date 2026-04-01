@@ -44,40 +44,49 @@ export interface NormalizedCpxRewardPayload {
   raw: Record<string, unknown>;
 }
 
-/**
- * GET query + POST body (JSON veya x-www-form-urlencoded) tek sözlükte birleştirir.
- */
-export async function parseWebhookRequest(request: Request): Promise<Record<string, unknown>> {
-  const url = new URL(request.url);
-  const fromQuery: Record<string, unknown> = {};
-  url.searchParams.forEach((value, key) => {
-    fromQuery[key] = value;
-  });
+export interface ParsedWebhookRequest {
+  /** URL query string (GET params). */
+  query: Record<string, string>;
+  /** POST/PUT/PATCH gövdesi ayrıştırılmış; GET’te {} */
+  body: Record<string, unknown>;
+  /** query + body birleşimi (önceki davranış). */
+  merged: Record<string, unknown>;
+}
 
+/**
+ * GET query + POST body (JSON veya x-www-form-urlencoded) tek seferde okur (gövde tek okunur).
+ */
+export async function parseWebhookRequest(request: Request): Promise<ParsedWebhookRequest> {
+  const url = new URL(request.url);
+  const query = Object.fromEntries(url.searchParams.entries());
+
+  const fromQuery: Record<string, unknown> = { ...query };
   let fromBody: Record<string, unknown> = {};
+
   const method = request.method.toUpperCase();
   if (method === "POST" || method === "PUT" || method === "PATCH") {
     const ct = request.headers.get("content-type") ?? "";
     try {
+      const text = await request.text();
       if (ct.includes("application/json")) {
-        fromBody = (await request.json()) as Record<string, unknown>;
+        fromBody = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : {};
       } else if (ct.includes("application/x-www-form-urlencoded")) {
-        const text = await request.text();
+        fromBody = text.length > 0 ? Object.fromEntries(new URLSearchParams(text).entries()) : {};
+      } else if (text.trim().startsWith("{")) {
+        fromBody = JSON.parse(text) as Record<string, unknown>;
+      } else if (text.length > 0) {
         fromBody = Object.fromEntries(new URLSearchParams(text).entries());
-      } else {
-        const text = await request.text();
-        if (text.trim().startsWith("{")) {
-          fromBody = JSON.parse(text) as Record<string, unknown>;
-        } else if (text.length > 0) {
-          fromBody = Object.fromEntries(new URLSearchParams(text).entries());
-        }
       }
     } catch {
-      fromBody = {};
+      fromBody = { _parse_error: true as const };
     }
   }
 
-  return { ...fromQuery, ...fromBody };
+  return {
+    query,
+    body: fromBody,
+    merged: { ...fromQuery, ...fromBody },
+  };
 }
 
 export function normalizeCpxRewardPayload(raw: Record<string, unknown>): NormalizedCpxRewardPayload {
