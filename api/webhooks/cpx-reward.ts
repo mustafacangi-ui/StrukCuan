@@ -5,6 +5,12 @@ export const config = {
   runtime: "nodejs",
 };
 
+function getTicketCount(minutes: number): number {
+  if (minutes < 1) return 1;
+  if (minutes <= 3) return 2;
+  return 3;
+}
+
 export default function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const transId = String(req.query.trans_id ?? "");
@@ -27,9 +33,28 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const status = String(req.query.status ?? "");
+    const userId = String(req.query.user_id ?? "");
+    const loiRaw = req.query.survey_loi;
+    const loiStr = Array.isArray(loiRaw) ? loiRaw[0] : loiRaw;
+    const surveyLoiParsed = Number.parseFloat(String(loiStr ?? ""));
+    const survey_loi = Number.isFinite(surveyLoiParsed) ? surveyLoiParsed : 0;
+
+    if (status !== "1" && status !== "3") {
+      return res.status(200).json({
+        success: true,
+        message: "Ignored status",
+      });
+    }
+
+    const tickets = getTicketCount(survey_loi);
+
     return res.status(200).json({
       success: true,
-      message: "Hash valid",
+      message: "Reward processed",
+      user_id: userId,
+      survey_loi,
+      tickets,
     });
   } catch (error) {
     console.error("CPX webhook error:", error);

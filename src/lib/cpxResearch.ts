@@ -7,10 +7,21 @@
 const CPX_GET_SURVEYS_URL = "https://live-api.cpx-research.com/api/get-surveys.php";
 export const CPX_OFFERS_URL = "https://offers.cpx-research.com/index.php";
 
-/** UI + API dil parametresi (`hl`) için tarayıcı dilinden türetilir. */
-export function getCpxUiLanguage(): "id" | "en" {
+/** CPX `hl` API parametresi — cihaz diline göre seçilir. */
+export type CpxSurveyLanguage = "tr" | "id" | "de" | "en";
+
+/**
+ * `navigator.language` ile anket listesi dili (`hl`).
+ * tr-*, id-*, de-*, en-* önekleri; aksi halde `en`.
+ */
+export function getCpxUiLanguage(): CpxSurveyLanguage {
   if (typeof navigator === "undefined") return "en";
-  return navigator.language.toLowerCase().startsWith("id") ? "id" : "en";
+  const lang = navigator.language.toLowerCase();
+  if (lang.startsWith("tr")) return "tr";
+  if (lang.startsWith("id")) return "id";
+  if (lang.startsWith("de")) return "de";
+  if (lang.startsWith("en")) return "en";
+  return "en";
 }
 
 /** Stil parametreleri SDK’nın get-surveys isteğinde kullandığı alanlarla uyumludur (web için sabit varsayılanlar). */
@@ -78,7 +89,7 @@ export interface FetchSurveysParams {
   subid1?: string;
   subid2?: string;
   /** API `hl` parametresi; verilmezse `getCpxUiLanguage()` kullanılır. */
-  hl?: "id" | "en";
+  hl?: CpxSurveyLanguage;
 }
 
 function buildGetSurveysSearchParams(params: FetchSurveysParams): URLSearchParams {
@@ -135,12 +146,8 @@ export function buildCpxSurveyOfferUrl(params: {
  * Dönüşteki `surveys` alanı API ile birebir aynıdır.
  */
 export async function fetchSurveys(params: FetchSurveysParams): Promise<CpxSurveysJson> {
-  const language =
-    params.hl ??
-    (typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("id") ? "id" : "en");
   const url = new URL(CPX_GET_SURVEYS_URL);
-  const q = buildGetSurveysSearchParams({ ...params, hl: language });
-  url.search = q.toString();
+  url.search = buildGetSurveysSearchParams(params).toString();
 
   const res = await fetch(url.toString(), {
     method: "GET",
