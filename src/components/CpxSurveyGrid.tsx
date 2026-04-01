@@ -140,31 +140,6 @@ export function CpxSurveyGrid({
     [appId, copy.opening, email, extUserId, isIndonesian, secureHash, username]
   );
 
-  if (!appId) {
-    return null;
-  }
-
-  if (!extUserId || !enabled) {
-    return (
-      <section className={cn("w-full", className)}>
-        <h2 className="font-display text-base font-bold text-white tracking-tight mb-3">
-          {copy.sectionTitle}
-        </h2>
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0f3c]/85 to-[#0d0620]/90 backdrop-blur-xl p-6 text-center"
-        >
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-theme-purple/20 border border-theme-purple/30">
-            <Ticket className="size-6 text-theme-pink" />
-          </div>
-          <p className="font-display font-semibold text-white">{copy.signInTitle}</p>
-          <p className="text-sm text-white/60 mt-2 max-w-md mx-auto">{copy.signInDesc}</p>
-        </motion.div>
-      </section>
-    );
-  }
-
   return (
     <section className={cn("w-full", className)}>
       <div className="flex flex-col gap-1 mb-4">
@@ -173,26 +148,43 @@ export function CpxSurveyGrid({
         </h2>
       </div>
 
-      <div className="mb-4 rounded-xl border border-white/15 bg-black/20 p-3 font-mono">
-        <div className="text-xs text-white/70 space-y-1">
-          <div>appId: {String(appId)}</div>
-          <div>userId: {String(user?.id)}</div>
-          <div>enabled: {String(enabled)}</div>
-          <div>loading: {String(loading)}</div>
-          <div>error: {String(error)}</div>
-          <div>survey count: {surveys?.length ?? 0}</div>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-3 border-white/20 bg-white/5 text-white hover:bg-white/10"
-          onClick={() => void refetch()}
-        >
-          <RefreshCw className="size-4 mr-2" />
-          {copy.retry}
-        </Button>
+      <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-white/70 space-y-1 mb-4">
+        <div>appId: {String(appId)}</div>
+        <div>userId: {String(user?.id)}</div>
+        <div>enabled: {String(enabled)}</div>
+        <div>loading: {String(loading)}</div>
+        <div>error: {String(error)}</div>
+        <div>survey count: {surveys?.length ?? 0}</div>
       </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mb-4 border-white/20 bg-white/5 text-white hover:bg-white/10"
+        onClick={() => void refetch()}
+      >
+        <RefreshCw className="size-4 mr-2" />
+        {copy.retry}
+      </Button>
+
+      {(!extUserId || !enabled) && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a0f3c]/85 to-[#0d0620]/90 backdrop-blur-xl p-6 text-center mb-4"
+        >
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-theme-purple/20 border border-theme-purple/30">
+            <Ticket className="size-6 text-theme-pink" />
+          </div>
+          <p className="font-display font-semibold text-white">{copy.signInTitle}</p>
+          <p className="text-sm text-white/60 mt-2 max-w-md mx-auto">{copy.signInDesc}</p>
+        </motion.div>
+      )}
+
+      {loading && <p className="text-sm text-white/80 mb-4">Loading surveys...</p>}
+
+      {error && <p className="text-sm text-red-300/90 mb-4">{error.message}</p>}
 
       {surveys.length > 0 && (
         <motion.div
@@ -290,6 +282,10 @@ export function CpxSurveyGrid({
             );
           })}
         </motion.div>
+      )}
+
+      {!loading && !error && surveys.length === 0 && (
+        <p className="text-sm text-white/70">No surveys available right now</p>
       )}
     </section>
   );
