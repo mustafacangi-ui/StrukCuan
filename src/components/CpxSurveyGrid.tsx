@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Clock, Coins, RefreshCw, Ticket } from "lucide-react";
 import { toast } from "sonner";
@@ -90,7 +90,7 @@ export function CpxSurveyGrid({
 
   const canLoad = Boolean(appId && extUserId && enabled);
 
-  const { surveys, loading, error, refetch } = useCpxSurveys({
+  const { surveys, loading, error, debugMessage, refetch } = useCpxSurveys({
     appId,
     extUserId,
     secureHash,
@@ -99,14 +99,6 @@ export function CpxSurveyGrid({
     hl: language,
     userId: user?.id,
   });
-
-  useEffect(() => {
-    console.log({
-      appId,
-      userId: user?.id,
-      enabled,
-    });
-  }, [appId, user?.id, enabled]);
 
   const openingRef = useRef(false);
 
@@ -146,15 +138,19 @@ export function CpxSurveyGrid({
         <h2 className="font-display text-base font-bold text-white tracking-tight">
           {copy.sectionTitle}
         </h2>
-      </div>
-
-      <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-white/70 space-y-1 mb-4">
-        <div>appId: {String(appId)}</div>
-        <div>userId: {String(user?.id)}</div>
-        <div>enabled: {String(enabled)}</div>
-        <div>loading: {String(loading)}</div>
-        <div>error: {String(error)}</div>
-        <div>survey count: {surveys?.length ?? 0}</div>
+        <div className="mt-2 text-[10px] text-white/50 space-y-1">
+          <div>appId: {String(appId)}</div>
+          <div>userId: {String(user?.id)}</div>
+          <div>enabled: {String(enabled)}</div>
+          <div>loading: {String(loading)}</div>
+          <div>error: {String(error)}</div>
+          <div>surveyCount: {surveys?.length ?? 0}</div>
+        </div>
+        {debugMessage ? (
+          <pre className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/40 p-2 text-[10px] text-white/55 whitespace-pre-wrap break-all font-mono">
+            {debugMessage}
+          </pre>
+        ) : null}
       </div>
 
       <Button
