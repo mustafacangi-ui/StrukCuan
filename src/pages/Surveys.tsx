@@ -45,8 +45,6 @@ export default function Surveys() {
   const countryCode = user?.countryCode ?? "ID";
   const totalPoin = stats?.cuan ?? 0;
   const tugasCount = TUGAS_LOKAL.length + 1; // BitLabs + local tasks
-  const cpxAppId = import.meta.env.VITE_CPX_APP_ID ?? "";
-
   const handleBitLabsClick = () => {
     toast.info(t("surveys.verifyingAccount"), {
       description: t("surveys.tryAgainLater"),
@@ -105,8 +103,8 @@ export default function Surveys() {
 
       <div className="mt-6">
         <CpxSurveyGrid
-          appId={cpxAppId ?? ""}
           extUserId={user?.id ?? ""}
+          country={countryCode}
           enabled={true}
         />
       </div>

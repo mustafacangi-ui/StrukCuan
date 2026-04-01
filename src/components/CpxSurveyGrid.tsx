@@ -34,11 +34,8 @@ const itemVariants = {
 };
 
 export interface CpxSurveyGridProps {
-  appId: string;
   extUserId: string;
-  secureHash?: string;
-  email?: string;
-  username?: string;
+  country: string;
   enabled?: boolean;
   className?: string;
 }
@@ -52,11 +49,8 @@ function formatCategoryLabel(raw: string | undefined): string | null {
 }
 
 export function CpxSurveyGrid({
-  appId,
   extUserId,
-  secureHash,
-  email,
-  username,
+  country,
   enabled = true,
   className,
 }: CpxSurveyGridProps) {
@@ -88,16 +82,13 @@ export function CpxSurveyGrid({
     [isIndonesian]
   );
 
-  const canLoad = Boolean(appId && extUserId && enabled);
+  const canLoad = Boolean(extUserId && enabled);
 
   const { surveys, loading, error, debugMessage, refetch } = useCpxSurveys({
-    appId,
-    extUserId,
-    secureHash,
-    email,
+    userId: extUserId,
+    country,
+    language,
     enabled: canLoad,
-    hl: language,
-    userId: user?.id,
   });
 
   const openingRef = useRef(false);
@@ -106,13 +97,18 @@ export function CpxSurveyGrid({
     async (survey: CpxSurvey) => {
       if (openingRef.current) return;
       openingRef.current = true;
-      const href = resolveCpxSurveyHref(survey, {
-        appId,
-        extUserId,
-        secureHash,
-        email,
-        username,
-      });
+      const href = resolveCpxSurveyHref(survey);
+      if (!href) {
+        toast.error(
+          isIndonesian ? "Tautan survei tidak tersedia" : "Survey link not available",
+          {
+            description: isIndonesian
+              ? "CPX tidak mengembalikan URL untuk survei ini."
+              : "CPX did not return a URL for this survey.",
+          }
+        );
+        return;
+      }
       const toastId = toast.loading(copy.opening);
       try {
         await new Promise((r) => setTimeout(r, OPEN_TOAST_MS));
@@ -129,7 +125,7 @@ export function CpxSurveyGrid({
         openingRef.current = false;
       }
     },
-    [appId, copy.opening, email, extUserId, isIndonesian, secureHash, username]
+    [copy.opening, isIndonesian]
   );
 
   return (
@@ -139,8 +135,9 @@ export function CpxSurveyGrid({
           {copy.sectionTitle}
         </h2>
         <div className="mt-2 text-[10px] text-white/50 space-y-1">
-          <div>appId: {String(appId)}</div>
-          <div>userId: {String(user?.id)}</div>
+          <div>userId: {String(extUserId || user?.id)}</div>
+          <div>country: {String(country)}</div>
+          <div>language: {String(language)}</div>
           <div>enabled: {String(enabled)}</div>
           <div>loading: {String(loading)}</div>
           <div>error: {String(error)}</div>

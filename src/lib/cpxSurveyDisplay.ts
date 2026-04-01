@@ -1,4 +1,4 @@
-import { buildCpxSurveyOfferUrl, type CpxSurvey } from "@/lib/cpxResearch";
+import type { CpxSurvey } from "@/lib/cpxResearch";
 
 export const getTicketCount = (minutes: number): number => {
   if (minutes < 1) return 1;
@@ -34,20 +34,11 @@ export function formatSurveyAmountIdr(survey: CpxSurvey): string {
   }).format(amount);
 }
 
-export function resolveCpxSurveyHref(
-  survey: CpxSurvey,
-  ctx: { appId: string; extUserId: string; secureHash?: string; email?: string; username?: string }
-): string {
+/** Anket listesi CPX’ten `href` ile gelmeli; sunucu proxy’si kullanıldığında app_id/hash istemcide yok. */
+export function resolveCpxSurveyHref(survey: CpxSurvey): string {
   const href = survey.href;
   if (typeof href === "string" && /^https?:\/\//i.test(href.trim())) {
     return href.trim();
   }
-  return buildCpxSurveyOfferUrl({
-    appId: ctx.appId,
-    extUserId: ctx.extUserId,
-    surveyId: survey.id,
-    secureHash: ctx.secureHash,
-    email: ctx.email,
-    username: ctx.username,
-  });
+  return "";
 }

@@ -1,33 +1,36 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchSurveys, type CpxSurvey, type FetchSurveysParams } from "@/lib/cpxResearch";
+import type { CpxSurvey, CpxSurveysJson } from "@/lib/cpxResearch";
 
-export interface UseCpxSurveysOptions extends FetchSurveysParams {
-  /** false ise otomatik ilk yükleme yapılmaz */
+export interface UseCpxSurveysOptions {
+  userId: string;
+  country: string;
+  language: string;
   enabled?: boolean;
-  /** Sadece debug log (console) */
-  userId?: string | null;
+}
+
+function isErrorPayload(v: unknown): v is { success: false; message?: string; error?: string } {
+  return typeof v === "object" && v !== null && (v as { success?: unknown }).success === false;
 }
 
 /**
- * CPX anket listesini `fetchSurveys` ile çeker; `surveys` dizisini React state’inde tutar.
+ * CPX anket listesini `/api/cpx-surveys` üzerinden çeker (hash ve app_id sunucuda).
  */
 export function useCpxSurveys(options: UseCpxSurveysOptions) {
-  const { enabled = true, appId, extUserId, secureHash, email, subid1, subid2, hl } = options;
+  const { userId, country, language, enabled = true } = options;
   const [surveys, setSurveys] = useState<CpxSurvey[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [debugMessage, setDebugMessage] = useState("");
 
   useEffect(() => {
-    if (!enabled || !appId || !extUserId) {
+    if (!enabled || !userId) {
       setDebugMessage(
         JSON.stringify(
           {
             surveysCount: 0,
             fetch: "skipped",
             enabled,
-            hasAppId: Boolean(appId),
-            hasExtUserId: Boolean(extUserId),
+            hasUserId: Boolean(userId),
             error: null,
           },
           null,
@@ -35,17 +38,17 @@ export function useCpxSurveys(options: UseCpxSurveysOptions) {
         )
       );
     }
-  }, [enabled, appId, extUserId]);
+  }, [enabled, userId]);
 
   const load = useCallback(async () => {
-    if (!appId || !extUserId) {
+    if (!userId) {
       setSurveys([]);
       setDebugMessage(
         JSON.stringify(
           {
             surveysCount: 0,
             fetch: "skipped",
-            reason: !appId ? "no appId" : "no extUserId",
+            reason: "no userId",
             error: null,
           },
           null,
@@ -54,44 +57,59 @@ export function useCpxSurveys(options: UseCpxSurveysOptions) {
       );
       return;
     }
+
     setLoading(true);
     setError(null);
+
     try {
-      const data = await fetchSurveys({ appId, extUserId, secureHash, email, subid1, subid2, hl });
-      const debugMsg = JSON.stringify(
-        {
-          surveysCount: data?.surveys?.length ?? 0,
-          firstSurvey: data?.surveys?.[0] ?? null,
-          error: null,
-        },
-        null,
-        2
-      );
-      setDebugMessage(debugMsg);
-      setSurveys(data.surveys ?? []);
+      const params = new URLSearchParams({
+        user_id: userId,
+        country: country || "",
+        language: language || "en",
+      });
+
+      const res = await fetch(`/api/cpx-surveys?${params.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+
+      const raw: unknown = await res.json();
+      setDebugMessage(JSON.stringify(raw, null, 2));
+
+      if (!res.ok && isErrorPayload(raw)) {
+        throw new Error(String(raw.error ?? raw.message ?? res.statusText));
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+
+      if (isErrorPayload(raw)) {
+        throw new Error(String(raw.error ?? raw.message ?? "CPX error"));
+      }
+
+      const data = raw as CpxSurveysJson;
+      const list = Array.isArray(data.surveys) ? data.surveys : [];
+      setSurveys(list);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      setDebugMessage(
-        JSON.stringify(
-          {
-            surveysCount: 0,
-            error: String(err),
-          },
-          null,
-          2
-        )
+      setDebugMessage((prev) =>
+        prev.trim()
+          ? prev
+          : JSON.stringify({ surveysCount: 0, error: String(err) }, null, 2)
       );
       setError(err);
       setSurveys([]);
     } finally {
       setLoading(false);
     }
-  }, [appId, extUserId, secureHash, email, subid1, subid2, hl]);
+  }, [userId, country, language]);
 
   useEffect(() => {
-    if (!enabled || !appId || !extUserId) return;
+    if (!enabled || !userId) return;
     void load();
-  }, [enabled, appId, extUserId, secureHash, email, subid1, subid2, hl, load]);
+  }, [enabled, userId, country, language, load]);
 
   return { surveys, setSurveys, loading, error, debugMessage, refetch: load };
 }
