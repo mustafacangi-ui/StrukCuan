@@ -6,6 +6,7 @@ import { startSurvey } from "@/lib/survey";
 import { useUserStats } from "@/hooks/useUserStats";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import { CpxSurveyGrid } from "@/components/CpxSurveyGrid";
 
 /** Survey item for list */
 interface SurveyItem {
@@ -44,6 +45,7 @@ export default function Surveys() {
   const countryCode = user?.countryCode ?? "ID";
   const totalPoin = stats?.cuan ?? 0;
   const tugasCount = TUGAS_LOKAL.length + 1; // BitLabs + local tasks
+  const cpxAppId = import.meta.env.VITE_CPX_APP_ID ?? "";
 
   const handleBitLabsClick = () => {
     toast.info(t("surveys.verifyingAccount"), {
@@ -68,7 +70,7 @@ export default function Surveys() {
   };
 
   return (
-    <div className="min-h-screen max-w-[430px] mx-auto flex flex-col pb-24">
+    <div className="min-h-screen w-full max-w-7xl mx-auto flex flex-col pb-24 px-4 sm:px-6 lg:px-8">
       {/* Deep purple/navy background - image_03a8bf style */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#1a0f3c] via-[#1a0f3c] to-[#0d0620] bg-fixed" />
 
@@ -100,6 +102,18 @@ export default function Surveys() {
           <span className="text-[11px] text-white/60">{t("surveys.tugasCount")}</span>
         </div>
       </div>
+
+      {cpxAppId ? (
+        <div className="mt-6">
+          <CpxSurveyGrid
+            appId={cpxAppId}
+            extUserId={user?.id ?? ""}
+            email={user?.email ?? undefined}
+            username={user?.nickname ?? undefined}
+            enabled={isOnboarded && !!user?.id}
+          />
+        </div>
+      ) : null}
 
       {/* BitLabs - Premium Partner, mor-pembe gradient çerçeveli özel kart */}
       <div className="mx-4 mt-4">
