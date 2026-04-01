@@ -103,17 +103,13 @@ export default function Surveys() {
         </div>
       </div>
 
-      {cpxAppId ? (
-        <div className="mt-6">
-          <CpxSurveyGrid
-            appId={cpxAppId}
-            extUserId={user?.id ?? ""}
-            email={user?.email ?? undefined}
-            username={user?.nickname ?? undefined}
-            enabled={isOnboarded && !!user?.id}
-          />
-        </div>
-      ) : null}
+      <div className="mt-6">
+        <CpxSurveyGrid
+          appId={cpxAppId ?? ""}
+          extUserId={user?.id ?? ""}
+          enabled={true}
+        />
+      </div>
 
       {/* BitLabs - Premium Partner, mor-pembe gradient çerçeveli özel kart */}
       <div className="mx-4 mt-4">
