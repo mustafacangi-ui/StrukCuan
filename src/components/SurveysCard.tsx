@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ interface SurveysCardProps {
   surveys: SurveyDisplay[];
   isLoading: boolean;
   onSelect: (survey: SurveyDisplay) => void;
+  autoOpen?: boolean;
 }
 
 const TICKETS_PER_ENTRY = 10;
@@ -43,7 +44,7 @@ const buildCpxUrl = (userId: string): string => {
   return `${baseUrl}?${params.toString()}`;
 };
 
-export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCardProps) {
+export default function SurveysCard({ surveys, isLoading, onSelect, autoOpen }: SurveysCardProps) {
   const { t } = useTranslation();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -53,6 +54,23 @@ export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCar
 
   const language = getCpxUiLanguage();
   const isIndonesian = language === "id";
+
+  const hasSurveys = surveys.length > 0;
+
+  // Auto-trigger CPX survey when autoOpen is true and no BitLabs surveys available
+  useEffect(() => {
+    if (autoOpen && !isLoading && user?.id && !hasSurveys && !isOpeningSurvey) {
+      // Small delay to allow card to render first
+      const timer = setTimeout(() => {
+        void handleOpenCpxSurvey();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // If autoOpen with surveys, open the modal instead
+    if (autoOpen && !isLoading && hasSurveys) {
+      setIsSurveyModalOpen(true);
+    }
+  }, [autoOpen, isLoading, user?.id, hasSurveys, isOpeningSurvey]);
 
   const handleOpenCpxSurvey = useCallback(async () => {
     if (!user?.id || isOpeningSurvey) return;
@@ -119,7 +137,6 @@ export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCar
   };
 
   const canBrowse = !isLoading && surveys.length > 0;
-  const hasSurveys = surveys.length > 0;
 
   const handleCardActivate = () => {
     if (canBrowse) setIsSurveyModalOpen(true);

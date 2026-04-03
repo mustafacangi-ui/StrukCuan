@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -35,6 +35,7 @@ const DEFAULT_COUNTDOWN = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 export default function Earn() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
@@ -43,6 +44,7 @@ export default function Earn() {
   const [showModal, setShowModal] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDisplay | null>(null);
+  const [autoOpenSurveys, setAutoOpenSurveys] = useState(false);
   const [countdown, setCountdown] = useState(DEFAULT_COUNTDOWN);
   const [countdownReady, setCountdownReady] = useState(false);
   const [showEntryAnimation, setShowEntryAnimation] = useState(false);
@@ -99,6 +101,16 @@ export default function Earn() {
       navigate("/home", { replace: true, state: { requireLogin: "profile" as const } });
     }
   }, [authLoading, isOnboarded, navigate]);
+
+  // Handle auto-open surveys when redirected from /surveys route
+  useEffect(() => {
+    const locationState = location.state as { openSurveys?: boolean } | null;
+    if (locationState?.openSurveys && !surveysLoading && user?.id) {
+      setAutoOpenSurveys(true);
+      // Clear the state to prevent re-triggering on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate, surveysLoading, user?.id]);
 
   const isRedirecting = !authLoading && !isOnboarded;
 
@@ -306,6 +318,7 @@ export default function Earn() {
           surveys={displaySurveys}
           isLoading={surveysLoading}
           onSelect={setSelectedSurvey}
+          autoOpen={autoOpenSurveys}
         />
 
         {/* Bölüm 3: LUCKY SHAKE */}

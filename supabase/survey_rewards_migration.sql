@@ -164,7 +164,7 @@ BEGIN
         UPDATE public.user_stats
         SET
             total_tickets = COALESCE(total_tickets, 0) + v_tickets,
-            tiket = COALESCE(tiket, 0) + v_tickets,
+            weekly_tickets = COALESCE(weekly_tickets, 0) + v_tickets,
             lifetime_tickets = COALESCE(lifetime_tickets, 0) + v_tickets,
             updated_at = now()
         WHERE user_id = p_user_id;
@@ -295,6 +295,8 @@ CREATE POLICY "Service role full access survey_rewards"
 CREATE OR REPLACE FUNCTION public.update_survey_rewards_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     NEW.updated_at = now();
@@ -313,58 +315,67 @@ CREATE TRIGGER trg_survey_rewards_updated_at
 -- Only inserts transactions that don't already exist
 
 -- Create a view for unified survey reporting across old and new tables
-CREATE OR REPLACE VIEW public.survey_rewards_unified AS
--- New format from survey_rewards
-SELECT 
-    id,
-    user_id,
-    provider,
-    survey_id,
-    transaction_id,
-    status,
-    survey_loi,
-    survey_started_at,
-    survey_completed_at,
-    tickets_granted,
-    cuan_granted,
-    hash_verified,
-    raw_payload,
-    country_code,
-    created_at
-FROM public.survey_rewards
+-- Only create if the old table exists to avoid migration failures
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'cpx_ticket_transactions'
+    ) THEN
+        CREATE OR REPLACE VIEW public.survey_rewards_unified AS
+        -- New format from survey_rewards
+        SELECT 
+            id,
+            user_id,
+            provider,
+            survey_id,
+            transaction_id,
+            status,
+            survey_loi,
+            survey_started_at,
+            survey_completed_at,
+            tickets_granted,
+            cuan_granted,
+            hash_verified,
+            raw_payload,
+            country_code,
+            created_at
+        FROM public.survey_rewards
 
-UNION ALL
+        UNION ALL
 
--- Old format from cpx_ticket_transactions (mapped to new structure)
-SELECT 
-    id,
-    user_id,
-    'cpx' as provider,
-    survey_id,
-    trans_id as transaction_id,
-    CASE 
-        WHEN status = '1' THEN 'completed'
-        WHEN status = '2' THEN 'reversed'
-        WHEN status = '3' THEN 'completed'
-        ELSE 'completed'
-    END as status,
-    survey_loi,
-    NULL as survey_started_at,
-    processed_at as survey_completed_at,
-    tickets_added as tickets_granted,
-    0 as cuan_granted,
-    hash_verified,
-    raw_payload,
-    'ID' as country_code,
-    created_at
-FROM public.cpx_ticket_transactions;
+        -- Old format from cpx_ticket_transactions (mapped to new structure)
+        SELECT 
+            id,
+            user_id,
+            'cpx' as provider,
+            survey_id,
+            trans_id as transaction_id,
+            CASE 
+                WHEN status = '1' THEN 'completed'
+                WHEN status = '2' THEN 'reversed'
+                WHEN status = '3' THEN 'completed'
+                ELSE 'completed'
+            END as status,
+            survey_loi,
+            NULL as survey_started_at,
+            processed_at as survey_completed_at,
+            tickets_added as tickets_granted,
+            0 as cuan_granted,
+            hash_verified,
+            raw_payload,
+            'ID' as country_code,
+            created_at
+        FROM public.cpx_ticket_transactions;
 
-COMMENT ON VIEW public.survey_rewards_unified IS 
-'Unified view of all survey rewards from both old (cpx_ticket_transactions) and new (survey_rewards) tables';
+        COMMENT ON VIEW public.survey_rewards_unified IS 
+        'Unified view of all survey rewards from both old (cpx_ticket_transactions) and new (survey_rewards) tables';
 
--- Grant access to view
-GRANT SELECT ON public.survey_rewards_unified TO authenticated;
-GRANT SELECT ON public.survey_rewards_unified TO service_role;
+        -- Grant access to view
+        GRANT SELECT ON public.survey_rewards_unified TO authenticated;
+        GRANT SELECT ON public.survey_rewards_unified TO service_role;
+    END IF;
+END $$;
 
 -- =============================================================================
 -- Migration complete - survey_rewards table is now ready
