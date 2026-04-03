@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";
 import { NotificationAutoPrompt } from "@/components/NotificationAutoPrompt";
+import { registerServiceWorker } from "@/hooks/useBrowserNotifications";
 
 // ── Eager — must be ready on first paint (LCP page) ──────────────────────────
 import Index from "./pages/Index";
@@ -47,21 +48,27 @@ function PageLoader() {
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <RadarProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <NotificationAutoPrompt />
-            <ReferralCapture />
-            <PostLoginRedirect />
-            {/* Global login modal — same UX on home, rank, invite, etc. */}
-            <Suspense fallback={null}>
-              <LoginSheet />
-            </Suspense>
+const App = () => {
+  // Register service worker for push notifications
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <RadarProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <NotificationAutoPrompt />
+              <ReferralCapture />
+              <PostLoginRedirect />
+              {/* Global login modal — same UX on home, rank, invite, etc. */}
+              <Suspense fallback={null}>
+                <LoginSheet />
+              </Suspense>
             {/* Single Suspense boundary — handles all lazy route chunks */}
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -95,6 +102,7 @@ const App = () => (
       </RadarProvider>
     </UserProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

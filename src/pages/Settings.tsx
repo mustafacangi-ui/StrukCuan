@@ -33,7 +33,7 @@ const Settings = () => {
     permission,
     enableNotifications,
     toggleNotifications,
-  } = useBrowserNotifications();
+  } = useBrowserNotifications(user?.id);
 
   // State for notification button loading
   const [notifLoading, setNotifLoading] = useState(false);
