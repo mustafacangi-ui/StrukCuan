@@ -76,6 +76,8 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 export async function subscribeToPush(
   userId: string
 ): Promise<{ success: boolean; subscription?: PushSubscription; error?: string }> {
+  console.log("[Push] Starting push subscription...", { userId });
+
   if (!isPushSupported()) {
     console.log("[Push] Push API not supported");
     return { success: false, error: "Push API not supported" };
@@ -98,7 +100,12 @@ export async function subscribeToPush(
 
     // Get service worker registration
     const registration = await navigator.serviceWorker.ready;
-    console.log("[Push] Service Worker ready:", registration);
+    console.log("[Push] Service Worker ready:", {
+      scope: registration.scope,
+      active: !!registration.active,
+      installing: !!registration.installing,
+      waiting: !!registration.waiting,
+    });
 
     // Check if already subscribed
     const existingSubscription = await registration.pushManager.getSubscription();
@@ -130,10 +137,16 @@ export async function subscribeToPush(
 
     // Subscribe to push
     console.log("[Push] Subscribing with VAPID key...");
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
-    });
+    let subscription: PushSubscription;
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
+      });
+    } catch (subscribeError) {
+      console.error("[Push] pushManager.subscribe() failed:", subscribeError);
+      throw subscribeError;
+    }
 
     console.log("[Push] Push subscription result:", {
       success: true,
@@ -184,7 +197,11 @@ export async function subscribeToPush(
 
     return { success: true, subscription };
   } catch (error) {
-    console.error("[Push] Subscription failed:", error);
+    console.error("[Push] Subscription failed:", {
+      error,
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
