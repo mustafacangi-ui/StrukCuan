@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";
+import { NotificationAutoPrompt } from "@/components/NotificationAutoPrompt";
 
 // ── Eager — must be ready on first paint (LCP page) ──────────────────────────
 import Index from "./pages/Index";
@@ -54,6 +55,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <NotificationAutoPrompt />
             <ReferralCapture />
             <PostLoginRedirect />
             {/* Global login modal — same UX on home, rank, invite, etc. */}

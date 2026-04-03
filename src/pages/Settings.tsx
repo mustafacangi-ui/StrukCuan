@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Moon, Sun, Bell, BellOff, LogOut, Shield, Phone, MapPin, Trophy, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
+import { Moon, Sun, Bell, BellOff, LogOut, Shield, Phone, MapPin, Trophy, ShieldCheck, Trash2, AlertTriangle, BellRing } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -14,16 +14,29 @@ import { PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
 const Settings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOnboarded, isLoading, logout, refreshUser, theme, toggleTheme, pushNotifications, togglePushNotifications } = useUser();
+  const { user, isOnboarded, isLoading, logout, refreshUser, theme, toggleTheme } = useUser();
   const updateCountry = useUpdateCountry();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Browser notifications hook
+  const {
+    isEnabled,
+    isSupported,
+    permission,
+    enableNotifications,
+    toggleNotifications,
+  } = useBrowserNotifications();
+
+  // State for notification button loading
+  const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -170,19 +183,76 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Notifications Section */}
       <div className="mx-4 mt-4">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">{t("settings.notifications")}</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+          {t("settings.notifications")}
+        </p>
         <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}>
-          <div className="flex items-center justify-between">
+          {/* Enable Notifications Button */}
+          <button
+            onClick={async () => {
+              if (!isSupported) {
+                toast.error(t("settings.notificationsNotSupported"));
+                return;
+              }
+              setNotifLoading(true);
+              try {
+                const success = await toggleNotifications();
+                if (success) {
+                  toast.success(t("settings.notificationsEnabled"));
+                } else if (permission === "denied") {
+                  toast.error(t("settings.notificationsDenied"));
+                }
+              } finally {
+                setNotifLoading(false);
+              }
+            }}
+            disabled={notifLoading || permission === "denied"}
+            className="w-full flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <div className="flex items-center gap-3">
-              {pushNotifications ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
-              <div>
-                <p className="text-sm font-semibold text-foreground">{t("settings.pushNotifications")}</p>
-                <p className="text-[10px] text-muted-foreground">{t("settings.pushNotifDesc")}</p>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isEnabled ? "bg-primary/20" : "bg-muted/30"}`}>
+                {isEnabled ? (
+                  <BellRing size={18} className="text-primary" />
+                ) : permission === "denied" ? (
+                  <BellOff size={18} className="text-muted-foreground" />
+                ) : (
+                  <Bell size={18} className="text-muted-foreground" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">
+                  {isEnabled
+                    ? t("settings.notificationsEnabled")
+                    : permission === "denied"
+                    ? t("settings.notificationsBlocked")
+                    : t("settings.enableNotifications")}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {isEnabled
+                    ? t("settings.notificationsActive")
+                    : permission === "denied"
+                    ? t("settings.notificationsBlockedDesc")
+                    : isSupported
+                    ? t("settings.enableNotificationsDesc")
+                    : t("settings.notificationsNotSupported")}
+                </p>
               </div>
             </div>
-            <Switch checked={pushNotifications} onCheckedChange={togglePushNotifications} />
-          </div>
+            {notifLoading ? (
+              <span className="inline-block w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
+            ) : isEnabled ? (
+              <span className="text-xs font-medium text-primary px-2 py-1 rounded-full bg-primary/10">
+                {t("common.enabled")}
+              </span>
+            ) : permission === "denied" ? (
+              <span className="text-xs font-medium text-muted-foreground">
+                {t("common.blocked")}
+              </span>
+            ) : null}
+          </button>
+
           <div className="rounded-lg bg-secondary/50 p-3">
             <div className="flex items-start gap-2">
               <MapPin size={12} className="text-neon-red mt-0.5 shrink-0" />

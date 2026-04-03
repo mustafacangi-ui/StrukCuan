@@ -53,6 +53,7 @@
     "back": "Back",
     "close": "Close",
     "cancel": "Cancel",
+    "notNow": "Not now",
     "done": "Done",
     "view": "View",
     "processing": "Processing...",
@@ -66,6 +67,8 @@
     "delete": "Delete",
     "error": "Error",
     "success": "Success",
+    "enabled": "Enabled",
+    "blocked": "Blocked",
     "tickets": "tickets",
     "ticket": "ticket",
     "progress": "Progress"
@@ -374,7 +377,15 @@
     "deleted": "Account deleted.",
     "deleteFailed": "Could not delete account. Please try again.",
     "receiptHistory": "Receipt History",
-    "receiptHistoryDesc": "View your uploaded receipts"
+    "receiptHistoryDesc": "View your uploaded receipts",
+    "enableNotifications": "Enable Notifications",
+    "enableNotificationsDesc": "Get notified about promotions and rewards",
+    "notificationsEnabled": "Notifications Enabled",
+    "notificationsActive": "You'll receive promo & reward alerts",
+    "notificationsBlocked": "Notifications Blocked",
+    "notificationsBlockedDesc": "Enable in browser settings to receive alerts",
+    "notificationsNotSupported": "Notifications not supported on this device",
+    "notificationsDenied": "Notification permission denied"
   },
   "cuanDashboard": {
     "title": "Cuan Dashboard",

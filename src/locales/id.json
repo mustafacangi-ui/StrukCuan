@@ -65,7 +65,9 @@
     "save": "Simpan",
     "delete": "Hapus",
     "error": "Error",
-    "success": "Berhasil",
+    "success": "Sukses",
+    "enabled": "Aktif",
+    "blocked": "Diblokir",
     "tickets": "tiket",
     "ticket": "tiket",
     "progress": "Progres"
@@ -375,7 +377,15 @@
     "deleted": "Akun dihapus.",
     "deleteFailed": "Gagal menghapus akun. Coba lagi.",
     "receiptHistory": "Riwayat Struk",
-    "receiptHistoryDesc": "Lihat struk yang kamu upload"
+    "receiptHistoryDesc": "Lihat struk yang kamu upload",
+    "enableNotifications": "Aktifkan Notifikasi",
+    "enableNotificationsDesc": "Dapatkan notifikasi promo dan hadiah",
+    "notificationsEnabled": "Notifikasi Aktif",
+    "notificationsActive": "Kamu akan menerima alert promo & hadiah",
+    "notificationsBlocked": "Notifikasi Diblokir",
+    "notificationsBlockedDesc": "Aktifkan di pengaturan browser untuk menerima alert",
+    "notificationsNotSupported": "Notifikasi tidak didukung di perangkat ini",
+    "notificationsDenied": "Izin notifikasi ditolak"
   },
   "cuanDashboard": {
     "title": "Cuan Dashboard",
