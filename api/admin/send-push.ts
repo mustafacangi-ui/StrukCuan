@@ -1,9 +1,18 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import webpush from "web-push";
 
 export const config = {
   runtime: "nodejs",
 };
+
+interface PushSubscription {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_id: string;
+}
 
 interface PushNotificationBody {
   title: string;
@@ -63,9 +72,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return res.status(500).json({
         success: false,
-        message: "Server misconfiguration",
+        message: "Server misconfiguration - Supabase not configured",
       });
     }
+
+    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.VAPID_SUBJECT) {
+      return res.status(500).json({
+        success: false,
+        message: "Server misconfiguration - VAPID keys not configured",
+      });
+    }
+
+    // Configure web-push
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT,
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+    console.log("[send-push] VAPID configured:", { subject: process.env.VAPID_SUBJECT });
 
     // Create Supabase client with service role
     const supabase = createClient(
@@ -144,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get all push subscriptions
     const { data: subscriptions, error: subsError } = await supabase
       .from("push_subscriptions")
-      .select("endpoint, p256dh, auth, user_id");
+      .select("id, endpoint, p256dh, auth, user_id");
 
     console.log("[send-push] Subscriptions query:", { count: subscriptions?.length, subsError: subsError?.message, code: subsError?.code });
 
@@ -158,24 +182,84 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // For now, we'll return success with subscription count
-    // Actual web push implementation would require web-push library and VAPID keys
     const subscriptionCount = subscriptions?.length || 0;
+    console.log(`[send-push] Sending to ${subscriptionCount} subscriptions...`);
 
-    // Note: Full web push implementation requires:
-    // 1. web-push library
-    // 2. VAPID keys (public/private)
-    // 3. Service worker with push event handler
-    // This is a simplified version that stores the notification
-    // and can be extended with actual push delivery
+    const notificationPayload = JSON.stringify({
+      title: trimmedTitle,
+      body: trimmedBody,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+    });
 
-    console.log(`Push notification saved. ID: ${notificationRecord.id}, Subscriptions: ${subscriptionCount}`);
+    // Send notifications to all subscriptions
+    const results = await Promise.allSettled(
+      (subscriptions as PushSubscription[]).map(async (sub, index) => {
+        try {
+          console.log(`[send-push] Sending to subscription ${index + 1}/${subscriptionCount}:`, {
+            id: sub.id,
+            user_id: sub.user_id,
+            endpoint: sub.endpoint.substring(0, 50) + "...",
+          });
+
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            },
+            notificationPayload
+          );
+
+          console.log(`[send-push] Successfully sent to subscription ${index + 1}`);
+          return { success: true, id: sub.id };
+        } catch (error: any) {
+          console.error(`[send-push] Failed to send to subscription ${index + 1}:`, {
+            id: sub.id,
+            statusCode: error.statusCode,
+            message: error.message,
+          });
+
+          // If endpoint is expired or invalid, delete it
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            console.log(`[send-push] Deleting expired subscription ${sub.id} (status ${error.statusCode})`);
+            const { error: deleteError } = await supabase
+              .from("push_subscriptions")
+              .delete()
+              .eq("id", sub.id);
+
+            if (deleteError) {
+              console.error(`[send-push] Failed to delete expired subscription ${sub.id}:`, deleteError);
+            } else {
+              console.log(`[send-push] Deleted expired subscription ${sub.id}`);
+            }
+          }
+
+          return { success: false, id: sub.id, error: error.message, statusCode: error.statusCode };
+        }
+      })
+    );
+
+    // Calculate results
+    const successful = results.filter((r) => r.status === "fulfilled" && r.value.success).length;
+    const failed = results.filter((r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value.success)).length;
+
+    console.log("[send-push] Push notification completed:", {
+      notificationId: notificationRecord.id,
+      total: subscriptionCount,
+      successful,
+      failed,
+    });
 
     return res.status(200).json({
       success: true,
       message: "Notification sent successfully",
       notification_id: notificationRecord.id,
-      subscription_count: subscriptionCount,
+      total: subscriptionCount,
+      successful,
+      failed,
       title: trimmedTitle,
       body: trimmedBody,
     });
