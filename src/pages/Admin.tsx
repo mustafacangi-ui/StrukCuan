@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Receipt, MapPin, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUser } from "@/contexts/UserContext";
 import AdminReceipts from "./AdminReceipts";
@@ -120,6 +120,38 @@ export default function Admin() {
                 <p className="font-semibold text-foreground">{t("admin.dashboard.dealCardTitle")}</p>
                 <p className="text-[10px] text-muted-foreground">{t("admin.dashboard.dealCardDesc")}</p>
               </button>
+              {Notification.permission === "granted" && (
+                <div
+                  className="col-span-2 rounded-xl border-2 p-4 text-left transition-colors"
+                  style={{
+                    borderColor: "rgba(155, 92, 255, 0.4)",
+                    background: "rgba(155, 92, 255, 0.08)",
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Bell size={24} className="text-[#9b5cff] mb-2" />
+                      <p className="font-semibold text-foreground">Push Notification Test</p>
+                      <p className="text-[10px] text-muted-foreground">Send a browser push notification to this device</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        new Notification("StrukCuan", {
+                          body: "Your daily shake is ready!",
+                          icon: "/icon-192.png"
+                        });
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: "linear-gradient(135deg, #9b5cff 0%, #7c3aed 100%)",
+                        boxShadow: "0 0 15px rgba(155, 92, 255, 0.4)",
+                      }}
+                    >
+                      Send Test Notification
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
