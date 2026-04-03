@@ -85,9 +85,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Verify hash
+    // Verify hash (bypass in development mode)
+    const isDevelopment = process.env.NODE_ENV === "development";
+    const bypassHash = isDevelopment;
+    
     const secret = process.env.CPX_SECRET_KEY ?? "";
-    if (!verifyCpxHash(transId, hash, secret)) {
+    if (!bypassHash && !verifyCpxHash(transId, hash, secret)) {
       console.warn("[CPX Postback] Invalid hash", { transId, receivedHash: hash });
       return res.status(403).json({
         success: false,
@@ -175,6 +178,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tickets_granted: 0,
         survey_loi: surveyLoi,
         data,
+        hash_bypassed: bypassHash || undefined,
+        warning: bypassHash ? "Development mode: hash validation bypassed" : undefined,
       });
     }
 
@@ -230,6 +235,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       survey_completed_at: surveyCompletedAt,
       duplicate: false,
       data,
+      hash_bypassed: bypassHash || undefined,
+      warning: bypassHash ? "Development mode: hash validation bypassed" : undefined,
     });
 
   } catch (error) {

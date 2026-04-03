@@ -197,6 +197,8 @@
       "title": "Complete Surveys",
       "subtitle": "Earn tickets directly",
       "rule": "Up to 2 tickets per survey",
+      "browse": "Browse Surveys",
+      "open": "Open Surveys",
       "empty": "No surveys available right now.",
       "emptyHint": "Check back later!",
       "bestOffer": "🔥 Best Offer",

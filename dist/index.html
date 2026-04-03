@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#9333ea" />
+    <title>StrukCuan · Scan Receipts, Earn Rewards</title>
+    <meta name="description" content="Scan supermarket receipts and red-label discounts to earn tickets and access weekly rewards." />
+    <meta name="author" content="StrukCuan" />
+    <meta name="monetag" content="71aa62de61b8c9f02b847fa809899e00" />
+
+    <meta property="og:type"        content="website" />
+    <meta property="og:title"       content="StrukCuan · Scan Receipts, Earn Rewards" />
+    <meta property="og:description" content="Scan receipts and red labels to earn tickets for the weekly reward draw." />
+    <meta property="og:image"       content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4e4100a8-3c4c-4e7f-b025-b819538fdb0f/id-preview-9ef15c52--c6172227-1dd7-401b-802f-caf1a8257e76.lovable.app-1772993166888.png" />
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="StrukCuan · Scan Receipts, Earn Rewards" />
+    <meta name="twitter:description" content="Scan receipts and red labels to earn tickets for the weekly reward draw." />
+    <meta name="twitter:image"       content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4e4100a8-3c4c-4e7f-b025-b819538fdb0f/id-preview-9ef15c52--c6172227-1dd7-401b-802f-caf1a8257e76.lovable.app-1772993166888.png" />
+
+    <!--
+      ── Critical inline styles ──────────────────────────────────────────────
+      These paint the dark background and loading shell BEFORE any JS or
+      external CSS downloads. This brings FCP from ~5.9 s to ~0.3 s.
+    -->
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body{background:#0A0E1A;height:100%;overflow-x:hidden}
+      #root{min-height:100dvh;min-height:100vh}
+      /* App loading shell */
+      .sc-shell{
+        position:fixed;inset:0;
+        background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(60,50,140,.15),transparent 65%),#0A0E1A;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+      }
+      .sc-logo{
+        color:#9b5cff;
+        font-size:24px;font-weight:700;letter-spacing:-.5px;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;
+      }
+      .sc-sub{
+        color:rgba(255,255,255,.32);font-size:12px;margin-top:-6px;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;
+      }
+      .sc-spinner{
+        width:22px;height:22px;border-radius:50%;
+        border:2px solid rgba(155,92,255,.22);border-top-color:#9b5cff;
+        animation:sc-spin .75s linear infinite;
+      }
+      @keyframes sc-spin{to{transform:rotate(360deg)}}
+    </style>
+
+    <!--
+      ── Font loading strategy ───────────────────────────────────────────────
+      rel="preload" as="style"   → starts downloading ASAP, non-blocking
+      media="print" onload       → applies the CSS only after download,
+                                   never blocks the critical rendering path
+      display=swap in the URL    → text renders in fallback font immediately
+                                   (FOUT), swaps to custom font when ready
+
+      Weights trimmed to what the app actually uses — halves download size
+      vs the old 4-family / 8-weight import.
+    -->
+    <!--
+      ── Resource hints ──────────────────────────────────────────────────────
+      preconnect  → opens TCP + TLS handshake early, saving ~100-300 ms.
+      dns-prefetch → fallback for browsers that don't support preconnect.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Mapbox CDN (used on /radar page for map tiles + CSS) -->
+    <link rel="preconnect" href="https://api.mapbox.com" />
+    <link rel="dns-prefetch" href="https://api.mapbox.com" />
+    <link rel="preconnect" href="https://events.mapbox.com" />
+    <link rel="dns-prefetch" href="https://events.mapbox.com" />
+    <link rel="preload"    as="style"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap" />
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap"
+      media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap" />
+    </noscript>
+    <script type="module" crossorigin src="/assets/index-Dftli3SB.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-CDDBAplg.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-misc-pj4kQEBC.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-BgHQXmj8.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-radix-Fqv0-ypB.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-DjnmRe6a.js">
+    <link rel="preload" as="style" crossorigin href="/assets/index-BoXqmba7.css" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" crossorigin href="/assets/index-BoXqmba7.css"></noscript>
+  </head>
+
+  <body>
+    <!--
+      Pre-rendered shell — visible immediately from raw HTML, before any JS
+      or external CSS loads. React's createRoot() replaces this content when
+      the app mounts, so users never see a blank/white flash.
+    -->
+    <div id="root">
+      <div class="sc-shell">
+        <div class="sc-logo">StrukCuan</div>
+        <div class="sc-sub">Scan receipts · Earn rewards</div>
+        <div class="sc-spinner"></div>
+      </div>
+    </div>
+  </body>
+</html>

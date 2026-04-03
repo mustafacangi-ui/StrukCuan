@@ -197,6 +197,8 @@
       "title": "Selesaikan Survei",
       "subtitle": "Dapatkan tiket langsung",
       "rule": "Hingga 2 tiket per survei",
+      "browse": "Jelajahi Survei",
+      "open": "Buka Survei",
       "empty": "Tidak ada survei saat ini.",
       "emptyHint": "Cek lagi nanti!",
       "bestOffer": "🔥 Penawaran Terbaik",
