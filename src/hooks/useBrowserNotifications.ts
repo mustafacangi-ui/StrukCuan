@@ -86,8 +86,15 @@ export async function subscribeToPush(
     return { success: false, error: "VAPID public key not configured" };
   }
 
+  console.log("[Push] VAPID key check:", {
+    exists: true,
+    length: VAPID_PUBLIC_KEY.length,
+    preview: `${VAPID_PUBLIC_KEY.substring(0, 20)}...`,
+  });
+
   try {
-    console.log("[Push] Starting subscription process for user:", userId);
+    console.log("[Push] VAPID key validation passed");
+    console.log("[Push] Getting service worker registration...");
 
     // Get service worker registration
     const registration = await navigator.serviceWorker.ready;
@@ -128,7 +135,11 @@ export async function subscribeToPush(
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
     });
 
-    console.log("[Push] Subscription created:", subscription);
+    console.log("[Push] Push subscription result:", {
+      success: true,
+      endpoint: subscription.endpoint.substring(0, 50) + "...",
+      expirationTime: subscription.expirationTime,
+    });
 
     // Extract subscription data
     const endpoint = subscription.endpoint;
@@ -146,7 +157,7 @@ export async function subscribeToPush(
     });
 
     // Save to database
-    console.log("[Push] Saving subscription to database...");
+    console.log("[Push] Inserting into Supabase push_subscriptions...");
     const { data: savedSub, error: saveError } = await supabase
       .from("push_subscriptions")
       .upsert(
@@ -160,6 +171,8 @@ export async function subscribeToPush(
       )
       .select("id")
       .single();
+
+    console.log("[Push] Supabase insert result:", { savedSub, saveError: saveError?.message, code: saveError?.code });
 
     if (saveError) {
       console.error("[Push] Failed to save subscription:", saveError);
