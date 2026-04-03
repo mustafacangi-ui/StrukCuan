@@ -209,7 +209,7 @@ export default function SurveysCard({ surveys, isLoading, onSelect, autoOpen }: 
           </h3>
           <p className="text-xs text-white/60 mt-0.5">Earn tickets directly</p>
           <p className="text-xs font-semibold mt-1 text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.7)]">
-            Up to 2 tickets per survey
+            Based on survey duration
           </p>
         </div>
       </div>
@@ -402,7 +402,7 @@ function GoldenSurveyRow({
           className="text-sm font-bold mt-1"
           style={{ color: "#fbbf24", textShadow: "0 0 10px rgba(251,191,36,0.7)" }}
         >
-          🎟️ 2 TICKETS
+          🎟️ TICKETS
         </p>
       </div>
 
@@ -480,7 +480,7 @@ function StandardSurveyRow({
           className="text-sm font-bold mt-1 text-[#4ade80]"
           style={{ textShadow: "0 0 8px rgba(74,222,128,0.6)" }}
         >
-          🎟️ 1 TICKET
+          🎟️ TICKETS
         </p>
       </div>
 

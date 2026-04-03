@@ -45,3 +45,41 @@ export function getCountdownParts(): CountdownParts {
 export function pad(count: number): string {
   return String(count).padStart(2, "0");
 }
+
+/**
+ * Get next midnight in Jakarta time (Asia/Jakarta, UTC+7).
+ * Lucky Shake resets once per calendar day at 00:00 Jakarta time.
+ * Countdown always targets next Jakarta midnight.
+ */
+export function getNextJakartaMidnight(): Date {
+  const now = new Date();
+  
+  // Convert current time to Jakarta timezone
+  const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+  const jakartaYear = jakartaTime.getFullYear();
+  const jakartaMonth = jakartaTime.getMonth();
+  const jakartaDate = jakartaTime.getDate();
+  
+  // Create next midnight in Jakarta time
+  const nextMidnightJakarta = new Date(jakartaYear, jakartaMonth, jakartaDate + 1, 0, 0, 0, 0);
+  
+  // Convert back to local/UTC for comparison
+  const nextMidnightUtc = new Date(nextMidnightJakarta.toLocaleString("en-US", { timeZone: "UTC" }));
+  
+  return nextMidnightUtc;
+}
+
+export function getDailyShakeCountdownParts(): CountdownParts {
+  try {
+    const diff = getNextJakartaMidnight().getTime() - Date.now();
+    if (diff <= 0) return DEFAULT_COUNTDOWN;
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff / 3600000) % 24),
+      minutes: Math.floor((diff / 60000) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  } catch {
+    return DEFAULT_COUNTDOWN;
+  }
+}

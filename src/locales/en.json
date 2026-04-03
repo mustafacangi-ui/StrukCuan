@@ -196,15 +196,14 @@
     "surveys": {
       "title": "Complete Surveys",
       "subtitle": "Earn tickets directly",
-      "rule": "Up to 2 tickets per survey",
+      "rule": "Based on survey duration",
       "browse": "Browse Surveys",
       "open": "Open Surveys",
       "empty": "No surveys available right now.",
       "emptyHint": "Check back later!",
       "bestOffer": "🔥 Best Offer",
       "fallbackTitle": "BitLabs Survey",
-      "tickets2": "🎟️ 2 TICKETS",
-      "tickets1": "🎟️ 1 TICKET",
+      "tickets": "TICKETS",
       "start": "START"
     }
   },
@@ -213,9 +212,9 @@
     "subtitle": "Shake your phone to win bonus tickets!",
     "rule": "Win 1 to 5 tickets instantly",
     "ready": "🎯 Your shake is ready — good luck!",
-    "lockedHint": "Next shake unlocks when countdown hits zero",
+    "lockedHint": "Next shake unlocks at midnight Jakarta time",
     "countdown": {
-      "nextDraw": "Next draw in",
+      "nextDraw": "Next shake in",
       "days": "Days",
       "hours": "Hours",
       "min": "Min",
@@ -223,7 +222,7 @@
     },
     "cta": {
       "shakeNow": "Shake Now",
-      "locked": "Locked — Wait for Draw"
+      "locked": "Locked — Wait for Midnight"
     },
     "modal": {
       "title": "Lucky Shake!",
@@ -234,11 +233,11 @@
       "congrats": "Congratulations! 🎉"
     },
     "toast": {
-      "waitCountdown": "Come back when the countdown reaches zero!",
-      "alreadyUsed": "Already used this period. Come back next week!",
+      "waitCountdown": "Come back after midnight Jakarta time for your next shake!",
+      "alreadyUsed": "Already used today's shake. Come back tomorrow!",
       "weeklyLimit": "Weekly ticket limit reached.",
       "loginToPlay": "Log in to play",
-      "unlockOnZero": "Your shake unlocks when the countdown hits zero!",
+      "unlockOnZero": "Your shake unlocks at midnight Jakarta time!",
       "unsupportedDevice": "Device not supported. Try on mobile.",
       "sensorPermission": "Sensor permission required for Lucky Shake.",
       "failed": "Failed"

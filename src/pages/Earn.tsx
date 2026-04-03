@@ -25,7 +25,7 @@ import SurveysCard from "@/components/SurveysCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
-import { getCountdownParts } from "@/lib/weeklyCountdown";
+import { getCountdownParts, getDailyShakeCountdownParts } from "@/lib/weeklyCountdown";
 import { CARD_BASE, BTN_GLASS, PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
 
 const TICKETS_PER_ENTRY = 10;
@@ -47,6 +47,8 @@ export default function Earn() {
   const [autoOpenSurveys, setAutoOpenSurveys] = useState(false);
   const [countdown, setCountdown] = useState(DEFAULT_COUNTDOWN);
   const [countdownReady, setCountdownReady] = useState(false);
+  const [shakeCountdown, setShakeCountdown] = useState(DEFAULT_COUNTDOWN);
+  const [shakeCountdownReady, setShakeCountdownReady] = useState(false);
   const [showEntryAnimation, setShowEntryAnimation] = useState(false);
   const prevAdsRef = useRef<number>(adsWatched ?? 0);
 
@@ -68,10 +70,14 @@ export default function Earn() {
       try {
         setCountdown(getCountdownParts());
         setCountdownReady(true);
+        setShakeCountdown(getDailyShakeCountdownParts());
+        setShakeCountdownReady(true);
       } catch (err) {
         console.error("[Earn] countdown tick error:", err);
         setCountdown(DEFAULT_COUNTDOWN);
         setCountdownReady(true);
+        setShakeCountdown(DEFAULT_COUNTDOWN);
+        setShakeCountdownReady(true);
       }
     };
     tick();
@@ -323,8 +329,8 @@ export default function Earn() {
 
         {/* Bölüm 3: LUCKY SHAKE */}
         <LuckyShakeCard
-          countdown={countdown}
-          countdownReady={countdownReady}
+          countdown={shakeCountdown}
+          countdownReady={shakeCountdownReady}
           userId={user?.id}
           isWeeklyLimitReached={isWeeklyLimitReached}
         />
