@@ -39,20 +39,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const incomingHash = String(req.query.hash ?? "");
     const secret = process.env.CPX_SECRET_KEY ?? "";
 
-    if (!secret || !transId || !incomingHash) {
+    const isDevelopment = process.env.NODE_ENV === "development";
+    const bypassHash = isDevelopment;
+
+    if (!transId || !incomingHash) {
       return res.status(403).json({
         success: false,
-        message: "Invalid hash",
+        message: "Missing required parameters",
       });
     }
 
-    const generatedHash = crypto.createHash("md5").update(`${transId}-${secret}`).digest("hex");
+    if (!bypassHash) {
+      if (!secret) {
+        return res.status(403).json({
+          success: false,
+          message: "Invalid hash",
+        });
+      }
 
-    if (generatedHash.toLowerCase() !== incomingHash.toLowerCase()) {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid hash",
-      });
+      const generatedHash = crypto.createHash("md5").update(`${transId}-${secret}`).digest("hex");
+
+      if (generatedHash.toLowerCase() !== incomingHash.toLowerCase()) {
+        return res.status(403).json({
+          success: false,
+          message: "Invalid hash",
+        });
+      }
     }
 
     const status = String(req.query.status ?? "");
@@ -256,6 +268,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: "Tickets added",
       user_id: userId,
       tickets,
+      hash_bypassed: bypassHash || undefined,
+      warning: bypassHash ? "Development mode: hash validation bypassed" : undefined,
     });
   } catch (error) {
     console.error("CPX webhook error:", error);

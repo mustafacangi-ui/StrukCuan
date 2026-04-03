@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import type { SurveyDisplay } from "@/hooks/useBitLabsSurveys";
+import { useUser } from "@/contexts/UserContext";
+import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
+import { getCpxUiLanguage } from "@/lib/cpxResearch";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,11 +21,110 @@ interface SurveysCardProps {
   surveys: SurveyDisplay[];
   isLoading: boolean;
   onSelect: (survey: SurveyDisplay) => void;
+  autoOpen?: boolean;
 }
 
-export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCardProps) {
+const TICKETS_PER_ENTRY = 10;
+
+// Reward tier calculation based on survey duration (minutes)
+const getTicketCount = (minutes: number): number => {
+  if (minutes < 1) return 1;
+  if (minutes <= 3) return 2;
+  return 3;
+};
+
+// Build CPX survey URL with user ID
+const buildCpxUrl = (userId: string): string => {
+  const appId = import.meta.env.VITE_CPX_APP_ID ?? "";
+  const baseUrl = "https://offers.cpx-research.com/index.php";
+  const params = new URLSearchParams({
+    app_id: appId,
+    ext_user_id: userId,
+  });
+  return `${baseUrl}?${params.toString()}`;
+};
+
+export default function SurveysCard({ surveys, isLoading, onSelect, autoOpen }: SurveysCardProps) {
+  const { t } = useTranslation();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
   const [goldenShaking, setGoldenShaking] = useState(false);
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
+  const [isOpeningSurvey, setIsOpeningSurvey] = useState(false);
+
+  const language = getCpxUiLanguage();
+  const isIndonesian = language === "id";
+
+  const hasSurveys = surveys.length > 0;
+
+  // Auto-trigger CPX survey when autoOpen is true and no BitLabs surveys available
+  useEffect(() => {
+    if (autoOpen && !isLoading && user?.id && !hasSurveys && !isOpeningSurvey) {
+      // Small delay to allow card to render first
+      const timer = setTimeout(() => {
+        void handleOpenCpxSurvey();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // If autoOpen with surveys, open the modal instead
+    if (autoOpen && !isLoading && hasSurveys) {
+      setIsSurveyModalOpen(true);
+    }
+  }, [autoOpen, isLoading, user?.id, hasSurveys, isOpeningSurvey]);
+
+  const handleOpenCpxSurvey = useCallback(async () => {
+    if (!user?.id || isOpeningSurvey) return;
+    
+    setIsOpeningSurvey(true);
+    const toastId = toast.loading(isIndonesian ? "Membuka survei..." : "Opening survey...");
+    
+    try {
+      // Save survey_started_at to database before opening
+      const { error } = await supabase.from("survey_rewards").insert({
+        user_id: user.id,
+        provider: "cpx",
+        transaction_id: `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        status: "completed", // Will be updated by webhook on actual completion
+        survey_started_at: new Date().toISOString(),
+        tickets_granted: 0, // Will be updated by webhook
+        hash_verified: false,
+        raw_payload: { source: "frontend_click", clicked_at: new Date().toISOString() },
+        country_code: user.countryCode ?? "ID",
+      });
+
+      if (error && !error.message?.includes("duplicate")) {
+        console.error("Failed to save survey start:", error);
+      }
+
+      // Build and open CPX URL with ext_user_id
+      const cpxUrl = buildCpxUrl(user.id);
+      
+      await new Promise((r) => setTimeout(r, 380));
+      
+      const w = window.open(cpxUrl, "_blank", "noopener,noreferrer");
+      if (!w) {
+        toast.error(isIndonesian ? "Popup diblokir" : "Popup blocked", {
+          description: isIndonesian ? "Izinkan popup untuk situs ini." : "Allow popups for this site.",
+        });
+      }
+
+      // Set up polling to check for new survey completions
+      const checkForCompletion = setInterval(() => {
+        // Refresh ticket balance and draw progress
+        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
+        invalidateLotteryPoolQueries(queryClient);
+      }, 5000);
+
+      // Stop polling after 2 minutes
+      setTimeout(() => clearInterval(checkForCompletion), 120000);
+      
+    } finally {
+      toast.dismiss(toastId);
+      setIsOpeningSurvey(false);
+    }
+  }, [user?.id, user?.countryCode, isOpeningSurvey, isIndonesian, queryClient]);
 
   const triggerGoldenShake = () => {
     setGoldenShaking(true);
@@ -141,16 +248,58 @@ export default function SurveysCard({ surveys, isLoading, onSelect }: SurveysCar
         )}
       </div>
 
+      {/* Reward Tiers Info */}
+      <div className="relative z-10 mt-3 p-3 rounded-xl bg-white/5 border border-white/10">
+        <p className="text-[10px] font-semibold text-white/70 mb-2 uppercase tracking-wide">
+          {isIndonesian ? "Tingkat Hadiah" : "Reward Tiers"}
+        </p>
+        <div className="flex items-center justify-between text-[10px]">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+            <span className="text-white/60">&lt;1 {isIndonesian ? "menit" : "min"}</span>
+            <span className="font-bold text-green-400">= 1 {t("common.ticket")}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-yellow-400" />
+            <span className="text-white/60">1-3 {isIndonesian ? "menit" : "min"}</span>
+            <span className="font-bold text-yellow-400">= 2 {t("common.tickets")}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-pink-400" />
+            <span className="text-white/60">3+ {isIndonesian ? "menit" : "min"}</span>
+            <span className="font-bold text-pink-400">= 3 {t("common.tickets")}</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-white/50 mt-2 text-center">
+          {TICKETS_PER_ENTRY} {t("common.tickets")} = 1 {isIndonesian ? "undian akhir pekan" : "weekend draw entry"}
+        </p>
+      </div>
+
       <Button
         type="button"
-        disabled={isLoading || !canBrowse}
+        disabled={isLoading || !user?.id || isOpeningSurvey}
         onClick={(e) => {
           e.stopPropagation();
-          if (canBrowse) setIsSurveyModalOpen(true);
+          if (hasSurveys) {
+            setIsSurveyModalOpen(true);
+          } else {
+            void handleOpenCpxSurvey();
+          }
         }}
         className="relative z-10 mt-4 w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Loading..." : canBrowse ? "Browse Surveys" : "No Surveys Available"}
+        {isLoading ? (
+          t("common.loading")
+        ) : isOpeningSurvey ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            {isIndonesian ? "Membuka..." : "Opening..."}
+          </span>
+        ) : hasSurveys ? (
+          t("earn.surveys.browse")
+        ) : (
+          isIndonesian ? "Buka Survei" : "Open Surveys"
+        )}
       </Button>
 
       <Dialog open={isSurveyModalOpen} onOpenChange={setIsSurveyModalOpen}>

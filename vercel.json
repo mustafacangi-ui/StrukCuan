@@ -19,6 +19,9 @@
   "functions": {
     "api/webhooks/cpx-reward.ts": {
       "maxDuration": 30
+    },
+    "api/cpx/postback.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [
