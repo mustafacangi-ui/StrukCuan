@@ -92,19 +92,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
+    console.log("[send-push] Auth user:", { userId: user?.id, email: user?.email, hasUser: !!user, authError: authError?.message });
+
     if (authError || !user) {
+      console.error("[send-push] Auth failed:", authError);
       return res.status(401).json({
         success: false,
         message: "Unauthorized - invalid token",
+        error: authError?.message || "Authentication failed",
+        details: authError,
       });
     }
 
     // Check if user is admin
     const isAdmin = user.app_metadata?.is_admin === true;
+    console.log("[send-push] Admin check:", { isAdmin, appMetadata: user.app_metadata });
+
     if (!isAdmin) {
       return res.status(403).json({
         success: false,
         message: "Forbidden - admin access required",
+        error: "User is not an admin",
+        details: { userId: user.id, isAdmin },
       });
     }
 
@@ -120,12 +129,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select("id")
       .single();
 
+    console.log("[send-push] Insert result:", { notificationRecord, insertError: insertError?.message, code: insertError?.code });
+
     if (insertError) {
-      console.error("Failed to save push notification:", insertError);
+      console.error("[send-push] Failed to save push notification:", insertError);
       return res.status(500).json({
         success: false,
         message: "Failed to save notification",
-        error: insertError.message,
+        error: insertError?.message || "Unknown error",
+        details: insertError,
       });
     }
 
@@ -134,12 +146,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, user_id");
 
+    console.log("[send-push] Subscriptions query:", { count: subscriptions?.length, subsError: subsError?.message, code: subsError?.code });
+
     if (subsError) {
-      console.error("Failed to fetch push subscriptions:", subsError);
+      console.error("[send-push] Failed to fetch push subscriptions:", subsError);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch subscriptions",
-        error: subsError.message,
+        error: subsError?.message || "Unknown error",
+        details: subsError,
       });
     }
 
@@ -165,12 +180,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: trimmedBody,
     });
   } catch (error) {
-    console.error("Send push notification error:", error);
+    console.error("[send-push] Send push notification error:", error);
 
     return res.status(500).json({
       success: false,
       message: "Failed to send notification",
       error: error instanceof Error ? error.message : "Unknown error",
+      details: error,
     });
   }
 }
