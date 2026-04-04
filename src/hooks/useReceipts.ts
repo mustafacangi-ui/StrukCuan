@@ -264,7 +264,7 @@ export function useApproveReceiptWithRewards() {
       tiket,
     }: { receiptId: number; tiket: number }) => {
       const { error } = await supabase.rpc("approve_receipt_with_rewards", {
-        p_receipt_id: Number(receiptId),
+        p_receipt_id: receiptId,
         p_tiket: Number(tiket),
       });
 
@@ -274,6 +274,7 @@ export function useApproveReceiptWithRewards() {
       }
     },
     onSuccess: () => {
+      // Invalidate all receipt queries to refresh the UI
       queryClient.invalidateQueries({
         queryKey: RECEIPTS_QUERY_KEY,
       });
@@ -281,6 +282,8 @@ export function useApproveReceiptWithRewards() {
       queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       invalidateLotteryPoolQueries(queryClient);
+      // Force refetch pending receipts
+      queryClient.refetchQueries({ queryKey: [...RECEIPTS_QUERY_KEY, "pending"] });
     },
   });
 }
