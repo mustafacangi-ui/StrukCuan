@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText } from "lucide-react";
+import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText, Calendar, Clock } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import AdminReceipts from "./AdminReceipts";
 import AdminDeals from "./AdminDeals";
+
+// Segment options for scheduled push notifications
+const SEGMENT_OPTIONS = [
+  { value: "all", label: "All users" },
+  { value: "inactive_users", label: "Inactive users (3+ days)" },
+  { value: "low_ticket_users", label: "Low ticket users (<5 tickets)" },
+  { value: "indonesia_users", label: "Indonesia users" },
+  { value: "survey_users", label: "Survey users" },
+];
 
 type Tab = "dashboard" | "receipts" | "deals";
 
@@ -31,6 +40,101 @@ export default function Admin() {
   const [notifTitle, setNotifTitle] = useState("StrukCuan");
   const [notifBody, setNotifBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  // Scheduled push notification form state
+  const [scheduledTitle, setScheduledTitle] = useState("StrukCuan");
+  const [scheduledBody, setScheduledBody] = useState("");
+  const [scheduledSegment, setScheduledSegment] = useState("all");
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduledNotifications, setScheduledNotifications] = useState<any[]>([]);
+  const [isLoadingScheduled, setIsLoadingScheduled] = useState(false);
+
+  // Fetch scheduled notifications
+  useEffect(() => {
+    if (isAdmin) {
+      fetchScheduledNotifications();
+    }
+  }, [isAdmin]);
+
+  const fetchScheduledNotifications = async () => {
+    setIsLoadingScheduled(true);
+    try {
+      const { data, error } = await supabase
+        .from("scheduled_push_notifications")
+        .select("*")
+        .order("scheduled_for", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch scheduled notifications:", error);
+      } else {
+        setScheduledNotifications(data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching scheduled notifications:", error);
+    } finally {
+      setIsLoadingScheduled(false);
+    }
+  };
+
+  const handleScheduleNotification = async () => {
+    if (!scheduledTitle.trim() || !scheduledBody.trim() || !scheduledFor) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch("/api/admin/schedule-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          title: scheduledTitle.trim(),
+          body: scheduledBody.trim(),
+          segment: scheduledSegment,
+          scheduled_for: new Date(scheduledFor).toISOString(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "Notification scheduled successfully",
+          description: `Scheduled for ${new Date(scheduledFor).toLocaleString()}`,
+        });
+        setScheduledBody("");
+        setScheduledTitle("StrukCuan");
+        setScheduledSegment("all");
+        setScheduledFor("");
+        // Refresh the list
+        fetchScheduledNotifications();
+      } else {
+        toast({
+          title: "Failed to schedule",
+          description: result.message || "An error occurred",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to schedule",
+        description: error instanceof Error ? error.message : "Network error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -298,7 +402,7 @@ export default function Admin() {
                       if (result.success) {
                         toast({
                           title: "Notification sent successfully",
-                          description: `Sent to ${result.subscription_count} subscribed devices`,
+                          description: `Sent to ${result.total} subscribed devices (${result.successful} successful, ${result.failed} failed)`,
                         });
                         setNotifBody("");
                         setNotifTitle("StrukCuan");
@@ -338,6 +442,178 @@ export default function Admin() {
                     </span>
                   )}
                 </button>
+              </div>
+
+              {/* Scheduled Push Notification Card */}
+              <div
+                className="col-span-2 rounded-xl border-2 p-4 text-left transition-colors"
+                style={{
+                  borderColor: "rgba(155, 92, 255, 0.4)",
+                  background: "linear-gradient(135deg, rgba(155, 92, 255, 0.08) 0%, rgba(124, 58, 237, 0.05) 100%)",
+                }}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
+                    style={{
+                      background: "rgba(155, 92, 255, 0.2)",
+                      border: "1px solid rgba(155, 92, 255, 0.3)",
+                    }}
+                  >
+                    <Calendar size={20} className="text-[#9b5cff]" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Scheduled Push Notification</p>
+                    <p className="text-[10px] text-muted-foreground">Schedule a push notification for later</p>
+                  </div>
+                </div>
+
+                {/* Title Input */}
+                <div className="mb-3">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={scheduledTitle}
+                    onChange={(e) => setScheduledTitle(e.target.value)}
+                    placeholder="Notification title..."
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#9b5cff]/50 focus:ring-1 focus:ring-[#9b5cff]/30 transition-all"
+                    maxLength={100}
+                  />
+                </div>
+
+                {/* Message Textarea */}
+                <div className="mb-3">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block">
+                    Message
+                  </label>
+                  <textarea
+                    value={scheduledBody}
+                    onChange={(e) => setScheduledBody(e.target.value)}
+                    placeholder="Write your notification message..."
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#9b5cff]/50 focus:ring-1 focus:ring-[#9b5cff]/30 transition-all resize-none"
+                    rows={3}
+                    maxLength={500}
+                  />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[10px] text-white/40">
+                      {scheduledBody.length}/500 characters
+                    </span>
+                  </div>
+                </div>
+
+                {/* Segment Dropdown */}
+                <div className="mb-3">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block">
+                    Target Segment
+                  </label>
+                  <select
+                    value={scheduledSegment}
+                    onChange={(e) => setScheduledSegment(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#9b5cff]/50 focus:ring-1 focus:ring-[#9b5cff]/30 transition-all appearance-none cursor-pointer"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 12px center",
+                    }}
+                  >
+                    {SEGMENT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value} className="bg-[#1a1a2e] text-white">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Date/Time Picker */}
+                <div className="mb-4">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block">
+                    Schedule Date & Time
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      onChange={(e) => setScheduledFor(e.target.value)}
+                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#9b5cff]/50 focus:ring-1 focus:ring-[#9b5cff]/30 transition-all"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    <Clock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Schedule Button */}
+                <button
+                  onClick={handleScheduleNotification}
+                  disabled={isScheduling || !scheduledTitle.trim() || !scheduledBody.trim() || !scheduledFor}
+                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mb-4"
+                  style={{
+                    background: "linear-gradient(135deg, #9b5cff 0%, #7c3aed 100%)",
+                    boxShadow: "0 0 20px rgba(155, 92, 255, 0.4)",
+                  }}
+                >
+                  {isScheduling ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Scheduling...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Calendar size={16} />
+                      Schedule Notification
+                    </span>
+                  )}
+                </button>
+
+                {/* Scheduled Notifications List */}
+                {isLoadingScheduled ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#9b5cff] border-t-transparent" />
+                  </div>
+                ) : scheduledNotifications.length > 0 ? (
+                  <div className="border-t border-white/10 pt-4">
+                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-3 block">
+                      Scheduled Notifications ({scheduledNotifications.length})
+                    </label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {scheduledNotifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="rounded-xl border border-white/10 bg-black/20 p-3 flex items-start justify-between gap-2"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-white/50 mt-0.5">
+                              {SEGMENT_OPTIONS.find((o) => o.value === notification.segment)?.label || notification.segment}
+                            </p>
+                            <p className="text-[10px] text-white/40 mt-1 flex items-center gap-1">
+                              <Clock size={10} />
+                              {new Date(notification.scheduled_for).toLocaleString()}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${
+                              notification.sent
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                            }`}
+                          >
+                            {notification.sent ? "Sent" : "Pending"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-[10px] text-white/40 text-center">
+                      No scheduled notifications yet
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
