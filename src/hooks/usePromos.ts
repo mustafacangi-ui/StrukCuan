@@ -78,7 +78,7 @@ export async function fetchPromosNearby(
 
   const authorIds = [...new Set(promos.map((p) => p.user_id))];
   const { data: profilesData } = await supabase
-    .from("profiles")
+    .from("survey_profiles")
     .select("id, nickname")
     .in("id", authorIds);
   const { data: statsData } = await supabase

@@ -55,7 +55,7 @@ export const useUser = () => {
 };
 
 async function upsertProfile(userId: string, nickname: string, phone?: string, email?: string) {
-  const { error } = await supabase.from("profiles").upsert(
+  const { error } = await supabase.from("survey_profiles").upsert(
     {
       id: userId,
       nickname,
@@ -107,7 +107,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const nickname = u.user_metadata?.nickname ?? u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? "";
 
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("survey_profiles")
       .select("nickname, phone")
       .eq("id", userId)
       .single();

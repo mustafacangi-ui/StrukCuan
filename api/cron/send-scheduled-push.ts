@@ -164,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "indonesia_users":
           console.log("[cron/send-scheduled-push] Segment: indonesia_users - finding users with country_code = ID");
           const { data: indonesiaUsers, error: indonesiaError } = await supabase
-            .from("profiles")
+            .from("survey_profiles")
             .select("id")
             .eq("country_code", "ID");
 
