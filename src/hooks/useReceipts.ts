@@ -261,12 +261,10 @@ export function useApproveReceiptWithRewards() {
   return useMutation({
     mutationFn: async ({
       receiptId,
-      cuan,
       tiket,
-    }: { receiptId: number; cuan: number; tiket: number }) => {
+    }: { receiptId: number; tiket: number }) => {
       const { error } = await supabase.rpc("approve_receipt_with_rewards", {
         p_receipt_id: Number(receiptId),
-        p_cuan: Number(cuan),
         p_tiket: Number(tiket),
       });
 
