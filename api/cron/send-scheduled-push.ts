@@ -240,6 +240,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: notification.body,
         icon: "/icon-192.png",
         badge: "/icon-192.png",
+        tag: `scheduled-${notification.id}`,
+        requireInteraction: true,
+        data: {
+          url: "/"
+        }
       });
 
       // Send notifications to all subscriptions
@@ -251,6 +256,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               user_id: sub.user_id,
               endpoint: sub.endpoint.substring(0, 50) + "...",
             });
+            console.log("[cron/send-scheduled-push] Sending payload:", notificationPayload);
 
             await webpush.sendNotification(
               {

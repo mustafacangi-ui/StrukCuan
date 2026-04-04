@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText, Calendar, Clock, AlertTriangle, Info } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
@@ -527,7 +527,7 @@ export default function Admin() {
                 </div>
 
                 {/* Date/Time Picker */}
-                <div className="mb-4">
+                <div className="mb-3">
                   <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block">
                     Schedule Date & Time
                   </label>
@@ -542,6 +542,89 @@ export default function Admin() {
                     <Clock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
                   </div>
                 </div>
+
+                {/* Timezone Helper */}
+                {scheduledFor && (
+                  <div className="mb-3 rounded-xl border border-[#9b5cff]/30 bg-[#9b5cff]/10 p-3">
+                    <label className="text-[10px] font-medium text-[#9b5cff] uppercase tracking-wider mb-2 block">
+                      Timezone Preview
+                    </label>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white/50 w-16 shrink-0">Local:</span>
+                        <span className="text-white font-medium">
+                          {new Date(scheduledFor).toLocaleString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white/50 w-16 shrink-0">Jakarta:</span>
+                        <span className="text-white font-medium">
+                          {new Intl.DateTimeFormat("en-US", {
+                            timeZone: "Asia/Jakarta",
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(scheduledFor))}
+                          <span className="text-white/60 ml-1">WIB</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white/50 w-16 shrink-0">Germany:</span>
+                        <span className="text-white font-medium">
+                          {new Intl.DateTimeFormat("en-US", {
+                            timeZone: "Europe/Berlin",
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(scheduledFor))}
+                          <span className="text-white/60 ml-1">CET</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Sleeping Hours Warning */}
+                    {(() => {
+                      const jakartaDate = new Date(
+                        new Date(scheduledFor).toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+                      );
+                      const jakartaHour = jakartaDate.getHours();
+                      const isSleepingHours = jakartaHour >= 22 || jakartaHour < 7;
+
+                      if (isSleepingHours) {
+                        return (
+                          <div className="mt-3 flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2">
+                            <AlertTriangle size={14} className="text-yellow-400 shrink-0 mt-0.5" />
+                            <span className="text-[10px] text-yellow-200">
+                              Warning: This notification may be sent during sleeping hours in Indonesia
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Info Box */}
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-[#9b5cff]/20 bg-black/20 px-3 py-2">
+                      <Info size={14} className="text-[#9b5cff] shrink-0 mt-0.5" />
+                      <span className="text-[10px] text-white/60">
+                        Scheduled notifications should avoid 22:00 - 07:00 WIB
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Schedule Button */}
                 <button
