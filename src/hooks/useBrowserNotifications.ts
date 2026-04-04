@@ -52,6 +52,7 @@ export function getNotificationPermission(): NotificationPermission | "unsupport
 
 /**
  * Register the service worker for push notifications
+ * Forces update check on every registration to ensure latest version
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported()) {
@@ -61,8 +62,29 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
   try {
     console.log("[Push] Registering service worker...");
-    const registration = await navigator.serviceWorker.register("/sw.js");
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+      updateViaCache: "none", // Force network check for updates
+    });
     console.log("[Push] Service Worker registered:", registration);
+
+    // Force update check immediately
+    registration.update().catch((err) => {
+      console.log("[Push] Service worker update check failed:", err);
+    });
+
+    // Listen for updates
+    registration.addEventListener("updatefound", () => {
+      const newWorker = registration.installing;
+      if (newWorker) {
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            console.log("[Push] New service worker available, activating...");
+            newWorker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      }
+    });
+
     return registration;
   } catch (error) {
     console.error("[Push] Service Worker registration failed:", error);
@@ -244,6 +266,49 @@ export async function unsubscribeFromPush(): Promise<{ success: boolean; error?:
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Unregister all service workers and clear all caches
+ * Use this to force a clean slate when stale assets are being served
+ */
+export async function unregisterAllServiceWorkers(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    // Unregister all service workers
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    const unregisterPromises = registrations.map((reg) => {
+      console.log("[SW Cleanup] Unregistering:", reg.scope);
+      return reg.unregister();
+    });
+    await Promise.all(unregisterPromises);
+
+    // Clear all caches
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      const cacheClearPromises = cacheNames.map((name) => {
+        console.log("[SW Cleanup] Deleting cache:", name);
+        return caches.delete(name);
+      });
+      await Promise.all(cacheClearPromises);
+    }
+
+    // Clear localStorage keys related to service workers
+    localStorage.removeItem(PUSH_SUBSCRIPTION_ID_KEY);
+
+    return {
+      success: true,
+      message: `Unregistered ${registrations.length} service worker(s) and cleared ${(await caches.keys()).length} cache(s). Reload the page to get fresh assets.`,
+    };
+  } catch (error) {
+    console.error("[SW Cleanup] Failed:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error during cleanup",
     };
   }
 }
@@ -521,5 +586,6 @@ export function useBrowserNotifications(userId?: string) {
     markPromptShown,
     subscribeToPush,
     unsubscribeFromPush,
+    unregisterAllServiceWorkers,
   };
 }
