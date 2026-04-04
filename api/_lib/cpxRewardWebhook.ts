@@ -222,3 +222,4 @@ export async function processReversalReward(
   const row = data as RpcResult | null;
   return { result: row?.result ?? "error" };
 }
+
