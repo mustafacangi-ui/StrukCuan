@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText, Calendar, Clock, AlertTriangle, Info } from "lucide-react";
+import { ArrowLeft, Receipt, MapPin, LayoutDashboard, Bell, Send, Sparkles, Ticket, MapPinned, CheckCircle, ScrollText, Calendar, Clock, AlertTriangle, Info, Play } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +49,16 @@ export default function Admin() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledNotifications, setScheduledNotifications] = useState<any[]>([]);
   const [isLoadingScheduled, setIsLoadingScheduled] = useState(false);
+
+  // Manual run scheduled notifications state
+  const [isRunningScheduled, setIsRunningScheduled] = useState(false);
+  const [lastRunTime, setLastRunTime] = useState<Date | null>(null);
+  const [lastRunResult, setLastRunResult] = useState<{
+    notifications_processed: number;
+    subscriptions_targeted: number;
+    successful_sends: number;
+    failed_sends: number;
+  } | null>(null);
 
   // Fetch scheduled notifications
   useEffect(() => {
@@ -133,6 +143,47 @@ export default function Admin() {
       });
     } finally {
       setIsScheduling(false);
+    }
+  };
+
+  const handleRunScheduledNotifications = async () => {
+    setIsRunningScheduled(true);
+    try {
+      const response = await fetch("/api/cron/send-scheduled-push", {
+        method: "GET",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setLastRunTime(new Date());
+        setLastRunResult({
+          notifications_processed: result.notifications_processed,
+          subscriptions_targeted: result.subscriptions_targeted,
+          successful_sends: result.successful_sends,
+          failed_sends: result.failed_sends,
+        });
+        toast({
+          title: "Scheduled notifications processed",
+          description: `Processed ${result.notifications_processed} notifications, ${result.successful_sends} successful sends`,
+        });
+        // Refresh the list to show updated sent status
+        fetchScheduledNotifications();
+      } else {
+        toast({
+          title: "Failed to run scheduled notifications",
+          description: result.message || "An error occurred",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to run scheduled notifications",
+        description: error instanceof Error ? error.message : "Network error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunningScheduled(false);
     }
   };
 
@@ -701,6 +752,80 @@ export default function Admin() {
                     </p>
                   </div>
                 )}
+
+                {/* Run Scheduled Notifications Section */}
+                <div className="border-t border-white/10 pt-4 mt-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
+                      style={{
+                        background: "rgba(155, 92, 255, 0.2)",
+                        border: "1px solid rgba(155, 92, 255, 0.3)",
+                      }}
+                    >
+                      <Play size={20} className="text-[#9b5cff]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Run Scheduled Notifications</p>
+                      <p className="text-[10px] text-muted-foreground">Manually trigger pending scheduled push notifications now</p>
+                    </div>
+                  </div>
+
+                  {/* Run Button */}
+                  <button
+                    onClick={handleRunScheduledNotifications}
+                    disabled={isRunningScheduled}
+                    className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mb-3"
+                    style={{
+                      background: "linear-gradient(135deg, #9b5cff 0%, #7c3aed 100%)",
+                      boxShadow: "0 0 20px rgba(155, 92, 255, 0.4)",
+                    }}
+                  >
+                    {isRunningScheduled ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Running...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Play size={16} />
+                        Run Scheduled Notifications Now
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Last Run Summary */}
+                  {lastRunTime && lastRunResult && (
+                    <div className="rounded-xl border border-[#9b5cff]/30 bg-[#9b5cff]/10 p-3">
+                      <label className="text-[10px] font-medium text-[#9b5cff] uppercase tracking-wider mb-2 block">
+                        Last Run Summary
+                      </label>
+                      <p className="text-[10px] text-white/60 mb-2">
+                        {lastRunTime.toLocaleString()}
+                      </p>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-white/50">Notifications processed:</span>
+                          <span className="text-white font-medium">{lastRunResult.notifications_processed}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/50">Subscriptions targeted:</span>
+                          <span className="text-white font-medium">{lastRunResult.subscriptions_targeted}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/50">Successful sends:</span>
+                          <span className="text-green-400 font-medium">{lastRunResult.successful_sends}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/50">Failed sends:</span>
+                          <span className={lastRunResult.failed_sends > 0 ? "text-red-400 font-medium" : "text-white/70 font-medium"}>
+                            {lastRunResult.failed_sends}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
