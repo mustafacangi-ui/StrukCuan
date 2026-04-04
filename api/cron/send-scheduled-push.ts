@@ -240,7 +240,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: notification.body,
         icon: "/icon-192.png",
         badge: "/icon-192.png",
-        tag: `scheduled-${notification.id}`,
+        tag: `scheduled-${notification.id}-${Date.now()}`,
+        timestamp: Date.now(),
+        renotify: true,
         requireInteraction: true,
         data: {
           url: "/"

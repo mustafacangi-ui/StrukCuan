@@ -190,6 +190,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: trimmedBody,
       icon: "/icon-192.png",
       badge: "/icon-192.png",
+      tag: `manual-${Date.now()}`,
+      timestamp: Date.now(),
+      renotify: true,
     });
 
     // Send notifications to all subscriptions

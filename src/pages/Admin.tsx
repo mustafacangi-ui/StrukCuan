@@ -535,7 +535,11 @@ export default function Admin() {
                     <input
                       type="datetime-local"
                       value={scheduledFor}
-                      onChange={(e) => setScheduledFor(e.target.value)}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        console.log("[Admin] scheduledFor changed:", newValue);
+                        setScheduledFor(newValue);
+                      }}
                       className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#9b5cff]/50 focus:ring-1 focus:ring-[#9b5cff]/30 transition-all"
                       min={new Date().toISOString().slice(0, 16)}
                     />
@@ -543,7 +547,7 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Timezone Helper */}
+                {/* Timezone Helper - Shows when datetime is selected */}
                 {scheduledFor && (
                   <div className="mb-3 rounded-xl border border-[#9b5cff]/30 bg-[#9b5cff]/10 p-3">
                     <label className="text-[10px] font-medium text-[#9b5cff] uppercase tracking-wider mb-2 block">
