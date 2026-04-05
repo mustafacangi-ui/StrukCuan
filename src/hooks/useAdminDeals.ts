@@ -47,17 +47,25 @@ export function useApproveDeal() {
     mutationFn: async (dealId: number | string) => {
       console.log('[useApproveDeal] Starting approval for deal:', dealId);
       console.log('[useApproveDeal] Current user:', user?.id);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('deals')
         .update({
           status: 'active'
         })
-        .eq('id', dealId);
+        .eq('id', dealId)
+        .select();
+
       if (error) {
-        console.error('[useApproveDeal] Failed to approve deal:', error);
+        console.error('[useApproveDeal] Failed to approve deal. Full error:', JSON.stringify(error, null, 2));
         throw error;
       }
-      console.log('[useApproveDeal] Successfully approved deal:', dealId);
+      
+      if (!data || data.length === 0) {
+        console.error('[useApproveDeal] No rows were updated. RLS policy might be blocking the update, or ID not found. ID:', dealId);
+        throw new Error('No rows updated. RLS block or deal missing.');
+      }
+
+      console.log('[useApproveDeal] Successfully approved deal:', dealId, 'Result Data:', data);
     },
     onSuccess: () => {
       console.log('[useApproveDeal] Invalidate queries');
