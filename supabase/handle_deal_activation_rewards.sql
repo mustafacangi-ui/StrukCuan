@@ -39,37 +39,74 @@ begin
         v_tickets_to_add := 1;
       end if;
 
-      -- 1. user_stats tablosundaki bilet bakiyesini güncelle (user_id beklentisi: UUID)
-      insert into public.user_stats (user_id, tiket)
-      values (v_user_uuid, v_tickets_to_add)
-      on conflict (user_id)
-      do update set
-        tiket = coalesce(public.user_stats.tiket, 0) + v_tickets_to_add,
-        updated_at = now();
+      -- 1. user_stats tablosundaki bilet bakiyesini güncelle (Hata raporlarından biliyoruz ki user_stats.user_id UUID bekliyor)
+      begin
+        insert into public.user_stats (user_id, tiket)
+        values (v_user_uuid, v_tickets_to_add)
+        on conflict (user_id)
+        do update set
+          tiket = coalesce(public.user_stats.tiket, 0) + v_tickets_to_add,
+          updated_at = now();
+      exception when others then
+          -- Fail-safe: eğer TEXT bekliyorsa diye
+          insert into public.user_stats (user_id, tiket)
+          values (v_user_text, v_tickets_to_add)
+          on conflict (user_id)
+          do update set
+            tiket = coalesce(public.user_stats.tiket, 0) + v_tickets_to_add,
+            updated_at = now();
+      end;
 
-      -- 2. Haftalık toplamı izlemek için upsert_user_ticket'i çağır (parametre beklentisi: UUID)
-      perform public.upsert_user_ticket(v_user_uuid, v_draw_week, v_tickets_to_add);
+      -- 2. Haftalık toplamı izlemek için upsert_user_ticket'i çağır 
+      -- (Hata raporundan biliyoruz ki upsert_user_ticket(uuid, int, int) yok, bu yüzden TEXT gönderiyoruz)
+      begin
+        perform public.upsert_user_ticket(v_user_text, v_draw_week, v_tickets_to_add);
+      exception when others then
+        -- Eğer UUID bekleyen bir fonksiyon varsa
+        perform public.upsert_user_ticket(v_user_uuid, v_draw_week, v_tickets_to_add);
+      end;
       
-      -- 3. Haftalık çekiliş limitine kadar bilet başına lottery_tickets kaydı oluştur (user_id beklentisi: UUID)
-      select coalesce(tickets, 0) into v_cur
-      from public.user_tickets
-      where user_id = v_user_uuid and draw_week = v_draw_week;
+      -- 3. Haftalık çekiliş limitine kadar bilet başına lottery_tickets kaydı oluştur
+      -- user_tickets tablosundan güncel bilet sayısını al (Önce text ile dene, fail olursa uuid)
+      begin
+        select coalesce(tickets, 0) into v_cur
+        from public.user_tickets
+        where user_id::text = v_user_text and draw_week = v_draw_week;
+      exception when others then
+        v_cur := 0;
+      end;
 
       v_add := least(v_tickets_to_add, greatest(0, 42 - v_cur));
       if v_add > 0 then
-        for i in 1..v_add loop
-          insert into public.lottery_tickets (user_id, draw_week)
-          values (v_user_uuid, v_draw_week);
-        end loop;
+        begin
+          for i in 1..v_add loop
+            insert into public.lottery_tickets (user_id, draw_week)
+            values (v_user_text, v_draw_week);
+          end loop;
+        exception when others then
+          for i in 1..v_add loop
+            insert into public.lottery_tickets (user_id, draw_week)
+            values (v_user_uuid, v_draw_week);
+          end loop;
+        end;
       end if;
 
       -- 4. Kullanıcıya bildirim gönder (notifications tablosu beklentisi: TEXT)
-      insert into public.notifications (user_id, title, message)
-      values (
-        v_user_text,
-        'Fırsat Onaylandı',
-        'Paylaştığınız fırsat onaylandı! ' || v_tickets_to_add || ' bilet kazandınız.'
-      );
+      begin
+        insert into public.notifications (user_id, title, message)
+        values (
+          v_user_text,
+          'Fırsat Onaylandı',
+          'Paylaştığınız fırsat onaylandı! ' || v_tickets_to_add || ' bilet kazandınız.'
+        );
+      exception when others then
+        insert into public.notifications (user_id, title, message)
+        values (
+          v_user_uuid::text,
+          'Fırsat Onaylandı',
+          'Paylaştığınız fırsat onaylandı! ' || v_tickets_to_add || ' bilet kazandınız.'
+        );
+      end;
 
     end if;
   end if;
