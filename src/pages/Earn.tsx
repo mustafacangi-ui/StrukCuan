@@ -341,7 +341,6 @@ export default function Earn() {
         open={showModal}
         onClose={() => setShowModal(false)}
         onComplete={handleAdComplete}
-        popupBlocked={popupBlocked}
       />
 
       {selectedSurvey && (

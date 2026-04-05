@@ -1,54 +1,74 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Loader2, ExternalLink } from "lucide-react";
-import { AD_NETWORKS } from "@/config/adNetworks";
-
-const COUNTDOWN_SECONDS = 20;
+import { X, ExternalLink, Speaker, Info, Loader2, Gamepad2, ShoppingBag, Utensils } from "lucide-react";
 
 interface RewardedAdModalProps {
   open: boolean;
   onClose: () => void;
   onComplete: () => void | Promise<void>;
-  /** True if popup was blocked - show manual link */
-  popupBlocked?: boolean;
 }
 
-/**
- * Monetag rewarded ad modal.
- * Monetag omg10.com links are redirect/popunder - they do NOT work in iframes.
- * We open the ad in a popup, show countdown. When user clicks "Close & Claim Ticket",
- * onComplete is called (RPC) and modal must NOT close until onComplete finishes.
- */
+const AD_DURATION = 8;
+const TOTAL_ADS = 3;
+
+const AD_THEMES = [
+  {
+    gradient: "linear-gradient(135deg, #ea580c, #dc2626)",
+    icon: <Gamepad2 size={40} className="text-white/80" />,
+    title: "Epic Dragons RPG",
+    subtitle: "Play for free and summon legendary heroes!",
+    cta: "Install Now",
+    buttonColor: "#059669"
+  },
+  {
+    gradient: "linear-gradient(135deg, #d946ef, #9333ea)",
+    icon: <ShoppingBag size={40} className="text-white/80" />,
+    title: "Flash Sale Live!",
+    subtitle: "Get up to 99% cashback on your first purchase.",
+    cta: "Shop Now",
+    buttonColor: "#eab308"
+  },
+  {
+    gradient: "linear-gradient(135deg, #16a34a, #0ea5e9)",
+    icon: <Utensils size={40} className="text-white/80" />,
+    title: "Hungry? We Deliver fast.",
+    subtitle: "50% Off your first food delivery order.",
+    cta: "Order Food",
+    buttonColor: "#1e40af"
+  }
+];
+
 export default function RewardedAdModal({
   open,
   onClose,
   onComplete,
-  popupBlocked = false,
 }: RewardedAdModalProps) {
-  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
-  const [canClose, setCanClose] = useState(false);
-  const [showTicketEarned, setShowTicketEarned] = useState(false);
+  const [currentAd, setCurrentAd] = useState(1);
+  const [secondsLeft, setSecondsLeft] = useState(AD_DURATION);
+  const [isFinished, setIsFinished] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const completionFiredRef = useRef(false);
-  const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
 
-  const monetagUrl = AD_NETWORKS[0].url;
+  // Prevent multiple rapid clicks causing double grants
+  const hasGrantedRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setCurrentAd(1);
+      setSecondsLeft(AD_DURATION);
+      setIsFinished(false);
+      setIsProcessing(false);
+      hasGrantedRef.current = false;
+      return;
+    }
 
-    setSecondsLeft(COUNTDOWN_SECONDS);
-    setCanClose(false);
-    setShowTicketEarned(false);
-    setIsProcessing(false);
-    completionFiredRef.current = false;
+    setSecondsLeft(AD_DURATION);
+    setIsFinished(false);
 
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setCanClose(true);
+          setIsFinished(true);
           return 0;
         }
         return prev - 1;
@@ -57,122 +77,151 @@ export default function RewardedAdModal({
     countdownRef.current = timer;
 
     return () => {
-      clearInterval(timer);
-      countdownRef.current = null;
+      if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [open]);
+  }, [open, currentAd]);
 
-  const handleClose = useCallback(async () => {
-    if (isProcessing || completionFiredRef.current) return;
-    if (!canClose) return;
+  const handleNextOrClose = useCallback(async () => {
+    if (!isFinished || isProcessing) return;
 
-    setIsProcessing(true);
-    completionFiredRef.current = true;
+    if (currentAd < TOTAL_ADS) {
+      // Advance to next ad
+      setCurrentAd((prev) => prev + 1);
+    } else {
+      // Sequence completed fully
+      if (hasGrantedRef.current) return;
+      hasGrantedRef.current = true;
+      setIsProcessing(true);
 
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      
+      try {
+        await onComplete();
+        setTimeout(() => {
+          onClose(); // Auto close slightly after success
+        }, 800);
+      } catch (err) {
+        console.error("Reward grant failed:", err);
+        hasGrantedRef.current = false;
+        onClose(); // Fail safely without locking
+      } finally {
+        setIsProcessing(false);
+      }
     }
-
-    try {
-      await onCompleteRef.current();
-      setShowTicketEarned(true);
-      await new Promise((r) => setTimeout(r, 1500));
-      onClose();
-    } catch (err) {
-      console.warn("Reward grant failed:", err);
-      completionFiredRef.current = false;
-      onClose();
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [canClose, isProcessing, onClose]);
+  }, [currentAd, isFinished, isProcessing, onComplete, onClose]);
 
   if (!open) return null;
 
+  const currentTheme = AD_THEMES[currentAd - 1];
+  const progressPercent = ((AD_DURATION - secondsLeft) / AD_DURATION) * 100;
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          background: "rgba(0,0,0,0.5)",
-          border: "1px solid rgba(255,255,255,0.2)",
-          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-        }}
-      >
-        {showTicketEarned && (
-          <div className="flex flex-col items-center gap-3 px-6 py-6">
-            <span className="text-3xl">🎟</span>
-            <p className="font-display text-lg font-bold text-[#22c55e] text-center">
-              Ad finished — Ticket earned!
-            </p>
+    <div className="fixed inset-0 z-[9999] bg-black overflow-hidden flex flex-col justify-between">
+      {/* ── Top Bar ── */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex flex-col pt-[var(--safe-area-top,0px)]">
+        {/* Progress Bar overall */}
+        <div className="h-1.5 w-full bg-white/10">
+          <div 
+            className="h-full bg-[#3b82f6] transition-all duration-1000 ease-linear shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="bg-black/40 backdrop-blur border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white">Sponsored</span>
+              <Info size={12} className="text-white/60" />
+            </div>
+            <div className="bg-black/40 backdrop-blur border border-white/10 rounded-full px-3 py-1">
+              <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+                Ad {currentAd} of {TOTAL_ADS}
+              </span>
+            </div>
           </div>
-        )}
-
-        {!showTicketEarned && (
-          <div className="flex flex-col items-center gap-6 px-6 py-8">
-            {popupBlocked ? (
-              <>
-                <p className="text-center text-sm font-medium text-white">
-                  Your browser blocked the ad popup.
-                </p>
-                <p className="text-center text-xs text-white/70">
-                  Tap the button below to open the ad in a new tab. Watch it, then return here and tap Close.
-                </p>
-                <a
-                  href={monetagUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg px-6 py-3 font-bold text-black"
-                  style={{ background: "#facc15" }}
-                >
-                  <ExternalLink size={18} />
-                  Open Ad in New Tab
-                </a>
-              </>
-            ) : (
-              <>
-                <Loader2 className="h-12 w-12 animate-spin text-[#facc15]" />
-                <p className="text-center text-sm font-medium text-white">
-                  Watching ad...
-                </p>
-                <p className="text-center text-lg font-bold text-[#facc15]">
-                  Reward unlocks in: {secondsLeft}s
-                </p>
-              </>
-            )}
-          </div>
-        )}
-
-        {!showTicketEarned && (
-          <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-white/10">
-            <span className="text-sm text-white/90">
-              {canClose ? (
-                "Tap the button to claim your ticket"
-              ) : (
-                <>Reward unlocks in: <span className="font-bold text-[#facc15]">{secondsLeft}s</span></>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={!canClose || isProcessing}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-display font-bold text-sm transition-colors ${
-                canClose
-                  ? "bg-[#facc15] text-black hover:opacity-90"
-                  : "bg-white/20 text-white/50 cursor-not-allowed"
-              }`}
-            >
-              {isProcessing ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <X size={18} />
-              )}
-              {canClose ? "Close & Claim Ticket" : "Close"}
+          
+          <div className="flex items-center gap-2">
+            <button className="bg-black/30 backdrop-blur border border-white/10 rounded-full p-2">
+              <Speaker size={14} className="text-white/60" />
             </button>
+            <div className={`h-10 px-3 flex items-center justify-center rounded-full bg-black/50 backdrop-blur border border-white/20 transition-all ${isFinished ? 'opacity-100' : 'opacity-80'}`}>
+               {!isFinished ? (
+                 <span className="text-xs font-bold text-whitetabular-nums text-white/80">
+                   Reward in {secondsLeft}
+                 </span>
+               ) : (
+                 <button onClick={handleNextOrClose} className="flex items-center justify-center p-1">
+                   <X size={18} className="text-white drop-shadow-md" />
+                 </button>
+               )}
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Simulated Video Container ── */}
+      <div 
+        key={currentAd}
+        className="absolute inset-0 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-500"
+        style={{ background: currentTheme.gradient }}
+      >
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center max-w-sm text-center">
+          {/* Mock Video Playing Graphic */}
+          <div className="w-24 h-24 rounded-3xl bg-black/20 backdrop-blur shadow-2xl flex items-center justify-center mb-6 animate-pulse" 
+               style={{ border: "1px solid rgba(255,255,255,0.15)" }}>
+            {currentTheme.icon}
+          </div>
+
+          <h2 className="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-lg leading-tight">
+            {currentTheme.title}
+          </h2>
+          <p className="text-white/90 text-sm mb-10 max-w-[250px] mx-auto drop-shadow-md">
+            {currentTheme.subtitle}
+          </p>
+
+          <button 
+            className="w-full max-w-[200px] h-14 rounded-full flex items-center justify-center gap-2 font-black text-white shadow-2xl text-lg hover:scale-105 transition-transform"
+            style={{ 
+              background: currentTheme.buttonColor,
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3)"
+            }}
+          >
+            {currentTheme.cta}
+            <ExternalLink size={18} />
+          </button>
+          
+          <div className="mt-8 flex items-center gap-2 text-white/50 text-xs font-medium bg-black/20 px-4 py-2 rounded-full border border-white/5">
+            <Loader2 size={12} className="animate-spin" />
+            Simulating Video Playback...
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bottom Overlay (Only shows when playing) ── */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 flex justify-center pb-[calc(1.5rem+var(--safe-area-bottom,0px))]">
+        {!isFinished ? (
+          <p className="text-xs text-white/50 bg-black/60 backdrop-blur rounded-full px-5 py-2">
+            Skip unavailable
+          </p>
+        ) : (
+          <button 
+            onClick={handleNextOrClose}
+            disabled={isProcessing}
+            className="flex items-center justify-center gap-2 w-full max-w-sm rounded-2xl bg-white text-black font-bold h-14 shadow-2xl disabled:opacity-50"
+          >
+            {isProcessing ? (
+              <><Loader2 size={18} className="animate-spin text-black/50" /> Awarding Ticket...</>
+            ) : currentAd < TOTAL_ADS ? (
+              "Next Ad"
+            ) : (
+              "Claim Ticket"
+            )}
+          </button>
         )}
       </div>
+
     </div>
   );
 }
