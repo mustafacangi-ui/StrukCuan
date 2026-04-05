@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Award, X, Gift, Zap, Trophy } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -334,6 +334,13 @@ export default function WeeklyRewardCard() {
             }}>
             {t("weeklyReward.earnMore")}
           </button>
+
+          <div className="mt-4 pt-3 border-t border-white/5 text-center px-2">
+            <p className="text-[8px] leading-tight text-white/30">
+              Draws are fully automated. Tickets hold zero cash value. <br />
+              Participation implies agreement with our <Link to="/promo-rules" className="underline hover:text-white/60">Promo Rules</Link> & <Link to="/terms" className="underline hover:text-white/60">Terms</Link>.
+            </p>
+          </div>
         </div>
       </div>
     </>

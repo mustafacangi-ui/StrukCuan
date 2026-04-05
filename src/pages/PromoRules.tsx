@@ -6,51 +6,55 @@ export default function PromoRules() {
     <div className="min-h-screen max-w-[420px] mx-auto px-4 py-6 pb-12">
       <Link
         to="/home"
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-6"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-6 transition-colors"
       >
         <ArrowLeft size={18} />
         <span className="text-sm">Back</span>
       </Link>
 
       <h1 className="font-display text-2xl font-bold text-foreground mb-4">
-        Promo Rules
+        Promotional Rules & Draw Mechanics
       </h1>
 
-      <div className="prose prose-invert prose-sm max-w-none text-muted-foreground space-y-4">
-        <p className="text-sm leading-relaxed">
-          Last updated: March 2026
-        </p>
-        <p className="text-sm leading-relaxed">
-          These rules govern participation in StrukCuan promotions, lotteries, and reward programs.
+      <div className="prose prose-invert prose-sm max-w-none text-muted-foreground space-y-5">
+        <p className="text-sm leading-relaxed font-semibold text-white/80">
+          Last updated: April 2026
         </p>
 
-        <h2 className="text-base font-semibold text-foreground mt-6">Receipt Rules</h2>
-        <ul className="list-disc pl-5 text-sm leading-relaxed space-y-1">
-          <li>Only supermarket receipts are accepted</li>
-          <li>Receipts must be from the same day</li>
-          <li>Maximum 3 receipts per day</li>
-          <li>Rewards are granted only after manual approval</li>
-        </ul>
+        <section>
+          <h2 className="text-base font-bold text-white mb-2">1. The Weekly Draw Overview</h2>
+          <p className="text-sm leading-relaxed">
+            StrukCuan distributes Rp50,000 Indomaret vouchers to 5 winners every single week. This process is 100% automated, utilizing a secure, randomized system generation algorithm (cron Sunday sweep) to pick draw codes. Participation does NOT constitute a guaranteed reward.
+          </p>
+        </section>
 
-        <h2 className="text-base font-semibold text-foreground mt-6">Receipt Ownership</h2>
-        <p className="text-sm leading-relaxed">
-          Users must only upload receipts from purchases they personally made. Uploading receipts belonging to other individuals, businesses, or third parties is strictly prohibited. StrukCuan reserves the right to reject receipts suspected of being collected, shared, purchased, or distributed between users.
-        </p>
+        <section>
+          <h2 className="text-base font-bold text-white mb-2">2. Ticket Calculation & Entries</h2>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Entry Accumulation:</strong> Every 10 total cumulative tickets earned (via receipt uploads, shakes, or surveys) automatically grants 1 physical Draw Code. You may hold multiple draw codes.</li>
+            <li><strong>Single Win Per Code:</strong> While holding multiple draw codes increases objective mathematical odds, the same literal 6-digit draw code cannot be pulled twice in the same week.</li>
+          </ul>
+        </section>
 
-        <h2 className="text-base font-semibold text-foreground mt-6">Tickets and Cuan</h2>
-        <p className="text-sm leading-relaxed">
-          Each approved receipt earns Cuan (points) and lottery tickets. The exact amounts are determined by StrukCuan moderators during manual verification. Tickets enter you into the weekly lottery draw.
-        </p>
+        <section>
+          <h2 className="text-base font-bold text-white mb-2">3. Claiming Limits & Rules</h2>
+          <p className="text-sm leading-relaxed mb-2">
+            Should you win the Weekly Draw, specific timelines and caveats apply:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-yellow-100/90">
+            <li><strong>Contact Period:</strong> You will be notified via in-app alerts and/or email. You must provide delivery details or verify your identity within <strong>7 days</strong>. Failure to respond signifies total forfeiture.</li>
+            <li><strong>Contact Details Responsibility:</strong> StrukCuan exclusively relies on the contact info stored in your profile. If you input a fake WhatsApp or email, StrukCuan is entirely relieved of delivery obligations.</li>
+            <li><strong>Right to Redraw:</strong> We reserve the right to void the winner and redraw if forfeiture conditions are met or fraud is suspected post-draw.</li>
+          </ul>
+        </section>
 
-        <h2 className="text-base font-semibold text-foreground mt-6">Weekly Lottery</h2>
-        <p className="text-sm leading-relaxed">
-          Lotteries are drawn weekly. Winners are selected randomly from participants with tickets. Participation does not guarantee rewards.
-        </p>
+        <section>
+          <h2 className="text-base font-bold text-white mb-2">4. Disqualification Scenarios</h2>
+          <p className="text-sm leading-relaxed">
+            StrukCuan routinely audits winning accounts prior to final delivery. If an audited winning account contains digitally duplicated receipts, manipulated OCR bounds, or matches multi-account fingerprints, the win goes void immediately.
+          </p>
+        </section>
 
-        <h2 className="text-base font-semibold text-foreground mt-6">Contact</h2>
-        <p className="text-sm leading-relaxed">
-          For questions about promo rules, please visit our <Link to="/contact" className="text-primary hover:underline">Contact</Link> page.
-        </p>
       </div>
     </div>
   );

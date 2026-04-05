@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt, useReceiptsToday, fetchReceiptsTodayCount, isDailyLimitError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
@@ -231,6 +231,9 @@ export default function Upload() {
             </p>
             <p className="mt-2 text-[10px] text-muted-foreground/80">
               JPG/PNG max 5MB · Max 3 receipts/day
+            </p>
+            <p className="mt-5 px-6 text-[9px] text-muted-foreground/50 text-center leading-relaxed">
+              By uploading, you confirm this is your valid, original receipt and expressly consent to automated AI Moderation & Data Rules established in our <Link to="/terms" className="underline hover:text-white/80">Terms</Link> and <Link to="/privacy" className="underline hover:text-white/80">Privacy Policy</Link>.
             </p>
           </div>
         ) : step === "preview" && previewUrl ? (

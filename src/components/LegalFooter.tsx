@@ -19,6 +19,12 @@ export default function LegalFooter() {
         <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
           Contact
         </Link>
+        <Link to="/cookie-policy" className="text-muted-foreground hover:text-primary transition-colors">
+          Cookie Policy
+        </Link>
+        <Link to="/community-guidelines" className="text-muted-foreground hover:text-primary transition-colors">
+          Community Guidelines
+        </Link>
       </div>
     </footer>
   );

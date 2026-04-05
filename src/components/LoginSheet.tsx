@@ -304,15 +304,23 @@ const LoginSheet = () => {
             onCheckedChange={(v) => setAgreeTerms(!!v)}
             className="mt-0.5 shrink-0"
           />
-          <span className="text-xs text-muted-foreground leading-relaxed">
-            {t("auth.agreeTerms")}{" "}
+          <span className="text-[11px] text-muted-foreground leading-relaxed">
+            I agree to the{" "}
             <Link to="/terms" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-              {t("auth.termsOfService")}
+              Terms
             </Link>
-            {" "}{t("auth.and")}{" "}
+            {", "}
             <Link to="/privacy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-              {t("auth.privacyPolicy")}
+              Privacy
             </Link>
+            {", "}
+            <Link to="/cookie-policy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+              Cookies
+            </Link>
+            {", and "}
+            <Link to="/community-guidelines" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+              Guidelines
+            </Link>.
           </span>
         </label>
 

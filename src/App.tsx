@@ -31,6 +31,8 @@ const Privacy       = lazy(() => import("./pages/Privacy"));
 const Terms         = lazy(() => import("./pages/Terms"));
 const PromoRules    = lazy(() => import("./pages/PromoRules"));
 const Contact       = lazy(() => import("./pages/Contact"));
+const CookiePolicy  = lazy(() => import("./pages/CookiePolicy"));
+const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
 const NotFound      = lazy(() => import("./pages/NotFound"));
 const Onboarding    = lazy(() => import("./pages/Onboarding"));
 const Admin         = lazy(() => import("./pages/Admin"));
@@ -92,6 +94,8 @@ const App = () => {
                 <Route path="/terms"       element={<Terms />} />
                 <Route path="/promo-rules" element={<PromoRules />} />
                 <Route path="/contact"     element={<Contact />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/admin"       element={<Admin />} />
                 <Route path="/receipts"    element={<PageErrorBoundary label="ReceiptHistory"><ReceiptHistory /></PageErrorBoundary>} />
                 <Route path="*"            element={<NotFound />} />
