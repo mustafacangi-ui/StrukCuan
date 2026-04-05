@@ -139,11 +139,14 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
 
   const handleApprove = () => {
     if (!reviewingReceipt) return;
+    const tempId = reviewingReceipt.id;
     approve.mutate(
       { receipt: reviewingReceipt, cuanReward: 0, ticketReward: selectedTicket },
       {
         onSuccess: () => {
           toast.success("Receipt Approved");
+          queryClient.invalidateQueries({ queryKey: ['admin-pending-receipts'] });
+          queryClient.invalidateQueries({ queryKey: ['receipts'] });
           refetch();
           closeReview();
         },
@@ -157,6 +160,8 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
     reject.mutate(reviewingReceipt.id, {
       onSuccess: () => {
         toast.success("Receipt Rejected");
+        queryClient.invalidateQueries({ queryKey: ['admin-pending-receipts'] });
+        queryClient.invalidateQueries({ queryKey: ['receipts'] });
         refetch();
         closeReview();
       },
