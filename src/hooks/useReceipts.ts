@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
+import { extractReceiptData } from "@/utils/extractReceiptData";
 
 export type ReceiptStatus = "pending" | "approved" | "rejected";
 
@@ -16,9 +17,34 @@ export interface ReceiptRow {
   status: ReceiptStatus;
   created_at: string;
   receipt_index_today?: number | null;
+  ai_store_name?: string | null;
+  ai_product_name?: string | null;
+  ai_original_price?: number | null;
+  ai_discount_price?: number | null;
+  ai_discount_percent?: number | null;
+  ai_expiry_date?: string | null;
+  ai_red_label?: boolean;
+  ai_suggested_ticket_reward?: number;
+  ai_confidence?: number | null;
+  ai_raw_text?: string | null;
+  image_hash?: string | null;
+  ai_duplicate_score?: number | null;
+  ai_duplicate_receipt_id?: string | null;
+  ai_auto_decision?: 'approve' | 'review' | 'reject' | null;
 }
 
 export const RECEIPTS_QUERY_KEY = ["receipts"];
+
+/** Simple Jaccard similarity for AI text comparison */
+export function getTextSimilarity(text1: string, text2: string): number {
+  if (!text1 || !text2) return 0;
+  const words1 = new Set(text1.toLowerCase().split(/\s+/));
+  const words2 = new Set(text2.toLowerCase().split(/\s+/));
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  if (union.size === 0) return 0;
+  return intersection.size / union.size;
+}
 
 /** User-facing message when backend rejects due to daily limit. */
 export const DAILY_LIMIT_ERROR = "Daily limit reached, try again tomorrow.";
@@ -226,7 +252,108 @@ export function useCreateReceipt() {
       }
 
       const result = data as { id: string | number; remaining: number };
-      return { receipt: { id: result.id } as ReceiptRow, remaining: result.remaining };
+      const receiptId = result.id;
+
+      // Automatically run OCR Extraction Phase 1 MVP
+      console.log('OCR started');
+      try {
+        const aiResult = await extractReceiptData(input.imageUrl);
+        console.log('OCR finished');
+        console.log('OCR result', aiResult);
+
+        // --- DUPLICATE DETECTION LOGIC ---
+        let duplicateScore = 0;
+        let duplicateReceiptId: string | null = null;
+        
+        // Fetch user's previous receipts to check duplicates over the last 50 receipts
+        const { data: pastReceipts } = await supabase
+           .from('receipts')
+           .select('id, image_hash, ai_raw_text, ai_store_name, ai_original_price, ai_expiry_date')
+           .eq('user_id', userId)
+           .neq('id', receiptId)
+           .order('created_at', { ascending: false })
+           .limit(50);
+
+        if (pastReceipts && pastReceipts.length > 0) {
+           for (const pr of pastReceipts) {
+              // Rule 1: Exact Hash = 1.0
+              if (input.imageHash && pr.image_hash === input.imageHash) {
+                 duplicateScore = 1.0;
+                 duplicateReceiptId = String(pr.id);
+                 break;
+              }
+              // Rule 2: OCR text similarity > 90% = 0.9
+              if (aiResult.raw_text && pr.ai_raw_text) {
+                 const sim = getTextSimilarity(aiResult.raw_text, pr.ai_raw_text);
+                 if (sim > 0.90 && sim > duplicateScore) {
+                    duplicateScore = 0.9;
+                    duplicateReceiptId = String(pr.id);
+                 }
+              }
+              // Rule 3: Same Store, Price, Expiry = 0.8
+              if (
+                 aiResult.store_name && pr.ai_store_name && aiResult.store_name === pr.ai_store_name &&
+                 aiResult.original_price && pr.ai_original_price && aiResult.original_price === pr.ai_original_price &&
+                 aiResult.expiry_date && pr.ai_expiry_date && aiResult.expiry_date === pr.ai_expiry_date
+              ) {
+                 if (0.8 > duplicateScore) {
+                    duplicateScore = 0.8;
+                    duplicateReceiptId = String(pr.id);
+                 }
+              }
+           }
+        }
+
+        if (duplicateScore >= 0.8) {
+           console.log('[Duplicate Detection] WARNING: Possible duplicate detected');
+        }
+        console.log('[Duplicate Detection] Image hash:', input.imageHash);
+        console.log('[Duplicate Detection] Duplicate score:', duplicateScore);
+        console.log('[Duplicate Detection] Matched receipt ID:', duplicateReceiptId);
+
+        // --- AI AUTO DECISION LOGIC ---
+        let aiDecision: 'approve' | 'review' | 'reject' = 'review';
+        if (duplicateScore >= 0.95) {
+           aiDecision = 'reject';
+        } else if (aiResult.confidence >= 0.9 && aiResult.red_label === true) {
+           aiDecision = 'approve';
+        } else if (aiResult.confidence >= 0.85 && duplicateScore < 0.5) {
+           aiDecision = 'approve';
+        }
+
+        console.log('[AI Auto Decision] Decision:', aiDecision);
+
+        const { error: updateError } = await supabase
+          .from('receipts')
+          .update({
+            ai_store_name: aiResult.store_name,
+            ai_product_name: aiResult.product_name,
+            ai_original_price: aiResult.original_price,
+            ai_discount_price: aiResult.discount_price,
+            ai_discount_percent: aiResult.discount_percent,
+            ai_expiry_date: aiResult.expiry_date,
+            ai_red_label: aiResult.red_label,
+            ai_suggested_ticket_reward: aiResult.suggested_ticket_reward,
+            ai_confidence: aiResult.confidence,
+            ai_raw_text: aiResult.raw_text,
+            image_hash: input.imageHash,
+            ai_duplicate_score: duplicateScore,
+            ai_duplicate_receipt_id: duplicateReceiptId,
+            ai_auto_decision: aiDecision
+          })
+          .eq('id', receiptId);
+
+        if (updateError) {
+          console.error("Failed to update receipt with AI fields:", updateError);
+        } else {
+          console.log('Receipt updated with AI fields');
+        }
+      } catch (ocrError) {
+        console.error('OCR Extraction failed:', ocrError);
+        // Do not block the upload flow if OCR fails
+      }
+
+      return { receipt: { id: receiptId } as ReceiptRow, remaining: result.remaining };
     },
     onSuccess: (data, variables) => {
       const remaining = (data as { receipt: ReceiptRow; remaining: number }).remaining;
