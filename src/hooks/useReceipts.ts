@@ -308,6 +308,7 @@ export function useApproveReceiptWithRewards() {
       if (profileError) throw profileError;
 
       // 3. Update the receipt row with approval details
+      console.log('Updating receipt', receipt.id)
       const { error: receiptError } = await supabase
         .from('receipts')
         .update({
@@ -317,7 +318,11 @@ export function useApproveReceiptWithRewards() {
         })
         .eq('id', receipt.id);
 
-      if (receiptError) throw receiptError;
+      if (receiptError) {
+        console.error('Receipt update failed:', receiptError)
+        throw receiptError
+      }
+      console.log('Receipt updated successfully')
     },
     onSuccess: () => {
       // Invalidate all receipt queries to refresh the UI
