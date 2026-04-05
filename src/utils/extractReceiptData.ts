@@ -51,14 +51,37 @@ const PREFERRED_PRODUCT_WORDS = [
 ];
 
 export async function extractReceiptData(imageUrl: string): Promise<AIReceiptResult> {
-  console.log('[extractReceiptData] Starting OCR for image:', imageUrl);
+  console.log('[extractReceiptData] Starting OCR pipeline');
+  console.log('[OCR] imageUrl', imageUrl);
 
   try {
-    const result = await Tesseract.recognize(imageUrl, 'ind+eng', {
+    console.log('[OCR] starting fetch');
+    const response = await fetch(imageUrl);
+    console.log('[OCR] fetch status', response.status);
+
+    if (!response.ok) {
+       console.error('[OCR] Image fetch failed!', response.statusText);
+       console.log('[OCR] URL type check:', imageUrl.includes('supabase') ? 'Supabase Storage' : 'External');
+    }
+
+    const blob = await response.blob();
+    console.log('[OCR] blob size', blob.size);
+
+    const localImageUrl = URL.createObjectURL(blob);
+    console.log('[OCR] localImageUrl created');
+
+    console.log('[OCR] tesseract started');
+    const result = await Tesseract.recognize(localImageUrl, 'eng', {
       logger: (m) => console.log(`[extractReceiptData] Tesseract progress: ${m.status} ${(m.progress * 100).toFixed(2)}%`),
+      // @ts-ignore: Tesseract.js typings don't expose all worker parameters in the simple API
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,:-/%€ '
     });
+    console.log('[OCR] tesseract finished');
+
+    URL.revokeObjectURL(localImageUrl); // cleanup memory
 
     const rawText = result.data.text;
+    console.log('[OCR] raw text length', rawText.length);
     let confidence = result.data.confidence / 100; // Tesseract returns 0-100
     const lowercaseText = rawText.toLowerCase();
 

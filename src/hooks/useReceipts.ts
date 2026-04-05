@@ -254,12 +254,14 @@ export function useCreateReceipt() {
         p_store: input.store != null ? String(input.store) : null,
         p_total: input.total != null ? Number(input.total) : null,
         p_receipt_index_today: input.receiptIndexToday != null ? Number(input.receiptIndexToday) : null,
-        p_image_hash: input.imageHash ?? null,
+        // NOTE: p_image_hash omitted here — saved later in AI update payload
+        // Prevents crash if DB was created before security_hardening.sql was applied
       };
       const { data, error } = await supabase.rpc("create_receipt", params);
 
       if (error) {
         const msg = (error as { message?: string }).message ?? "Upload failed. Please try again.";
+        console.error('[Upload] create_receipt RPC failed:', error);
         const err = new Error(msg);
         (err as unknown as { originalError: unknown }).originalError = error;
         throw err;
@@ -269,11 +271,9 @@ export function useCreateReceipt() {
       const receiptId = result.id;
 
       // Automatically run OCR Extraction Phase 1 MVP
-      console.log('OCR started');
+      console.log('[OCR] starting');
       try {
         const aiResult = await extractReceiptData(input.imageUrl);
-        console.log('OCR finished');
-        console.log('[OCR] raw text', aiResult.raw_text);
         console.log('[OCR] parsed result', aiResult);
 
         // --- DUPLICATE DETECTION LOGIC ---
@@ -428,7 +428,7 @@ export function useCreateReceipt() {
           console.log('[OCR] DB values after update', dbRow);
         }
       } catch (ocrError) {
-        console.error('OCR Extraction failed:', ocrError);
+        console.error('[OCR] failed', ocrError);
         // Do not block the upload flow if OCR fails
       }
 

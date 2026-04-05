@@ -57,11 +57,11 @@ export const useUser = () => {
 async function upsertProfile(userId: string, nickname: string, phone?: string, email?: string) {
   const { error } = await supabase.from("survey_profiles").upsert(
     {
-      id: userId,
+      user_id: userId,
       phone: phone ?? null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "id" }
+    { onConflict: "user_id" }
   );
   if (error) console.error("Profile upsert error:", error);
 }
@@ -108,7 +108,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const { data: profile } = await supabase
       .from("survey_profiles")
       .select("phone")
-      .eq("id", userId)
+      .eq("user_id", userId)
       .single();
 
     const { data: stats } = await supabase
