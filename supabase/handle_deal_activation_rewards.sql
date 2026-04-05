@@ -9,7 +9,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_user_uuid uuid;
+  v_user_id text;
   v_draw_week integer;
   v_tickets_to_add integer;
   i integer;
@@ -21,14 +21,9 @@ begin
      
     -- deals tablosunda user_id null değilse ödülü yatır (adminin değil fırsat sahibinin kimliği)
     if new.user_id is not null then
-      begin
-        -- text'ten uuid'ye cast
-        v_user_uuid := new.user_id::uuid;
-      exception
-        when invalid_text_representation then
-          -- Geçersiz formatta uuid ise ödül yatırma işlemini atla
-          return new;
-      end;
+      
+      -- user_id (text) değerini doğrudan kullanıyoruz çünkü diğer tablolar (user_stats, lottery_tickets) user_id'yi text olarak bekler!
+      v_user_id := new.user_id;
 
       v_draw_week := extract(week from (now() at time zone 'Asia/Jakarta'))::integer;
       
@@ -41,32 +36,33 @@ begin
 
       -- 1. user_stats tablosundaki bilet bakiyesini güncelle
       insert into public.user_stats (user_id, tiket)
-      values (v_user_uuid, v_tickets_to_add)
+      values (v_user_id, v_tickets_to_add)
       on conflict (user_id)
       do update set
         tiket = coalesce(public.user_stats.tiket, 0) + v_tickets_to_add,
         updated_at = now();
 
       -- 2. Haftalık toplamı izlemek için upsert_user_ticket'i çağır
-      perform public.upsert_user_ticket(v_user_uuid, v_draw_week, v_tickets_to_add);
+      -- DİKKAT: upsert_user_ticket(text, integer, integer) imzasına uygundur.
+      perform public.upsert_user_ticket(v_user_id, v_draw_week, v_tickets_to_add);
       
       -- 3. Haftalık çekiliş limitine kadar bilet başına lottery_tickets kaydı oluştur
       select coalesce(tickets, 0) into v_cur
       from public.user_tickets
-      where user_id = v_user_uuid and draw_week = v_draw_week;
+      where user_id = v_user_id and draw_week = v_draw_week;
 
       v_add := least(v_tickets_to_add, greatest(0, 42 - v_cur));
       if v_add > 0 then
         for i in 1..v_add loop
           insert into public.lottery_tickets (user_id, draw_week)
-          values (v_user_uuid, v_draw_week);
+          values (v_user_id, v_draw_week);
         end loop;
       end if;
 
       -- 4. Kullanıcıya bildirim gönder
       insert into public.notifications (user_id, title, message)
       values (
-        v_user_uuid,
+        v_user_id,
         'Fırsat Onaylandı',
         'Paylaştığınız fırsat onaylandı! ' || v_tickets_to_add || ' bilet kazandınız.'
       );
