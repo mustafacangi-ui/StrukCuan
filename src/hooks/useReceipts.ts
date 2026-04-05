@@ -76,13 +76,13 @@ export async function fetchUserReceiptsSameDay(
   return (data as ReceiptRow[]) ?? [];
 }
 
-export function usePendingReceipts(userId: string | undefined) {
+export function usePendingReceipts(userId?: string | null) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: [...RECEIPTS_QUERY_KEY, "pending"],
     queryFn: fetchPendingReceipts,
-    enabled: !!userId,
+    enabled: true, // Always enabled for admin use; pass null for admin
   });
 
   // Realtime invalidation
