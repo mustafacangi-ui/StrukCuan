@@ -10,6 +10,19 @@ create policy "Authenticated and anonymous users can insert deals"
   on public.deals for insert
   with check (auth.uid() is not null);
 
+-- Admin kullanıcılar deals tablosunu güncelleyebilir (approve/reject için)
+drop policy if exists "Admin users can update deals" on public.deals;
+
+create policy "Admin users can update deals"
+  on public.deals for update
+  using (
+    exists (
+      select 1 from public.user_stats 
+      where user_id = auth.uid() 
+      and is_admin = true
+    )
+  );
+
 -- Okuma zaten var, kontrol et
 -- create policy "Anyone can read deals" ... (deals_table.sql'de tanımlı)
 
