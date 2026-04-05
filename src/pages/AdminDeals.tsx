@@ -29,7 +29,7 @@ function useUserNicknames(userIds: string[]) {
 
 export default function AdminDeals() {
   const { t } = useTranslation();
-  const { data: deals = [], isLoading, error } = usePendingDeals();
+  const { data: deals = [], isLoading, error, refetch } = usePendingDeals();
   const approve = useApproveDeal();
   const reject = useRejectDeal();
 
@@ -131,7 +131,10 @@ export default function AdminDeals() {
                           type="button"
                           onClick={() =>
                             approve.mutate(d.id, {
-                              onSuccess: () => toast.success(t("admin.toast.dealApproved")),
+                              onSuccess: () => {
+                                toast.success(t("admin.toast.dealApproved"));
+                                refetch();
+                              },
                               onError: () => toast.error(t("admin.toast.dealActionFailed")),
                             })
                           }
@@ -144,7 +147,10 @@ export default function AdminDeals() {
                           type="button"
                           onClick={() =>
                             reject.mutate(d.id, {
-                              onSuccess: () => toast.success(t("admin.toast.dealRejected")),
+                              onSuccess: () => {
+                                toast.success(t("admin.toast.dealRejected"));
+                                refetch();
+                              },
                               onError: () => toast.error(t("admin.toast.dealActionFailed")),
                             })
                           }

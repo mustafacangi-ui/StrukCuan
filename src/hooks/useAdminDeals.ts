@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 import { DEALS_QUERY_KEY } from "./useDeals";
 
 export interface PendingDeal {
@@ -41,12 +42,21 @@ export function usePendingDeals() {
 
 export function useApproveDeal() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
-      const id = typeof dealId === "string" ? Number(dealId) : dealId;
-      if (!Number.isFinite(id)) throw new Error("Invalid deal id");
-      const { error } = await supabase.rpc("approve_deal", { p_deal_id: id });
-      if (error) throw error;
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          status: 'active',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id,
+        })
+        .eq('id', dealId);
+      if (error) {
+        console.error('Failed to approve deal:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
@@ -56,12 +66,21 @@ export function useApproveDeal() {
 
 export function useRejectDeal() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
-      const id = typeof dealId === "string" ? Number(dealId) : dealId;
-      if (!Number.isFinite(id)) throw new Error("Invalid deal id");
-      const { error } = await supabase.rpc("reject_deal", { p_deal_id: id });
-      if (error) throw error;
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id,
+        })
+        .eq('id', dealId);
+      if (error) {
+        console.error('Failed to reject deal:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
