@@ -84,7 +84,7 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const handleApprove = () => {
     if (!reviewingReceipt) return;
     approve.mutate(
-      { receiptId: Number(reviewingReceipt.id), tiket: selectedTicket },
+      { receipt: reviewingReceipt, cuanReward: selectedCuan, ticketReward: selectedTicket },
       {
         onSuccess: () => {
           toast.success(t("admin.toast.receiptApproved"));

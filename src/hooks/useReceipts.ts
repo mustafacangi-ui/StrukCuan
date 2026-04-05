@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 
@@ -257,21 +258,50 @@ export function useApproveReceipt() {
 
 export function useApproveReceiptWithRewards() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async ({
-      receiptId,
-      tiket,
-    }: { receiptId: number; tiket: number }) => {
-      const { error } = await supabase.rpc("approve_receipt_with_rewards", {
-        p_receipt_id: receiptId,
-        p_tiket: Number(tiket),
-      });
+      receipt,
+      cuanReward,
+      ticketReward,
+    }: {
+      receipt: ReceiptRow;
+      cuanReward: number;
+      ticketReward: number;
+    }) => {
+      // 1. Load the user's profile from survey_profiles
+      const { data: profile } = await supabase
+        .from('survey_profiles')
+        .select('user_id,total_cuan,total_tickets')
+        .eq('user_id', receipt.user_id)
+        .single();
 
-      if (error) {
-        console.error("Failed to approve receipt with rewards", error);
-        throw error;
-      }
+      const currentCuan = profile?.total_cuan || 0;
+      const currentTickets = profile?.total_tickets || 0;
+
+      // 2. Update the profile row with new totals
+      const { error: profileError } = await supabase
+        .from('survey_profiles')
+        .update({
+          total_cuan: currentCuan + cuanReward,
+          total_tickets: currentTickets + ticketReward,
+        })
+        .eq('user_id', receipt.user_id);
+
+      if (profileError) throw profileError;
+
+      // 3. Update the receipt row with approval details
+      const { error: receiptError } = await supabase
+        .from('receipts')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id,
+        })
+        .eq('id', receipt.id);
+
+      if (receiptError) throw receiptError;
     },
     onSuccess: () => {
       // Invalidate all receipt queries to refresh the UI
