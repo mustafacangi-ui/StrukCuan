@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import {
   useTodayRewardedTickets,
@@ -39,6 +40,8 @@ export default function Earn() {
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
   const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
+  const { data: stats } = useUserStats(user?.id);
+  const totalTickets = stats?.tiket ?? 0;
   const { data: myBallotIds = [], isLoading: ballotsLoading, isError: ballotsError } = useMyLotteryBallots(user?.id);
   const { adsWatched, refetch } = useTodayRewardedTickets();
   const [showModal, setShowModal] = useState(false);
@@ -50,7 +53,7 @@ export default function Earn() {
   const [shakeCountdown, setShakeCountdown] = useState(DEFAULT_COUNTDOWN);
   const [shakeCountdownReady, setShakeCountdownReady] = useState(false);
   const [showEntryAnimation, setShowEntryAnimation] = useState(false);
-  const prevAdsRef = useRef<number>(adsWatched ?? 0);
+  const prevTicketsRef = useRef<number>(totalTickets);
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
@@ -87,20 +90,20 @@ export default function Earn() {
 
   const isWeeklyLimitReached = (weeklyTickets ?? 0) >= MAX_TICKETS_PER_WEEK;
   const todayAds = adsWatched ?? 0;
-  const entriesEarned = Math.floor(todayAds / TICKETS_PER_ENTRY);
-  const progressInBatch = todayAds % TICKETS_PER_ENTRY;
+  const entriesEarned = Math.floor(totalTickets / TICKETS_PER_ENTRY);
+  const progressInBatch = totalTickets % TICKETS_PER_ENTRY;
 
   // Detect crossing a multiple of TICKETS_PER_ENTRY → trigger animation
   useEffect(() => {
-    const prev = prevAdsRef.current;
-    const cur = todayAds;
+    const prev = prevTicketsRef.current;
+    const cur = totalTickets;
     if (cur > 0 && cur > prev && Math.floor(cur / TICKETS_PER_ENTRY) > Math.floor(prev / TICKETS_PER_ENTRY)) {
       setShowEntryAnimation(true);
       const timer = setTimeout(() => setShowEntryAnimation(false), 3000);
       return () => clearTimeout(timer);
     }
-    prevAdsRef.current = cur;
-  }, [todayAds]);
+    prevTicketsRef.current = cur;
+  }, [totalTickets]);
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
@@ -254,7 +257,7 @@ export default function Earn() {
           <div className="flex gap-1">
             {Array.from({ length: TICKETS_PER_ENTRY }, (_, i) => {
               const filled = i < progressInBatch;
-              const justFilled = todayAds === TICKETS_PER_ENTRY && i === TICKETS_PER_ENTRY - 1;
+              const justFilled = false;
               return (
                 <div
                   key={i}
@@ -273,11 +276,7 @@ export default function Earn() {
 
           {/* Caption */}
           <p className="text-[10px] text-white/40 mt-2 text-right uppercase tracking-widest">
-            {progressInBatch === 0 && entriesEarned > 0
-              ? entriesEarned === 1
-                ? t("earn.entryEarnedBadgeOne", { count: 1 })
-                : t("earn.entryEarnedBadgeMany", { count: entriesEarned })
-              : t("earn.entryRemaining", { remaining: TICKETS_PER_ENTRY - progressInBatch })}
+            {t("earn.entryRemaining", { remaining: progressInBatch === 0 ? TICKETS_PER_ENTRY : TICKETS_PER_ENTRY - progressInBatch })}
           </p>
 
           {/* Pool ballot IDs — same rows used in Sunday draw */}

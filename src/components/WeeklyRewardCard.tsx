@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Award, X, Gift, Zap, Trophy } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { useUserTickets } from "@/hooks/useUserTickets";
+import { useUserStats } from "@/hooks/useUserStats";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import { getCountdownParts, pad } from "@/lib/weeklyCountdown";
 
@@ -11,16 +11,21 @@ export default function WeeklyRewardCard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const { data: ticketCount = 0 } = useUserTickets(user?.id);
+  // Use user_stats.tiket as the single source of truth for cumulative ticket total
+  const { data: stats } = useUserStats(user?.id);
+  const ticketCount = stats?.tiket ?? 0;
   const { data: winners = [] } = useLotteryWinners(5);
   const [showWinners, setShowWinners] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  // ── Ticket → Entry conversion (10 tickets = 1 entry) ──
+  // ── Ticket → Entry conversion: tickets never decrease, entries are virtual ──
+  // 10 tickets = 1 entry, 27 tickets = 2 entries + 3 until next
   const entries          = Math.floor(ticketCount / 10);
-  const remainingTickets = ticketCount % 10;
-  const nextEntryPct     = (remainingTickets / 10) * 100;
-  const ticketsNeeded    = 10 - remainingTickets;
+  const remainder        = ticketCount % 10;
+  const nextEntryPct     = (remainder / 10) * 100;
+  // If remainder is 0 and tickets > 0, they just hit a threshold — show 10 until next
+  const ticketsNeeded    = remainder === 0 ? 10 : 10 - remainder;
+  const remainingTickets = remainder;
 
   useEffect(() => {
     const tick = () => setTimeLeft(getCountdownParts());

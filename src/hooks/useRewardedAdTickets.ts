@@ -1,10 +1,9 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * Grants a ticket via Supabase RPC "grant_ticket".
- * RPC inserts into: ad_ticket_events (user_id, event_type='rewarded', week_id)
- * RPC updates: user_stats (tiket + 1)
- * Requires: grant_ticket RPC, ad_ticket_events table, user_stats table.
+ * Grants +1 ticket for watching an ad.
+ * Writes to user_stats.tiket (primary cumulative store).
+ * Also syncs to survey_profiles.total_tickets (secondary, non-fatal).
  */
 export async function grantTicket() {
   console.log("[grantTicket] Starting...");
@@ -14,7 +13,7 @@ export async function grantTicket() {
     throw new Error("Please login");
   }
   const userId = sessionData.session.user?.id;
-  console.log("[grantTicket] User ID:", userId, "| Granting ticket directly...");
+  console.log("[grantTicket] User:", userId);
 
   // 1. Track ad event for progress bars
   const { error: eventError } = await supabase
@@ -30,23 +29,42 @@ export async function grantTicket() {
     throw new Error("Failed to track ad view: " + eventError.message);
   }
 
-  // 2. Grant ticket directly to survey_profiles
-  const { data: profile } = await supabase
-    .from('survey_profiles')
-    .select('user_id, total_tickets')
+  // 2. Grant +1 to user_stats.tiket (primary — this is what UI reads)
+  const { data: statsRow } = await supabase
+    .from('user_stats')
+    .select('tiket')
     .eq('user_id', userId)
     .maybeSingle();
 
-  const { data, error } = await supabase
-    .from('survey_profiles')
-    .update({
-      total_tickets: (profile?.total_tickets || 0) + 1
-    })
+  const currentTiket = statsRow?.tiket ?? 0;
+  const { error: tiketError } = await supabase
+    .from('user_stats')
+    .update({ tiket: currentTiket + 1 })
     .eq('user_id', userId);
 
-  if (error) {
-    console.error("[grantTicket] Ticket update failed:", error);
-    throw new Error(error.message ?? "Failed to grant ticket");
+  if (tiketError) {
+    console.error("[grantTicket] user_stats.tiket update failed:", tiketError);
+    throw new Error(tiketError.message ?? "Failed to grant ticket");
+  }
+
+  console.log("[grantTicket] user_stats.tiket updated to", currentTiket + 1);
+
+  // 3. Also sync to survey_profiles.total_tickets (non-fatal secondary store)
+  try {
+    const { data: profile } = await supabase
+      .from('survey_profiles')
+      .select('total_tickets')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    await supabase
+      .from('survey_profiles')
+      .update({ total_tickets: (profile?.total_tickets || 0) + 1 })
+      .eq('user_id', userId);
+
+    console.log("[grantTicket] survey_profiles synced");
+  } catch (spErr) {
+    console.warn("[grantTicket] survey_profiles sync failed (non-fatal):", spErr);
   }
 
   console.log("[grantTicket] Ticket granted successfully");

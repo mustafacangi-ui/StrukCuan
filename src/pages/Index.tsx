@@ -299,8 +299,8 @@ const Index = () => {
   const { user, session, isOnboarded, requireLogin, theme } = useUser();
   const L = theme === "light";
   const { deals } = useRadar();
-  const { data: ticketCount = 0 } = useUserTickets(user?.id);
   const { data: stats } = useUserStats(user?.id);
+  const ticketCount = stats?.tiket ?? 0;
   const { data: notifications = [] } = useNotifications(user?.id);
   const markRead = useMarkNotificationsRead(user?.id);
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
@@ -694,7 +694,7 @@ const Index = () => {
               {(() => {
                 const _entries   = Math.floor(ticketCount / 10);
                 const _remaining = ticketCount % 10;
-                const _needed    = 10 - _remaining;
+                const _needed    = _remaining === 0 ? 10 : 10 - _remaining;
                 return (
                   <div className="mt-2" style={{ width: "155px" }}>
                     <div className="flex items-center gap-1.5 mb-1">
