@@ -15,6 +15,9 @@ import { X, Check, XCircle, AlertTriangle, Sparkles, Tag, ExternalLink, Settings
 import { motion, AnimatePresence } from "framer-motion";
 
 const TICKET_OPTIONS = [1, 2, 3];
+// Red label receipts earn 3 tickets, normal receipts earn 1
+const DEFAULT_TICKET = 1;
+const RED_LABEL_TICKET = 3;
 
 function useUserNicknames(userIds: string[]) {
   return useQuery({
@@ -119,13 +122,17 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
     setViewingImageUrl(r.image_url);
     const sameDay = await fetchUserReceiptsSameDay(r.user_id, r.created_at);
     setPreviousReceipts(sameDay.filter((x) => x.id !== r.id).sort((a, b) => (a.receipt_index_today ?? 0) - (b.receipt_index_today ?? 0)));
-    // Auto-select rewards if AI suggests
+    // Auto-select ticket reward: red label = 3, normal = 1
+    const isRedLabel = r.ai_red_label === true;
     if (r.ai_auto_decision === 'approve' && r.ai_suggested_ticket_reward) {
        setSelectedTicket(r.ai_suggested_ticket_reward);
        setFocusedAction('approve');
     } else if (r.ai_auto_decision === 'reject') {
        setFocusedAction('reject');
+       setSelectedTicket(DEFAULT_TICKET);
     } else {
+       // Default: red label gets 3 tickets, normal gets 1
+       setSelectedTicket(isRedLabel ? RED_LABEL_TICKET : DEFAULT_TICKET);
        setFocusedAction(null);
     }
   };

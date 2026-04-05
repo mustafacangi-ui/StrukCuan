@@ -467,55 +467,78 @@ export function useApproveReceiptWithRewards() {
       cuanReward: number;
       ticketReward: number;
     }) => {
-      // 1. Load the user's profile from survey_profiles
-      const { data: profile } = await supabase
-        .from('survey_profiles')
-        .select('user_id,total_cuan,total_tickets')
+      console.log('[Approve] Starting approval for receipt', receipt.id, '| user:', receipt.user_id);
+
+      // --- Step 1: Read current user_stats.tiket (this is what the UI shows) ---
+      const { data: stats, error: statsReadError } = await supabase
+        .from('user_stats')
+        .select('tiket')
         .eq('user_id', receipt.user_id)
-        .single();
+        .maybeSingle();
 
-      const currentCuan = profile?.total_cuan || 0;
-      const currentTickets = profile?.total_tickets || 0;
+      if (statsReadError) {
+        console.error('[Approve] Failed to read user_stats:', statsReadError);
+      }
 
-      // 2. Update the profile row with new totals
-      const { error: profileError } = await supabase
-        .from('survey_profiles')
-        .update({
-          total_cuan: currentCuan + cuanReward,
-          total_tickets: currentTickets + ticketReward,
-        })
+      const currentTiket = stats?.tiket ?? 0;
+      console.log('[Approve] Current tiket in user_stats:', currentTiket, '| Adding:', ticketReward);
+
+      // --- Step 2: Write to user_stats.tiket (primary ticket store read by UI) ---
+      const { error: statsUpdateError } = await supabase
+        .from('user_stats')
+        .update({ tiket: currentTiket + ticketReward })
         .eq('user_id', receipt.user_id);
 
-      if (profileError) throw profileError;
+      if (statsUpdateError) {
+        console.error('[Approve] Failed to update user_stats.tiket:', statsUpdateError);
+        throw statsUpdateError;
+      }
+      console.log('[Approve] user_stats.tiket updated to', currentTiket + ticketReward);
 
-      // 3. Update the receipt row with approval details
-      console.log('Updating receipt', receipt.id)
+      // --- Step 3: Also sync to survey_profiles.total_tickets (secondary store) ---
+      try {
+        const { data: profile } = await supabase
+          .from('survey_profiles')
+          .select('total_tickets')
+          .eq('user_id', receipt.user_id)
+          .maybeSingle();
+
+        await supabase
+          .from('survey_profiles')
+          .update({ total_tickets: (profile?.total_tickets ?? 0) + ticketReward })
+          .eq('user_id', receipt.user_id);
+
+        console.log('[Approve] survey_profiles.total_tickets synced');
+      } catch (spErr) {
+        // Non-fatal: UI doesn't read from here
+        console.warn('[Approve] survey_profiles sync failed (non-fatal):', spErr);
+      }
+
+      // --- Step 4: Update the receipt row ---
+      console.log('[Approve] Updating receipt status to approved');
       const { error: receiptError } = await supabase
         .from('receipts')
         .update({
           status: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: user?.id,
+          ticket_reward: ticketReward,
         })
         .eq('id', receipt.id);
 
       if (receiptError) {
-        console.error('Receipt update failed:', receiptError)
-        throw receiptError
+        console.error('[Approve] Receipt update failed:', receiptError);
+        throw receiptError;
       }
-      console.log('Receipt updated successfully')
+      console.log('[Approve] Done. Receipt approved, tickets granted:', ticketReward);
     },
     onSuccess: () => {
-      // Invalidate all receipt queries to refresh the UI
-      queryClient.invalidateQueries({
-        queryKey: RECEIPTS_QUERY_KEY,
-      });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['user_stats'] });
+      queryClient.invalidateQueries({ queryKey: ['user_tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       invalidateLotteryPoolQueries(queryClient);
-      // Force refetch pending receipts
-      queryClient.refetchQueries({ queryKey: [...RECEIPTS_QUERY_KEY, "pending"] });
     },
   });
 }
