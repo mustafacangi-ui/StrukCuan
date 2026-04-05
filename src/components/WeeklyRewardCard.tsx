@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Award, X, Gift, Zap, Trophy } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
+import { useMyDrawEntries, useEnsureDrawEntries } from "@/hooks/useWeeklyDraw";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
 import { getCountdownParts, pad } from "@/lib/weeklyCountdown";
 
@@ -15,8 +16,17 @@ export default function WeeklyRewardCard() {
   const { data: stats } = useUserStats(user?.id);
   const ticketCount = stats?.tiket ?? 0;
   const { data: winners = [] } = useLotteryWinners(5);
+  const { data: myEntries = [] } = useMyDrawEntries();
+  const ensureDraw = useEnsureDrawEntries();
   const [showWinners, setShowWinners] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  // Auto-generate draw codes if user crossed a 10-ticket threshold
+  useEffect(() => {
+    if (ticketCount > 0 && Math.floor(ticketCount / 10) > myEntries.length) {
+      ensureDraw.mutate();
+    }
+  }, [ticketCount, myEntries.length]);
 
   // ── Ticket → Entry conversion: tickets never decrease, entries are virtual ──
   // 10 tickets = 1 entry, 27 tickets = 2 entries + 3 until next
@@ -242,6 +252,37 @@ export default function WeeklyRewardCard() {
               <p className="text-[9px] mt-1.5 text-white/25">
                 {t("weeklyReward.nextEntryFooter", { needed: ticketsNeeded })}
               </p>
+            )}
+          </div>
+
+          {/* ── My Draw Codes ── */}
+          <div className="mb-4">
+            <p className="text-[9px] uppercase tracking-widest text-white/30 mb-2">{t("weeklyReward.myCodesTitle", "My Draw Codes This Week")}</p>
+            {myEntries.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {myEntries.map((entry) => (
+                  <div key={entry.draw_code} 
+                    className="flex justify-between items-center rounded-xl p-2.5"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)"
+                    }}>
+                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>#{entry.ticket_threshold}</span>
+                    <span className="font-bold tabular-nums tracking-widest text-white text-xs">
+                      {entry.draw_code}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl p-3 text-center border border-dashed"
+                style={{
+                  borderColor: "rgba(255,255,255,0.1)",
+                  background: "rgba(0,0,0,0.2)"
+                }}>
+                <p className="text-[10px] text-white/30">{t("weeklyReward.myCodesEmpty", "Keep collecting tickets to unlock your first draw code!")}</p>
+              </div>
             )}
           </div>
 
