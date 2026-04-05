@@ -50,9 +50,7 @@ export function useApproveDeal() {
       const { error } = await supabase
         .from('deals')
         .update({
-          status: 'active',
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id,
+          status: 'active'
         })
         .eq('id', dealId);
       if (error) {
@@ -64,6 +62,7 @@ export function useApproveDeal() {
     onSuccess: () => {
       console.log('[useApproveDeal] Invalidate queries');
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...DEALS_QUERY_KEY, 'pending'] });
     },
   });
 }
@@ -76,9 +75,7 @@ export function useRejectDeal() {
       const { error } = await supabase
         .from('deals')
         .update({
-          status: 'rejected',
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id,
+          status: 'rejected'
         })
         .eq('id', dealId);
       if (error) {
@@ -88,6 +85,7 @@ export function useRejectDeal() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...DEALS_QUERY_KEY, 'pending'] });
     },
   });
 }
