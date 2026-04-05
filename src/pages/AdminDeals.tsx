@@ -130,6 +130,8 @@ export default function AdminDeals() {
                         <button
                           type="button"
                           onClick={() => {
+                            console.log('Deal object:', d);
+                            console.log('Deal id being used:', d.id);
                             console.log('[AdminDeals] Approve button clicked for deal:', d.id);
                             approve.mutate(d.id, {
                               onSuccess: () => {
@@ -137,9 +139,9 @@ export default function AdminDeals() {
                                 toast.success(t("admin.toast.dealApproved"));
                                 refetch();
                               },
-                              onError: (err) => {
+                              onError: (err: any) => {
                                 console.error('[AdminDeals] Approve error:', err);
-                                toast.error(t("admin.toast.dealActionFailed"));
+                                toast.error(err?.message || "Could not update deal");
                               },
                             });
                           }}

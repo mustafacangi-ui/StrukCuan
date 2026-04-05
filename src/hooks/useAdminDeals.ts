@@ -45,8 +45,22 @@ export function useApproveDeal() {
   const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
-      console.log('[useApproveDeal] Starting approval for deal:', dealId);
+      console.log('Approving deal', dealId)
       console.log('[useApproveDeal] Current user:', user?.id);
+
+      const { data: existingDeal, error: fetchError } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', dealId)
+        .maybeSingle()
+
+      console.log('Existing deal:', existingDeal)
+      console.log('Fetch error:', fetchError)
+
+      if (!existingDeal) {
+        throw new Error(`Deal not found: ${dealId}`);
+      }
+
       const { data, error } = await supabase
         .from('deals')
         .update({
