@@ -76,6 +76,22 @@ export async function fetchUserReceiptsSameDay(
   return (data as ReceiptRow[]) ?? [];
 }
 
+export function useAdminPendingReceipts() {
+  return useQuery({
+    queryKey: RECEIPTS_QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('receipts')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data as ReceiptRow[]) ?? [];
+    }
+  });
+}
+
 export function usePendingReceipts(userId?: string | null) {
   const queryClient = useQueryClient();
 

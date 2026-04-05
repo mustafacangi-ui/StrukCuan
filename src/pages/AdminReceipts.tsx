@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import {
-  usePendingReceipts,
+  useAdminPendingReceipts,
   useApproveReceiptWithRewards,
   useRejectReceipt,
   fetchUserReceiptsSameDay,
@@ -42,7 +42,7 @@ interface AdminReceiptsProps {
 export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const { t } = useTranslation();
   const { user } = useUser();
-  const { data: receipts = [], isLoading, error } = usePendingReceipts(user?.id);
+  const { data: receipts = [], isLoading, error, refetch } = useAdminPendingReceipts();
   const approve = useApproveReceiptWithRewards();
   const reject = useRejectReceipt();
 
@@ -88,6 +88,7 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
       {
         onSuccess: () => {
           toast.success(t("admin.toast.receiptApproved"));
+          refetch();
           closeReview();
         },
         onError: () => toast.error(t("admin.toast.receiptActionFailed")),
@@ -100,6 +101,7 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
     reject.mutate(reviewingReceipt.id, {
       onSuccess: () => {
         toast.success(t("admin.toast.receiptRejected"));
+        refetch();
         closeReview();
       },
       onError: () => toast.error(t("admin.toast.receiptActionFailed")),
