@@ -80,6 +80,30 @@ export function useApproveDeal() {
       }
 
       console.log('[useApproveDeal] Successfully approved deal:', dealId, 'Result Data:', data);
+
+      // Allocate rewards directly without relying on an RPC or backend triggers
+      if (existingDeal.user_id) {
+        const ticketReward = existingDeal.is_red_label ? 3 : 1;
+        
+        try {
+          const { data: profile } = await supabase
+            .from('survey_profiles')
+            .select('user_id, total_tickets')
+            .eq('user_id', existingDeal.user_id)
+            .maybeSingle();
+
+          await supabase
+            .from('survey_profiles')
+            .update({
+              total_tickets: (profile?.total_tickets || 0) + ticketReward
+            })
+            .eq('user_id', existingDeal.user_id);
+            
+          console.log(`[useApproveDeal] Rewarded ${ticketReward} tickets to ${existingDeal.user_id}`);
+        } catch (ticketError) {
+          console.error('[useApproveDeal] Deal approved, but failed to allocate tickets:', ticketError);
+        }
+      }
     },
     onSuccess: () => {
       console.log('[useApproveDeal] Invalidate queries');
