@@ -247,31 +247,6 @@ export function useCreateReceipt() {
   });
 }
 
-export function useApproveReceipt() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (receiptId: string | number) => {
-      const { error } = await supabase.rpc("approve_receipt", {
-        p_receipt_id: receiptId,
-      });
-
-      if (error) {
-        console.error("Failed to approve receipt", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: RECEIPTS_QUERY_KEY,
-      });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
-}
-
 export function useApproveReceiptWithRewards() {
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -341,12 +316,18 @@ export function useApproveReceiptWithRewards() {
 
 export function useRejectReceipt() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation({
     mutationFn: async (receiptId: string | number) => {
-      const { error } = await supabase.rpc("reject_receipt", {
-        p_receipt_id: Number(receiptId),
-      });
+      const { error } = await supabase
+        .from('receipts')
+        .update({
+          status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id,
+        })
+        .eq('id', receiptId);
 
       if (error) {
         console.error("Failed to reject receipt", error);
