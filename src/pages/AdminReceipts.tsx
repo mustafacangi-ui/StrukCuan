@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import {
-  useAdminPendingReceipts,
+  useAdminFilteredReceipts,
   useApproveReceiptWithRewards,
   useRejectReceipt,
   fetchUserReceiptsSameDay,
   type ReceiptRow,
 } from "@/hooks/useReceipts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { X, Check, XCircle, AlertTriangle, Sparkles, Tag, ExternalLink } from "lucide-react";
+import { X, Check, XCircle, AlertTriangle, Sparkles, Tag, ExternalLink, Settings, Power } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CUAN_OPTIONS = [1, 5, 10, 20, 50, 100];
@@ -56,7 +56,28 @@ interface AdminReceiptsProps {
 export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const { t } = useTranslation();
   const { user } = useUser();
-  const { data: receipts = [], isLoading, error, refetch } = useAdminPendingReceipts();
+  const queryClient = useQueryClient();
+  const [filterTab, setFilterTab] = useState<'pending' | 'auto_approved' | 'auto_rejected' | 'manual_review'>('pending');
+
+  const { data: receipts = [], isLoading, error, refetch } = useAdminFilteredReceipts(filterTab);
+  
+  // App Settings Toggle state
+  const { data: autoEnabled, refetch: refetchSettings } = useQuery({
+     queryKey: ["app_settings", "ai_auto_approve_enabled"],
+     queryFn: async () => {
+        const { data } = await supabase.from('app_settings').select('value').eq('key', 'ai_auto_approve_enabled').maybeSingle();
+        return data?.value === "true" || data?.value === true;
+     }
+  });
+
+  const toggleAutoApprove = async () => {
+      const newVal = !autoEnabled;
+      const { error } = await supabase.from('app_settings').update({ value: newVal }).eq('key', 'ai_auto_approve_enabled');
+      if (error) { toast.error("Failed to update AI settings"); return; }
+      toast.success(newVal ? "AI Auto Approval Enabled" : "AI Auto Approval Disabled");
+      refetchSettings();
+  };
+
   const approve = useApproveReceiptWithRewards();
   const reject = useRejectReceipt();
 
@@ -147,11 +168,50 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
 
   return (
     <div className="w-full">
-      {/* Header (if not embedded) */}
+      {/* Header & Settings (if not embedded) */}
       {!embedded && (
-        <div className="mb-6 flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-white tracking-tight">Receipt Queue</h2>
-          <p className="text-xs text-zinc-500">You have {receipts.length} pending receipts</p>
+        <div className="mb-6 flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold text-white tracking-tight">Receipt Queue</h2>
+            <p className="text-xs text-zinc-500">You have {receipts.length} {filterTab.replace('_', ' ')} receipts</p>
+          </div>
+
+          <div className="flex flex-col gap-3 items-end">
+            {/* AI Safety Toggle */}
+            <button
+               onClick={toggleAutoApprove}
+               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-colors shadow-sm ${
+                 autoEnabled 
+                   ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                   : 'bg-zinc-800/50 border-white/5 text-zinc-500'
+               }`}
+            >
+               <Power size={12} className={autoEnabled ? 'animate-pulse' : ''} />
+               {autoEnabled ? 'AI Auto-Approve: ON' : 'AI Auto-Approve: OFF'}
+            </button>
+            
+            {/* Filter Tabs */}
+            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 overflow-x-auto max-w-full">
+              {[
+                { id: 'pending', label: 'Pending Review' },
+                { id: 'auto_approved', label: 'Auto Approved' },
+                { id: 'auto_rejected', label: 'Auto Rejected' },
+                { id: 'manual_review', label: 'Manual Review' }
+              ].map(tab => (
+                 <button
+                   key={tab.id}
+                   onClick={() => setFilterTab(tab.id as any)}
+                   className={`px-4 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors ${
+                     filterTab === tab.id 
+                       ? 'bg-white/10 text-white shadow-sm' 
+                       : 'text-zinc-500 hover:text-zinc-300'
+                   }`}
+                 >
+                   {tab.label}
+                 </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -202,14 +262,24 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
                      </span>
                   </div>
                   <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                     {r.ai_auto_decision === 'approve' && (
+                     {filterTab === 'pending' && r.ai_auto_decision === 'approve' && (
                         <span className="px-1.5 py-0.5 rounded pl-1 bg-green-500/80 backdrop-blur text-white border-green-400 text-[10px] font-bold flex items-center gap-1">
-                           <Check size={10} /> Approve
+                           <Check size={10} /> Suggests Approve
                         </span>
                      )}
-                     {r.ai_auto_decision === 'reject' && (
+                     {filterTab === 'pending' && r.ai_auto_decision === 'reject' && (
                         <span className="px-1.5 py-0.5 rounded pl-1 bg-red-500/80 backdrop-blur text-white border-red-400 text-[10px] font-bold flex items-center gap-1">
-                           <XCircle size={10} /> Reject
+                           <XCircle size={10} /> Suggests Reject
+                        </span>
+                     )}
+                     {r.status === 'approved' && r.ai_auto_processed === true && (
+                        <span className="px-1.5 py-0.5 rounded pl-1 bg-purple-500/90 backdrop-blur text-white border-purple-400 text-[10px] font-bold flex items-center gap-1 shadow-[0_0_10px_purple]">
+                           <Sparkles size={10} /> AI Approved
+                        </span>
+                     )}
+                     {r.status === 'rejected' && r.ai_auto_processed === true && (
+                        <span className="px-1.5 py-0.5 rounded pl-1 bg-zinc-700/90 backdrop-blur text-white border-zinc-500 text-[10px] font-bold flex items-center gap-1">
+                           <X size={10} /> AI Rejected
                         </span>
                      )}
                      {isDuplicate && (

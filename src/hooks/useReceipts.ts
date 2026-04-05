@@ -31,6 +31,9 @@ export interface ReceiptRow {
   ai_duplicate_score?: number | null;
   ai_duplicate_receipt_id?: string | null;
   ai_auto_decision?: 'approve' | 'review' | 'reject' | null;
+  ai_auto_processed?: boolean;
+  ai_processed_at?: string;
+  ai_processing_reason?: string;
 }
 
 export const RECEIPTS_QUERY_KEY = ["receipts"];
@@ -102,20 +105,31 @@ export async function fetchUserReceiptsSameDay(
   return (data as ReceiptRow[]) ?? [];
 }
 
-export function useAdminPendingReceipts() {
+export function useAdminFilteredReceipts(filter: 'pending' | 'auto_approved' | 'auto_rejected' | 'manual_review') {
   return useQuery({
-    queryKey: RECEIPTS_QUERY_KEY,
+    queryKey: [...RECEIPTS_QUERY_KEY, "admin", filter],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('receipts')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+      let query = supabase.from('receipts').select('*').order('created_at', { ascending: false });
+      
+      if (filter === 'pending') {
+        query = query.eq('status', 'pending');
+      } else if (filter === 'auto_approved') {
+        query = query.eq('status', 'approved').eq('ai_auto_processed', true);
+      } else if (filter === 'auto_rejected') {
+        query = query.eq('status', 'rejected').eq('ai_auto_processed', true);
+      } else if (filter === 'manual_review') {
+        query = query.in('status', ['approved', 'rejected']).is('ai_auto_processed', false);
+      }
 
+      const { data, error } = await query;
       if (error) throw error;
       return (data as ReceiptRow[]) ?? [];
     }
   });
+}
+
+export function useAdminPendingReceipts() {
+  return useAdminFilteredReceipts('pending');
 }
 
 export function usePendingReceipts(userId?: string | null) {
@@ -323,24 +337,77 @@ export function useCreateReceipt() {
 
         console.log('[AI Auto Decision] Decision:', aiDecision);
 
+        // --- FETCH AUTO-APPROVE SETTING ---
+        const { data: settingData } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'ai_auto_approve_enabled')
+          .maybeSingle();
+
+        const isAutoEnabled = settingData?.value === "true" || settingData?.value === true;
+        console.log('[AI Auto Decision] AI Auto Approval Enabled:', isAutoEnabled);
+
+        // --- PREPARE UPDATE PAYLOAD ---
+        const updatePayload: any = {
+          ai_store_name: aiResult.store_name,
+          ai_product_name: aiResult.product_name,
+          ai_original_price: aiResult.original_price,
+          ai_discount_price: aiResult.discount_price,
+          ai_discount_percent: aiResult.discount_percent,
+          ai_expiry_date: aiResult.expiry_date,
+          ai_red_label: aiResult.red_label,
+          ai_suggested_ticket_reward: aiResult.suggested_ticket_reward,
+          ai_confidence: aiResult.confidence,
+          ai_raw_text: aiResult.raw_text,
+          image_hash: input.imageHash,
+          ai_duplicate_score: duplicateScore,
+          ai_duplicate_receipt_id: duplicateReceiptId,
+          ai_auto_decision: aiDecision
+        };
+
+        // --- EXECUTE AI AUTOMATION ---
+        if (isAutoEnabled) {
+           if (aiDecision === 'approve') {
+              console.log('[AI Auto Decision] Auto-approving receipt');
+              updatePayload.status = 'approved';
+              updatePayload.approved_at = new Date().toISOString();
+              updatePayload.approved_by = 'ai-system';
+              updatePayload.cuan_reward = 0;
+              updatePayload.ticket_reward = aiResult.suggested_ticket_reward || 0;
+              updatePayload.ai_auto_processed = true;
+              updatePayload.ai_processed_at = new Date().toISOString();
+              updatePayload.ai_processing_reason = 'High confidence & low duplicate score';
+
+              // Grant Tickets securely
+              if (aiResult.suggested_ticket_reward && aiResult.suggested_ticket_reward > 0) {
+                 const { data: profile } = await supabase
+                    .from('survey_profiles')
+                    .select('user_id, total_tickets')
+                    .eq('user_id', userId)
+                    .single();
+                 
+                 await supabase
+                    .from('survey_profiles')
+                    .update({
+                       total_tickets: (profile?.total_tickets || 0) + aiResult.suggested_ticket_reward
+                    })
+                    .eq('user_id', userId);
+                 console.log(`[AI Auto Decision] Granted ${aiResult.suggested_ticket_reward} tickets to user`);
+              }
+           } else if (aiDecision === 'reject') {
+              console.log('[AI Auto Decision] Auto-rejecting receipt');
+              updatePayload.status = 'rejected';
+              updatePayload.rejected_at = new Date().toISOString();
+              updatePayload.rejected_reason = 'duplicate_or_low_confidence';
+              updatePayload.ai_auto_processed = true;
+              updatePayload.ai_processed_at = new Date().toISOString();
+              updatePayload.ai_processing_reason = duplicateScore >= 0.95 ? 'Duplicate exact match' : 'Poor confidence score';
+           }
+        }
+
         const { error: updateError } = await supabase
           .from('receipts')
-          .update({
-            ai_store_name: aiResult.store_name,
-            ai_product_name: aiResult.product_name,
-            ai_original_price: aiResult.original_price,
-            ai_discount_price: aiResult.discount_price,
-            ai_discount_percent: aiResult.discount_percent,
-            ai_expiry_date: aiResult.expiry_date,
-            ai_red_label: aiResult.red_label,
-            ai_suggested_ticket_reward: aiResult.suggested_ticket_reward,
-            ai_confidence: aiResult.confidence,
-            ai_raw_text: aiResult.raw_text,
-            image_hash: input.imageHash,
-            ai_duplicate_score: duplicateScore,
-            ai_duplicate_receipt_id: duplicateReceiptId,
-            ai_auto_decision: aiDecision
-          })
+          .update(updatePayload)
           .eq('id', receiptId);
 
         if (updateError) {
