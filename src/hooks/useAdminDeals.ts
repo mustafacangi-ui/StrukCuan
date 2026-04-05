@@ -45,6 +45,8 @@ export function useApproveDeal() {
   const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
+      console.log('[useApproveDeal] Starting approval for deal:', dealId);
+      console.log('[useApproveDeal] Current user:', user?.id);
       const { error } = await supabase
         .from('deals')
         .update({
@@ -54,11 +56,13 @@ export function useApproveDeal() {
         })
         .eq('id', dealId);
       if (error) {
-        console.error('Failed to approve deal:', error);
+        console.error('[useApproveDeal] Failed to approve deal:', error);
         throw error;
       }
+      console.log('[useApproveDeal] Successfully approved deal:', dealId);
     },
     onSuccess: () => {
+      console.log('[useApproveDeal] Invalidate queries');
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
     },
   });

@@ -129,15 +129,20 @@ export default function AdminDeals() {
                       <div className="flex gap-2 justify-end">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            console.log('[AdminDeals] Approve button clicked for deal:', d.id);
                             approve.mutate(d.id, {
                               onSuccess: () => {
+                                console.log('[AdminDeals] Approve success');
                                 toast.success(t("admin.toast.dealApproved"));
                                 refetch();
                               },
-                              onError: () => toast.error(t("admin.toast.dealActionFailed")),
-                            })
-                          }
+                              onError: (err) => {
+                                console.error('[AdminDeals] Approve error:', err);
+                                toast.error(t("admin.toast.dealActionFailed"));
+                              },
+                            });
+                          }}
                           disabled={approve.isPending || reject.isPending}
                           className="rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                         >
