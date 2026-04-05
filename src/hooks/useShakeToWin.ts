@@ -80,22 +80,37 @@ export async function shakeToWin(): Promise<ShakeResult> {
     else if (r < 0.97) tickets = 4;
     else tickets = 5;
 
-    // 3. Grant tickets to survey_profiles
-    const { data: profile } = await supabase
-      .from('survey_profiles')
-      .select('user_id, total_tickets')
+    // 3. Grant tickets to user_stats.tiket (primary ticket store read by UI)
+    const { data: statsForUpdate } = await supabase
+      .from('user_stats')
+      .select('tiket')
       .eq('user_id', userId)
       .maybeSingle();
 
-    const { error: profileError } = await supabase
-      .from('survey_profiles')
-      .update({
-        total_tickets: (profile?.total_tickets || 0) + tickets
-      })
+    const currentTiket = statsForUpdate?.tiket ?? 0;
+    const { error: tiketError } = await supabase
+      .from('user_stats')
+      .update({ tiket: currentTiket + tickets })
       .eq('user_id', userId);
 
-    if (profileError) {
-      return { success: false, error: profileError.message };
+    if (tiketError) {
+      console.error('[shakeToWin] Failed to grant tiket:', tiketError);
+      return { success: false, error: tiketError.message };
+    }
+
+    // 4. Also sync to survey_profiles (non-fatal secondary store)
+    try {
+      const { data: profile } = await supabase
+        .from('survey_profiles')
+        .select('total_tickets')
+        .eq('user_id', userId)
+        .maybeSingle();
+      await supabase
+        .from('survey_profiles')
+        .update({ total_tickets: (profile?.total_tickets || 0) + tickets })
+        .eq('user_id', userId);
+    } catch (spErr) {
+      console.warn('[shakeToWin] survey_profiles sync failed (non-fatal):', spErr);
     }
 
     // 4. Update shake statistics in user_stats

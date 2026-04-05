@@ -53,47 +53,22 @@ export default function LuckyShakeCard({
   const [shakeRightAvailable, setShakeRightAvailable] = useState(false);
 
   useEffect(() => {
-    if (!countdownReady || !userStats) {
-       // Fallback logic until stats load
-       const isCountdownZeroFallback = 
-          (countdown?.days ?? 0) === 0 &&
-          (countdown?.hours ?? 0) === 0 &&
-          (countdown?.minutes ?? 0) === 0 &&
-          (countdown?.seconds ?? 0) === 0;
-       if (countdownReady && isCountdownZeroFallback) {
-         setShakeRightAvailable(true);
-       }
-       return;
+    if (!countdownReady) return;
+    if (!userStats) {
+      // Stats not loaded yet — keep locked until we know for sure
+      return;
     }
-    
-    // Daily reset logic: check if the last shake was on a previous Jakarta day
+
+    // Single authoritative check: compare Jakarta calendar dates
     if (userStats.shake_last_at) {
-      const jakartaTimeNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-      const jakartaTimeLast = new Date(new Date(userStats.shake_last_at).toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-      
-      const isSameJakartaDay = 
-        jakartaTimeNow.getFullYear() === jakartaTimeLast.getFullYear() &&
-        jakartaTimeNow.getMonth() === jakartaTimeLast.getMonth() &&
-        jakartaTimeNow.getDate() === jakartaTimeLast.getDate();
-        
-      setShakeRightAvailable(!isSameJakartaDay);
+      const jakartaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      const lastShakeDate = new Date(userStats.shake_last_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      setShakeRightAvailable(lastShakeDate !== jakartaToday);
     } else {
+      // Never shaken before
       setShakeRightAvailable(true);
     }
-  }, [countdownReady, countdown, userStats]);
-
-  // Unlock instantly if countdown reaches exact 0
-  const isCountdownZero =
-    (countdown?.days ?? 0) === 0 &&
-    (countdown?.hours ?? 0) === 0 &&
-    (countdown?.minutes ?? 0) === 0 &&
-    (countdown?.seconds ?? 0) === 0;
-
-  useEffect(() => {
-    if (countdownReady && isCountdownZero) {
-      setShakeRightAvailable(true);
-    }
-  }, [countdownReady, isCountdownZero]);
+  }, [countdownReady, userStats]);
 
   const triggerShakeAnimation = () => {
     setIsShaking(true);
@@ -122,7 +97,7 @@ export default function LuckyShakeCard({
         setShakeWonTickets(result.ticketsAdded ?? 1);
         setShakeRightAvailable(false);
       } else {
-        const errMsg = result?.error ?? "FAILED";
+        const errMsg = !result.success ? (result.error ?? "FAILED") : "FAILED";
         if (errMsg === "SHAKE_ALREADY_USED") {
           toast.error(t("shake.toast.alreadyUsed"));
           setShakeRightAvailable(false);

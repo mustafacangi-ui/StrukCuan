@@ -268,11 +268,12 @@
   },
   "weeklyReward": {
     "cardTitle": "Weekly Reward",
-    "headline": "Win a Rp100,000 Shopping Voucher",
+    "headline": "Win Rp50,000 Shopping Voucher",
     "subhead": "5 winners every week",
     "poolLabel": "Weekly Prize Pool",
-    "poolValue": "5 × Rp100,000 vouchers",
-    "rule": "Each 10 tickets = 1 entry in the weekly draw",
+    "poolValue": "5 × Rp50,000 vouchers",
+    "poolTotal": "Rp250,000 total weekly rewards",
+    "rule": "Every 10 tickets = 1 draw entry",
     "youHave": "You have",
     "ticketsWord": "tickets",
     "entriesWord": "entries",
@@ -283,10 +284,10 @@
     "countdownLabel": "Next draw in",
     "viewWinners": "View Winners",
     "earnMore": "Earn More Tickets",
-    "amount": "Rp100,000",
+    "amount": "Rp50,000",
     "winners": {
       "title": "Prize Winners",
-      "prizeLabel": "Rp100,000 shopping voucher",
+      "prizeLabel": "Rp50,000 Indomaret voucher",
       "empty": "No winners yet"
     }
   },
@@ -502,7 +503,7 @@
     "step2Title": "Share Red Label Deals",
     "step2Body": "Found a great deal? Share it on the map and earn bonus tickets.",
     "step3Title": "Win Weekly Prizes",
-    "step3Body": "Every week, 5 lucky hunters win Rp100,000 vouchers.",
+    "step3Body": "Every week, 5 lucky hunters win Rp50,000 Indomaret vouchers.",
     "getStarted": "Get Started",
     "alreadyHaveAccount": "Already have an account?",
     "login": "Log in"
