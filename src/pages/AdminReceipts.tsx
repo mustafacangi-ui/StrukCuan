@@ -14,7 +14,6 @@ import { supabase } from "@/lib/supabase";
 import { X, Check, XCircle, AlertTriangle, Sparkles, Tag, ExternalLink, Settings, Power } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CUAN_OPTIONS = [1, 5, 10, 20, 50, 100];
 const TICKET_OPTIONS = [1, 2, 3];
 
 function useUserNicknames(userIds: string[]) {
@@ -84,7 +83,6 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const userIds = [...new Set(receipts.map((r) => r.user_id))];
   const { data: nicknames = new Map() } = useUserNicknames(userIds);
 
-  const [selectedCuan, setSelectedCuan] = useState<number>(50);
   const [selectedTicket, setSelectedTicket] = useState<number>(1);
   const [reviewingReceipt, setReviewingReceipt] = useState<ReceiptRow | null>(null);
   const [previousReceipts, setPreviousReceipts] = useState<ReceiptRow[]>([]);
@@ -142,7 +140,7 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
   const handleApprove = () => {
     if (!reviewingReceipt) return;
     approve.mutate(
-      { receipt: reviewingReceipt, cuanReward: selectedCuan, ticketReward: selectedTicket },
+      { receipt: reviewingReceipt, cuanReward: 0, ticketReward: selectedTicket },
       {
         onSuccess: () => {
           toast.success("Receipt Approved");
@@ -466,20 +464,6 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
                     {/* Reward Selection */}
                     <div className="space-y-4">
                        <div>
-                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Cuan Reward</p>
-                         <div className="flex flex-wrap gap-2">
-                           {CUAN_OPTIONS.map(n => (
-                              <button
-                                key={n}
-                                onClick={() => setSelectedCuan(n)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
-                                  selectedCuan === n ? 'border-yellow-500 bg-yellow-500/20 text-yellow-400' : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:border-yellow-500/50'
-                                }`}
-                              >+{n}</button>
-                           ))}
-                         </div>
-                       </div>
-                       <div>
                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Ticket Reward</p>
                          <div className="flex flex-wrap gap-2">
                            {TICKET_OPTIONS.map(n => (
@@ -528,7 +512,7 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
                          : 'border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20'
                      }`}
                    >
-                     {approve.isPending ? '...' : `Approve (+${selectedCuan}C, +${selectedTicket}T)`}
+                     {approve.isPending ? '...' : `Approve (+${selectedTicket} Ticket${selectedTicket > 1 ? 's' : ''})`}
                    </button>
                  </div>
                </div>

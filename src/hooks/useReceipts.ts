@@ -273,7 +273,8 @@ export function useCreateReceipt() {
       try {
         const aiResult = await extractReceiptData(input.imageUrl);
         console.log('OCR finished');
-        console.log('OCR result', aiResult);
+        console.log('[OCR] raw text', aiResult.raw_text);
+        console.log('[OCR] parsed result', aiResult);
 
         // --- DUPLICATE DETECTION LOGIC ---
         let duplicateScore = 0;
@@ -405,15 +406,26 @@ export function useCreateReceipt() {
            }
         }
 
+        console.log('[OCR] update payload', {
+          ai_store_name: updatePayload.ai_store_name,
+          ai_product_name: updatePayload.ai_product_name,
+          ai_original_price: updatePayload.ai_original_price,
+          ai_discount_price: updatePayload.ai_discount_price,
+          ai_confidence: updatePayload.ai_confidence,
+          ai_raw_text: updatePayload.ai_raw_text
+        });
+
         const { error: updateError } = await supabase
           .from('receipts')
           .update(updatePayload)
           .eq('id', receiptId);
 
         if (updateError) {
-          console.error("Failed to update receipt with AI fields:", updateError);
+          console.error("[AI Auto Decision] Receipt AI update error:", updateError);
         } else {
-          console.log('Receipt updated with AI fields');
+          console.log('[AI Auto Decision] Receipt AI update success');
+          const { data: dbRow } = await supabase.from('receipts').select('*').eq('id', receiptId).single();
+          console.log('[OCR] DB values after update', dbRow);
         }
       } catch (ocrError) {
         console.error('OCR Extraction failed:', ocrError);

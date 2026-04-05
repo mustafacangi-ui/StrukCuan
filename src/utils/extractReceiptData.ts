@@ -14,11 +14,13 @@ export interface AIReceiptResult {
   ai_detected_keywords: string[];
 }
 
-// 1. Indonesian Retailers
+// 1. Retailers (Indonesian + German)
 const KNOWN_STORES = [
   'indomaret', 'alfamart', 'hypermart', 'transmart', 'super indo',
   'giant', 'hero', 'lotte mart', 'carrefour', 'guardian',
-  'watsons', 'ranch market', 'farmer\'s market', 'farmers market'
+  'watsons', 'ranch market', 'farmer\'s market', 'farmers market',
+  'dm', 'dm-drogerie', 'rossmann', 'müller', 'lidl', 'aldi', 'rewe', 
+  'kaufland', 'edeka', 'netto', 'penny'
 ];
 
 // 2. Discount Keywords
@@ -33,11 +35,13 @@ const EXPIRY_KEYWORDS = [
   'exp', 'expiry', 'expired', 'best before', 'use before', 'bb', 'consume before'
 ];
 
-// 4. Invalid Product Words (Metrics, Totals, Taxes)
+// 4. Invalid Product Words (Metrics, Totals, Taxes - EN/ID/DE)
 const INVALID_PRODUCT_WORDS = [
   'diskon', 'promo', 'hemat', 'cashback', 'expiry', 'exp', 'best before',
   'total', 'subtotal', 'tax', 'ppn', 'qty', 'amount', 'transaction', 'invoice', 
-  'payment', 'kembali', 'tunai', 'cash', 'change', 'struk'
+  'payment', 'kembali', 'tunai', 'cash', 'change', 'struk',
+  'summe', 'eur', 'kauf', 'mwst', 'brutto', 'netto', 'kreditkarte', 'zahlen',
+  'rabatt', 'payback', 'punkte', 'steuer', 'kartenzahlung', 'tse'
 ];
 
 // 5. Preferred Product Words
@@ -59,7 +63,7 @@ export async function extractReceiptData(imageUrl: string): Promise<AIReceiptRes
     const lowercaseText = rawText.toLowerCase();
 
     console.log('[extractReceiptData] Raw text extracted. Base Confidence:', confidence);
-    console.log('[extractReceiptData] Text snippet:', rawText.substring(0, 150), '...');
+    console.log('[extractReceiptData] OCR raw text:\n', rawText);
 
     const resultObj: AIReceiptResult = {
       store_name: null,
@@ -79,7 +83,10 @@ export async function extractReceiptData(imageUrl: string): Promise<AIReceiptRes
 
     // --- STORE DETECTION ---
     for (const store of KNOWN_STORES) {
-      if (lowercaseText.includes(store)) {
+      // Regex boundary for exact word matching or check if store is standalone
+      // to avoid matching 'dm' inside 'admit'
+      const storeRegex = new RegExp(`\\b${store}\\b`, 'i');
+      if (storeRegex.test(lowercaseText) || lowercaseText.includes(store + '-drogerie') || lowercaseText.includes(store + ' gmbh')) {
         resultObj.store_name = store.toUpperCase();
         break;
       }
@@ -112,8 +119,8 @@ export async function extractReceiptData(imageUrl: string): Promise<AIReceiptRes
           continue;
       }
 
-      // Reject if contains Rp, %, dates
-      if (lLower.includes('rp') || line.includes('%') || /\b(\d{2}[\/\-.\\]\d{2}[\/\-.\\]\d{4})\b/.test(line)) {
+      // Reject if contains Rp, EUR, %, dates
+      if (lLower.includes('rp') || lLower.includes('eur') || line.includes('%') || /\b(\d{2}[\/\-.\\]\d{2}[\/\-.\\]\d{4})\b/.test(line)) {
           rejectedLines.push(`${line} (rejected: contains price/percent/date format)`);
           continue;
       }
@@ -175,16 +182,33 @@ export async function extractReceiptData(imageUrl: string): Promise<AIReceiptRes
       }
     }
 
-    // --- PRICE DETECTION ---
-    const priceRegex = /(?:rp[.\s]*)?\b\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?\b|\b\d{4,7}\b/gi;
+    // --- PRICE DETECTION (Both IDR thousands and EUR/Global decimals) ---
+    // Matches formats like 14,80 or 1.200 or 15.000,00 or 4,95
+    const priceRegex = /(?:rp|eur|€)?\s*\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2,3})?\b/gi;
     const priceMatches = rawText.match(priceRegex);
     let parsedPrices: number[] = [];
 
     if (priceMatches && priceMatches.length > 0) {
       parsedPrices = priceMatches.map(p => {
-        const cleanStr = p.replace(/rp/gi, '').replace(/[.,\s]/g, '');
-        return parseInt(cleanStr, 10);
-      }).filter(n => !isNaN(n) && n > 100);
+        let cleanStr = p.replace(/rp|eur|€/gi, '').trim();
+        
+        // Handling German/EU decimals: '14,80' -> '14.80'
+        // If there's exactly one comma and it's near the end, treat as decimal
+        if ((cleanStr.match(/,/g) || []).length === 1 && /,\d{1,2}$/.test(cleanStr)) {
+            cleanStr = cleanStr.replace(',', '.');
+        }
+        // Remove ALL remaining commas (usually thousands separator in US/UK, or if replaced above it's clean)
+        cleanStr = cleanStr.replace(/,/g, '');
+        
+        // Handle IDR where period is a thousand separator "12.000"
+        if ((cleanStr.match(/\./g) || []).length >= 1 && /\.\d{3}$/.test(cleanStr)) {
+            // Check if it's likely an IDR thousands separator (no cents)
+            cleanStr = cleanStr.replace(/\./g, '');
+        }
+
+        const parsed = parseFloat(cleanStr);
+        return parsed;
+      }).filter(n => !isNaN(n) && n > 0.5); // Filter out tiny non-prices or zeros
 
       parsedPrices.sort((a, b) => b - a);
       if (parsedPrices.length >= 2) {
@@ -245,7 +269,7 @@ export async function extractReceiptData(imageUrl: string): Promise<AIReceiptRes
     resultObj.confidence = finalConfidence;
 
     console.log('[extractReceiptData] Final Confidence Score:', finalConfidence);
-    console.log('[extractReceiptData] Extraction complete. Result:', resultObj);
+    console.log('[extractReceiptData] OCR parsed result:', resultObj);
     
     return resultObj;
 
