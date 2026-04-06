@@ -2,9 +2,10 @@ import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import { queryClient } from "@/lib/queryClient";
 import { UserProvider } from "@/contexts/UserContext";
 import { RadarProvider } from "@/contexts/RadarContext";
 import { NotificationAutoPrompt } from "@/components/NotificationAutoPrompt";
@@ -47,8 +48,6 @@ function PageLoader() {
     </div>
   );
 }
-
-const queryClient = new QueryClient();
 
 const App = () => {
   // Register service worker for push notifications
