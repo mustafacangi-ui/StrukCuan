@@ -12,6 +12,8 @@ import {
   type PendingDeal,
 } from "@/hooks/useAdminDeals";
 
+const TICKET_OPTIONS = [1, 2, 3];
+
 function useUserNicknames(userIds: string[]) {
   return useQuery({
     queryKey: ["user_nicknames_deals", userIds.sort().join(",")],
@@ -70,10 +72,12 @@ function DealDetailModal({
   deal: PendingDeal;
   nickname: string;
   onClose: () => void;
-  onApprove: () => void;
+  onApprove: (tickets: number) => void;
   onReject: () => void;
   isPending: boolean;
 }) {
+  const [selectedTicket, setSelectedTicket] = useState(deal.ticket_reward || 3);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -215,6 +219,24 @@ function DealDetailModal({
               <p className="text-[9px] text-zinc-500">Submitted {deal.created_at ? formatDate(deal.created_at) : "—"}</p>
             </div>
           </div>
+
+          {/* Reward Selection */}
+          <div className="space-y-4 px-1 pt-2">
+            <div>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Ticket Reward</p>
+              <div className="flex flex-wrap gap-2">
+                {TICKET_OPTIONS.map(n => (
+                   <button
+                     key={n}
+                     onClick={() => setSelectedTicket(n)}
+                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                       selectedTicket === n ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:border-blue-500/50'
+                     }`}
+                   >+{n}</button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer Actions */}
@@ -228,11 +250,11 @@ function DealDetailModal({
               Reject
             </button>
             <button
-              onClick={onApprove}
+              onClick={() => onApprove(selectedTicket)}
               disabled={isPending}
               className="py-3 rounded-2xl text-sm font-bold border-2 border-blue-500/50 bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
             >
-              {isPending ? "..." : "Approve"}
+              {isPending ? "..." : `Approve (+${selectedTicket})`}
             </button>
           </div>
         </div>
@@ -254,8 +276,8 @@ export default function AdminDeals() {
 
   const closeModal = () => setReviewingDeal(null);
 
-  const handleApprove = (dealId: number | string) => {
-    approve.mutate(dealId, {
+  const handleApprove = (dealId: number | string, ticketReward: number) => {
+    approve.mutate({ dealId, ticketReward }, {
       onSuccess: () => {
         toast.success("Deal Approved & Tickets Granted");
         queryClient.invalidateQueries({ queryKey: ["deals"] });
@@ -380,9 +402,9 @@ export default function AdminDeals() {
                     <XCircle size={14} /> Reject
                   </button>
                   <button
-                    onClick={() => handleApprove(d.id)}
+                    onClick={() => handleApprove(d.id, 3)}
                     disabled={approve.isPending || reject.isPending}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 py-2.5 text-[10px] font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 py-2.5 text-[10px] font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
                   >
                     <Check size={14} /> Approve
                   </button>
@@ -400,7 +422,7 @@ export default function AdminDeals() {
             deal={reviewingDeal}
             nickname={reviewingDeal.user_id ? (nicknames.get(reviewingDeal.user_id) || `User-${reviewingDeal.user_id.slice(0,6)}`) : "System"}
             onClose={closeModal}
-            onApprove={() => handleApprove(reviewingDeal.id)}
+            onApprove={(tickets) => handleApprove(reviewingDeal.id, tickets)}
             onReject={() => handleReject(reviewingDeal.id)}
             isPending={approve.isPending || reject.isPending}
           />

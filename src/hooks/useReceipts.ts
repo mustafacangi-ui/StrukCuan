@@ -469,36 +469,45 @@ export function useApproveReceiptWithRewards() {
       cuanReward: number;
       ticketReward: number;
     }) => {
-      console.log('[ReceiptApprove] start', { receiptId: receipt.id, userId: receipt.user_id, ticketReward });
+      // 1. Calculate reward amount (Selection || Row value || Default 1)
+      const rewardAmount = ticketReward || (receipt as any).ticket_reward || 1;
 
-      // --- Step 1: Grant tickets FIRST ---
-      if (ticketReward > 0) {
+      console.log('[AdminReceiptApprove] rewardAmount', rewardAmount);
+      console.log('[AdminReceiptApprove] userId', receipt.user_id);
+
+      try {
+        // 2. Update the receipt first
+        const { error: receiptError } = await supabase
+          .from('receipts')
+          .update({
+            status: 'approved',
+            approved_at: new Date().toISOString(),
+            approved_by: user?.id,
+            ticket_reward: rewardAmount,
+          })
+          .eq('id', receipt.id);
+
+        if (receiptError) throw receiptError;
+
+        // 3. Then grant the reward
         try {
-          await grantTickets(receipt.user_id, ticketReward);
-          console.log('[ReceiptApprove] reward success');
+          await grantTickets(receipt.user_id, rewardAmount);
+          console.log('[AdminReceiptApprove] grant success');
         } catch (error) {
-          console.log('[ReceiptApprove] reward error', error);
+          console.log('[AdminReceiptApprove] grant error', error);
+          
+          // CRITICAL: Revert status to 'pending' so it stays in the admin queue on failure
+          await supabase
+            .from('receipts')
+            .update({ status: 'pending' })
+            .eq('id', receipt.id);
+            
           throw error;
         }
+      } catch (err: any) {
+        console.error('[AdminReceiptApprove] Fatal error', err);
+        throw err;
       }
-
-      // --- Step 2: Update the receipt row ---
-      const { error: receiptError } = await supabase
-        .from('receipts')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id,
-          ticket_reward: ticketReward,
-        })
-        .eq('id', receipt.id);
-
-      if (receiptError) {
-        console.log('[ReceiptApprove] reward error', receiptError);
-        throw receiptError;
-      }
-      
-      console.log('[ReceiptApprove] Successfully approved receipt:', receipt.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });

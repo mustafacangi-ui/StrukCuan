@@ -18,6 +18,7 @@ export interface PendingDeal {
   expiry?: string | null;
   is_red_label?: boolean | null;
   user_id?: string | null;
+  ticket_reward?: number | null;
   created_at?: string;
 }
 
@@ -46,51 +47,58 @@ export function useApproveDeal() {
   const queryClient = useQueryClient();
   const { user } = useUser();
   return useMutation({
-    mutationFn: async (dealId: number | string) => {
-      console.log('[DealApprove] start', { dealId });
+    mutationFn: async ({ dealId, ticketReward }: { dealId: number | string; ticketReward?: number }) => {
+      console.log('[AdminDealApprove] start', { dealId });
 
-      const { data: existingDeal, error: fetchError } = await supabase
+      const { data: deal, error: fetchError } = await supabase
         .from('deals')
         .select('*')
         .eq('id', dealId)
         .maybeSingle();
 
-      if (fetchError || !existingDeal) {
-        const err = fetchError || new Error(`Deal not found: ${dealId}`);
-        console.log('[DealApprove] reward error', err);
-        throw err;
+      if (fetchError || !deal) {
+        throw fetchError || new Error(`Deal not found: ${dealId}`);
       }
 
-      // Determine reward amount
-      const rewardAmount = existingDeal.is_red_label ? 3 : 1;
+      // 1. Determine reward amount (Selection || Row value || Default 3)
+      const rewardAmount = ticketReward || deal.ticket_reward || 3;
 
-      // Step 1: Grant tickets FIRST — if this fails, deal stays pending
-      if (existingDeal.user_id) {
-        try {
-          await grantTickets(existingDeal.user_id, rewardAmount);
-          console.log('[DealApprove] reward success');
-        } catch (error) {
-          console.log('[DealApprove] reward error', error);
-          throw error;
+      console.log('[AdminDealApprove] rewardAmount', rewardAmount);
+      console.log('[AdminDealApprove] userId', deal.user_id);
+
+      try {
+        // 2. Update the deal first
+        const { error: dealError } = await supabase
+          .from('deals')
+          .update({
+            status: 'active',
+            ticket_reward: rewardAmount
+          })
+          .eq('id', dealId);
+
+        if (dealError) throw dealError;
+
+        // 3. Then grant the reward
+        if (deal.user_id) {
+          try {
+            await grantTickets(deal.user_id, rewardAmount);
+            console.log('[AdminDealApprove] grant success');
+          } catch (error) {
+            console.log('[AdminDealApprove] grant error', error);
+            
+            // REVERT: If grant fails, put back to pending so admin can retry
+            await supabase
+              .from('deals')
+              .update({ status: 'pending' })
+              .eq('id', dealId);
+
+            throw error;
+          }
         }
-      }
-
-      // Step 2: Only THEN update deal status
-      const { data, error } = await supabase
-        .from('deals')
-        .update({
-          status: 'active'
-        })
-        .eq('id', dealId)
-        .select();
-
-      if (error || !data || data.length === 0) {
-        const err = error || new Error('No rows updated. RLS block or deal missing.');
-        console.log('[DealApprove] reward error', err);
+      } catch (err: any) {
+        console.error('[AdminDealApprove] Fatal error', err);
         throw err;
       }
-
-      console.log('[DealApprove] Successfully approved deal:', dealId);
     },
     onSuccess: () => {
       console.log('[DealApprove] Invalidate queries');
