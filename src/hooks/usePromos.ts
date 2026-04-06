@@ -79,16 +79,16 @@ export async function fetchPromosNearby(
   const authorIds = [...new Set(promos.map((p) => p.user_id))];
   const { data: profilesData } = await supabase
     .from("survey_profiles")
-    .select("id")
-    .in("id", authorIds);
+    .select("user_id")
+    .in("user_id", authorIds);
   const { data: statsData } = await supabase
     .from("user_stats")
     .select("user_id, level")
     .in("user_id", authorIds);
 
-  const profiles = (profilesData ?? []) as { id: string }[];
+  const profiles = (profilesData ?? []) as { user_id: string }[];
   const stats = (statsData ?? []) as { user_id: string; level: number }[];
-  const profileMap: Record<string, string | null> = {}; // Nickname not available in survey_profiles
+  const profileMap: Record<string, string | null> = {}; 
   const levelMap = Object.fromEntries(stats.map((s) => [s.user_id, s.level ?? 1]));
 
   const now = Date.now();

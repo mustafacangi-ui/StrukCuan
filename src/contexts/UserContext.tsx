@@ -58,7 +58,7 @@ async function upsertProfile(userId: string, nickname: string, phone?: string, e
   const { error } = await supabase.from("survey_profiles").upsert(
     {
       user_id: userId,
-      phone: phone ?? null,
+      nickname: nickname,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" }
@@ -107,9 +107,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: profile } = await supabase
       .from("survey_profiles")
-      .select("phone")
+      .select("user_id, total_tickets, nickname")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     const { data: stats } = await supabase
       .from("user_stats")
@@ -119,7 +119,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     return {
       id: userId,
-      phone: profile?.phone ?? phone,
+      phone: phone,
       nickname: stats?.nickname ?? (nickname || "User"),
       email: email || undefined,
       cuan: 0,

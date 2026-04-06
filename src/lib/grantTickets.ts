@@ -22,62 +22,92 @@ export async function grantTickets(userId: string, amount: number): Promise<numb
   }
 
   try {
-    // ── Step 1: Read current user_stats.tiket ──
-    const { data: currentUserStats, error: statsReadError } = await supabase
+    // ── Step 1: Read current user_stats and survey_profiles ──
+    const { data: userStatsBefore } = await supabase
       .from('user_stats')
-      .select('tiket')
+      .select('user_id, tiket')
+      .eq('user_id', userId)
+      .maybeSingle(); // Using maybeSingle to handle the "if not exist" logic safely
+
+    console.log('[grantTickets] userStatsBefore', userStatsBefore);
+
+    const { data: surveyProfileBefore } = await supabase
+      .from('survey_profiles')
+      .select('user_id, total_tickets')
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (statsReadError) {
-      console.error('[grantTickets] error fetching stats', statsReadError);
-      throw new Error('Failed to read user stats: ' + statsReadError.message);
+    console.log('[grantTickets] surveyProfileBefore', surveyProfileBefore);
+
+    // ── Step 2: Auto-create rows if they do not exist ──
+    if (!userStatsBefore) {
+      console.log('[grantTickets] user_stats missing, creating...');
+      await supabase.from('user_stats').insert({
+        user_id: userId,
+        tiket: amount
+      });
     }
 
-    console.log('[grantTickets] user_stats before', currentUserStats);
+    if (!surveyProfileBefore) {
+      console.log('[grantTickets] survey_profiles missing, creating...');
+      await supabase.from('survey_profiles').insert({
+        user_id: userId,
+        total_tickets: amount
+      });
+    }
 
-    // Also fetch current profile for logging as requested
-    const { data: currentProfile } = await supabase
-      .from('survey_profiles')
-      .select('total_tickets')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    console.log('[grantTickets] survey_profiles before', currentProfile);
-
-    const currentTickets = currentUserStats?.tiket ?? 0;
+    const currentTickets = userStatsBefore?.tiket ?? 0;
     const newTotal = currentTickets + amount;
-    console.log('[grantTickets] new total', newTotal);
+    console.log('[grantTickets] calculated new total', newTotal);
 
-    // ── Step 2: Update BOTH tables — Single Source of Truth ──
+    // ── Step 3: Update BOTH tables — Single Source of Truth ──
     // 1. Update user_stats.tiket
-    const { error: statsUpdateError } = await supabase
-      .from('user_stats')
-      .update({ tiket: newTotal })
-      .eq('user_id', userId);
+    if (userStatsBefore) {
+      const { error: statsUpdateError } = await supabase
+        .from('user_stats')
+        .update({ tiket: newTotal })
+        .eq('user_id', userId);
 
-    if (statsUpdateError) {
-      console.error('[grantTickets] user_stats update error', statsUpdateError);
-      throw new Error('Failed to update user_stats.tiket: ' + statsUpdateError.message);
+      if (statsUpdateError) {
+        console.error('[grantTickets] user_stats update error', statsUpdateError);
+        throw new Error('Failed to update user_stats.tiket: ' + statsUpdateError.message);
+      }
     }
 
     // 2. Update survey_profiles.total_tickets
-    const { error: profileUpdateError } = await supabase
-      .from('survey_profiles')
-      .update({ total_tickets: newTotal })
-      .eq('user_id', userId);
+    if (surveyProfileBefore) {
+      const { error: profileUpdateError } = await supabase
+        .from('survey_profiles')
+        .update({ total_tickets: newTotal })
+        .eq('user_id', userId);
 
-    if (profileUpdateError) {
-      console.warn('[grantTickets] survey_profiles update error (non-fatal)', profileUpdateError);
-      // We don't throw here to ensure the primary update stands, but it will be logged
+      if (profileUpdateError) {
+        console.warn('[grantTickets] survey_profiles update error (non-fatal)', profileUpdateError);
+      }
     }
+
+    // ── Step 4: Verify results ──
+    const { data: userStatsAfter } = await supabase
+      .from('user_stats')
+      .select('user_id, tiket')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: surveyProfileAfter } = await supabase
+      .from('survey_profiles')
+      .select('user_id, total_tickets')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    console.log('[grantTickets] userStatsAfter', userStatsAfter);
+    console.log('[grantTickets] surveyProfileAfter', surveyProfileAfter);
 
     console.log('[grantTickets] success');
 
-    // ── Step 3: Invalidate all ticket-related queries ──
+    // Invalidate all ticket-related queries
     invalidateTicketQueries(queryClient);
 
-    return newTotal;
+    return userStatsAfter?.tiket ?? newTotal;
   } catch (error) {
     console.log('[grantTickets] error', error);
     throw error;

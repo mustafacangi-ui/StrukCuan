@@ -373,38 +373,19 @@ export function useCreateReceipt() {
         };
 
         // --- EXECUTE AI AUTOMATION ---
+        // NEW REQUIREMENT: Disable all automatic grants/approvals during upload.
+        // Status MUST stay 'pending' until manual admin review.
+        updatePayload.status = 'pending';
+        updatePayload.ticket_reward = aiResult.suggested_ticket_reward || 1;
+        updatePayload.ai_auto_processed = false; // Mark as not auto-processed yet
+        
         if (isAutoEnabled) {
+           console.log('[AI Auto Decision] AI Auto Approval is enabled, but automatic grants are now DISABLED. Stating as pending.');
            if (aiDecision === 'approve') {
-              console.log('[AI Auto Decision] Auto-approving receipt');
-              updatePayload.status = 'approved';
-              updatePayload.approved_at = new Date().toISOString();
-              updatePayload.approved_by = 'ai-system';
-              updatePayload.cuan_reward = 0;
-              updatePayload.ticket_reward = aiResult.suggested_ticket_reward || 0;
-              updatePayload.ai_auto_processed = true;
-              updatePayload.ai_processed_at = new Date().toISOString();
-              updatePayload.ai_processing_reason = 'High confidence & low duplicate score';
-
-              // Grant Tickets using shared helper
-              if (aiResult.suggested_ticket_reward && aiResult.suggested_ticket_reward > 0) {
-                 try {
-                    await grantTickets(userId, aiResult.suggested_ticket_reward);
-                    console.log('[ReceiptApprove] reward success');
-                 } catch (ticketErr) {
-                    console.log('[ReceiptApprove] reward error', ticketErr);
-                    // For AI auto-approval, if ticket grant fails, we might still want to mark it as approved?
-                    // The user said: "If any reward fails: keep item visible, show exact error toast, log exact reason".
-                    // But AI auto-approval is background. I'll make it throw so the update doesn't happen.
-                    throw ticketErr;
-                 }
-              }
+              console.log('[AI Auto Decision] AI suggests approve (High confidence).');
+              updatePayload.ai_processing_reason = 'High confidence & low duplicate score (Awaiting manual approval)';
            } else if (aiDecision === 'reject') {
-              console.log('[AI Auto Decision] Auto-rejecting receipt');
-              updatePayload.status = 'rejected';
-              updatePayload.rejected_at = new Date().toISOString();
-              updatePayload.rejected_reason = 'duplicate_or_low_confidence';
-              updatePayload.ai_auto_processed = true;
-              updatePayload.ai_processed_at = new Date().toISOString();
+              console.log('[AI Auto Decision] AI suggests reject.');
               updatePayload.ai_processing_reason = duplicateScore >= 0.95 ? 'Duplicate exact match' : 'Poor confidence score';
            }
         }
@@ -491,7 +472,10 @@ export function useApproveReceiptWithRewards() {
 
         // 3. Then grant the reward
         try {
-          await grantTickets(receipt.user_id, rewardAmount);
+          console.log('[AdminReceiptApprove] before grantTickets');
+          const grantResult = await grantTickets(receipt.user_id, rewardAmount);
+          console.log('[AdminReceiptApprove] grantResult', grantResult);
+          console.log('[AdminReceiptApprove] after grantTickets');
           console.log('[AdminReceiptApprove] grant success');
         } catch (error) {
           console.log('[AdminReceiptApprove] grant error', error);

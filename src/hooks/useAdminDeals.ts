@@ -81,7 +81,10 @@ export function useApproveDeal() {
         // 3. Then grant the reward
         if (deal.user_id) {
           try {
-            await grantTickets(deal.user_id, rewardAmount);
+            console.log('[AdminDealApprove] before grantTickets');
+            const grantResult = await grantTickets(deal.user_id, rewardAmount);
+            console.log('[AdminDealApprove] grantResult', grantResult);
+            console.log('[AdminDealApprove] after grantTickets');
             console.log('[AdminDealApprove] grant success');
           } catch (error) {
             console.log('[AdminDealApprove] grant error', error);
