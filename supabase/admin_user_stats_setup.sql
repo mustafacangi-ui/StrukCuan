@@ -3,16 +3,27 @@
 alter table public.user_stats
   add column if not exists last_seen_at timestamptz default now();
 
+alter table public.survey_profiles
+  add column if not exists last_seen_at timestamptz default now();
+
 -- 2. Create RPC for heartbeat (updates last_seen_at)
-create or replace function public.update_last_seen(p_user_id text)
+create or replace function public.update_last_seen()
 returns void
 language plpgsql
 security definer
 as $$
+declare
+  current_uid uuid;
 begin
-  update public.user_stats
+  current_uid := auth.uid();
+
+  update public.survey_profiles
   set last_seen_at = now()
-  where user_id = p_user_id;
+  where user_id = current_uid::text;
+
+  update public.user_stats
+  set updated_at = now()
+  where user_id = current_uid::text;
 end;
 $$;
 
@@ -41,21 +52,22 @@ begin
   select count(*) into v_total from public.user_stats;
   
   -- Online (last 5 minutes)
+  -- Count from survey_profiles as requested by user
   select count(*) 
   into v_online 
-  from public.user_stats 
+  from public.survey_profiles 
   where last_seen_at > now() - interval '5 minutes';
   
   -- Active today (24h)
   select count(*) 
   into v_active_today 
-  from public.user_stats 
+  from public.survey_profiles 
   where last_seen_at > now() - interval '24 hours';
   
   -- Active week (7d)
   select count(*) 
   into v_active_week 
-  from public.user_stats 
+  from public.survey_profiles 
   where last_seen_at > now() - interval '7 days';
   
   -- New today (24h)
@@ -82,10 +94,10 @@ begin
     group by 1 order by 1
   ) d;
 
-  -- Chart Data: Active Users (last 7 days grouped by last_seen_at)
+  -- Chart Data: Active Users (last 7 days grouped by last_seen_at from survey_profiles)
   select jsonb_agg(d) into v_chart_active from (
     select to_char(date_trunc('day', last_seen_at), 'YYYY-MM-DD') as date, count(*) as count
-    from public.user_stats
+    from public.survey_profiles
     where last_seen_at > now() - interval '7 days'
     group by 1 order by 1
   ) d;
@@ -103,5 +115,5 @@ begin
 end;
 $$;
 
-grant execute on function public.update_last_seen(text) to authenticated;
+grant execute on function public.update_last_seen() to authenticated;
 grant execute on function public.get_admin_dashboard_stats() to authenticated;

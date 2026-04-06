@@ -278,36 +278,41 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     initSession();
 
-    // Heartbeat logic: Update last_seen_at every 2 minutes
-    let heartbeatInterval: NodeJS.Timeout;
-    if (session?.user?.id) {
-      const updateSeen = async () => {
-        try {
-          await supabase.rpc('update_last_seen', { p_user_id: session.user.id });
-        } catch (e) {
-          console.warn('[Heartbeat] failed', e);
-        }
-      };
-      
-      updateSeen(); // Initial run
-      heartbeatInterval = setInterval(updateSeen, 120000);
-    }
-
     const fallbackTimer = setTimeout(() => {
       if (mounted) setIsLoading(false);
     }, 3000);
 
     return () => {
       clearTimeout(fallbackTimer);
-      if (heartbeatInterval) clearInterval(heartbeatInterval);
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [buildUserFromSession, session?.user?.id]);
+  }, [buildUserFromSession]);
+
+  // Heartbeat logic: Update last_seen_at every 60 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const pingLastSeen = async () => {
+      const { data, error } = await supabase.rpc('update_last_seen');
+      console.log('[update_last_seen] data', data);
+      console.log('[update_last_seen] error', error);
+    };
+
+    pingLastSeen();
+
+    const interval = setInterval(() => {
+      pingLastSeen();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const updateLastSeen = useCallback(async () => {
     if (!session?.user?.id) return;
-    await supabase.rpc('update_last_seen', { p_user_id: session.user.id });
+    const { data, error } = await supabase.rpc('update_last_seen');
+    console.log('[updateLastSeen helper] data', data);
+    console.log('[updateLastSeen helper] error', error);
   }, [session?.user?.id]);
 
   const loginWithPhone = useCallback(async (phone: string, nickname: string) => {
