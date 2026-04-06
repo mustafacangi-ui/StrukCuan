@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
 import { APP_URL, getAuthRedirectUrl, IS_LOCALHOST } from "@/config/app";
+import { grantTickets } from "@/lib/grantTickets";
 
 export interface UserData {
   id: string;
@@ -147,21 +148,77 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const processReferral = async (userId: string) => {
       const code = localStorage.getItem(REFERRAL_STORAGE_KEY);
       if (!code?.trim()) return;
+
+      console.log('[ReferralSignupReward] start', { userId, code });
+
+      // 1. Check if this user was already rewarded for a referral signup
+      const { data: userStats } = await supabase
+        .from("user_stats")
+        .select("referral_signup_rewarded")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (userStats?.referral_signup_rewarded) {
+        console.log('[ReferralSignupReward] already rewarded, skipping');
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+        return;
+      }
+
+      // 2. Find the referrer
       const { data: referrer } = await supabase
         .from("user_stats")
         .select("user_id")
         .eq("referral_code", code.trim().toUpperCase())
         .single();
+
       if (!referrer || referrer.user_id === userId) {
+        console.log('[ReferralSignupReward] invalid or self-referral', { referrer });
         localStorage.removeItem(REFERRAL_STORAGE_KEY);
         return;
       }
-      const { error } = await supabase.from("referrals").insert({
-        referrer_user_id: referrer.user_id,
-        referred_user_id: userId,
-        reward_given: false,
-      });
-      if (!error) localStorage.removeItem(REFERRAL_STORAGE_KEY);
+
+      const referrerId = referrer.user_id;
+
+      try {
+        // 3. Register the referral in the database
+        const { error: insertError } = await supabase.from("referrals").insert({
+          referrer_user_id: referrerId,
+          referred_user_id: userId,
+          reward_given: false, // This is for Stage 2 (receipt) backwards compatibility
+        });
+
+        if (insertError) {
+          // If insert fails (likely unique constraint on referred_user_id), we stop
+          console.log('[ReferralSignupReward] referral already registered or failed', insertError);
+          localStorage.removeItem(REFERRAL_STORAGE_KEY);
+          return;
+        }
+
+        // 4. Grant Stage 1 Rewards
+        console.log('[ReferralSignupReward] granting tickets', { referrerId, userId });
+        
+        // Reward Inviter (+10)
+        await grantTickets(referrerId, 10);
+        console.log('[ReferralSignupReward] inviter rewarded (+10)');
+
+        // Reward New User (+3)
+        await grantTickets(userId, 3);
+        console.log('[ReferralSignupReward] new user rewarded (+3)');
+
+        // 5. Update user_stats with signup reward flags
+        await supabase
+          .from("user_stats")
+          .update({
+            referral_signup_rewarded: true,
+            referral_signup_rewarded_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+
+        console.log('[ReferralSignupReward] success');
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+      } catch (error) {
+        console.error('[ReferralSignupReward] error', error);
+      }
     };
 
     const applySession = async (session: Session | null) => {

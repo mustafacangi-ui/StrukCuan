@@ -477,6 +477,69 @@ export function useApproveReceiptWithRewards() {
           console.log('[AdminReceiptApprove] grantResult', grantResult);
           console.log('[AdminReceiptApprove] after grantTickets');
           console.log('[AdminReceiptApprove] grant success');
+
+          // --- STAGE 2 REFERRAL REWARD LOGIC ---
+          try {
+            console.log('[ReferralReceiptReward] checking eligibility', { userId: receipt.user_id });
+            
+            // 1. Check if this user was already rewarded for their first receipt
+            const { data: userStats } = await supabase
+              .from('user_stats')
+              .select('first_receipt_referral_rewarded')
+              .eq('user_id', receipt.user_id)
+              .maybeSingle();
+
+            if (!userStats?.first_receipt_referral_rewarded) {
+              // 2. Check if the user was referred by someone
+              const { data: referral } = await supabase
+                .from('referrals')
+                .select('id, referrer_user_id')
+                .eq('referred_user_id', receipt.user_id)
+                .maybeSingle();
+
+              if (referral) {
+                const referrerId = referral.referrer_user_id;
+                console.log('[ReferralReceiptReward] referred user detected', { referrerId });
+
+                // 3. Grant Stage 2 Rewards
+                // Reward Inviter (+5)
+                await grantTickets(referrerId, 5);
+                console.log('[ReferralReceiptReward] inviter rewarded (+5)');
+
+                // Reward Referred User (+2)
+                await grantTickets(receipt.user_id, 2);
+                console.log('[ReferralReceiptReward] referred user rewarded (+2)');
+
+                // 4. Update referred user's flags
+                await supabase
+                  .from('user_stats')
+                  .update({
+                    first_receipt_referral_rewarded: true,
+                    first_receipt_referral_rewarded_at: new Date().toISOString(),
+                  })
+                  .eq('user_id', receipt.user_id);
+
+                // 5. Increment inviter's friends_joined count
+                await supabase.rpc('increment_friends_joined', { p_user_id: referrerId });
+                
+                // 6. Mark referral as completed in referrals table (backwards compat)
+                await supabase
+                  .from('referrals')
+                  .update({ reward_given: true })
+                  .eq('id', referral.id);
+
+                console.log('[ReferralReceiptReward] success');
+              } else {
+                console.log('[ReferralReceiptReward] not a referred user');
+              }
+            } else {
+              console.log('[ReferralReceiptReward] already rewarded for first receipt');
+            }
+          } catch (refError) {
+            console.error('[ReferralReceiptReward] error', refError);
+            // We do not throw here to avoid failing the main approval if referral reward fails
+            // But we logged it for admin visibility.
+          }
         } catch (error) {
           console.log('[AdminReceiptApprove] grant error', error);
           
