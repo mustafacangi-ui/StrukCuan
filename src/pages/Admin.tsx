@@ -9,6 +9,20 @@ import AdminDeals from "./AdminDeals";
 import AdminNotifications from "./AdminNotifications";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { useAdminUserStats } from "@/hooks/useAdminUserStats";
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid, 
+  LineChart, 
+  Line,
+  Cell
+} from "recharts";
+import { Users, UserPlus, Zap, Clock, TrendingUp } from "lucide-react";
 
 type Tab = "dashboard" | "receipts" | "deals" | "notifications";
 
@@ -17,6 +31,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { data: isAdmin, isLoading } = useIsAdmin(user?.id);
+  const { data: adminStats, isLoading: statsLoading } = useAdminUserStats();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [stats, setStats] = useState({ pendingReceipts: 0, pendingDeals: 0 });
 
@@ -90,7 +105,9 @@ export default function Admin() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Live</span>
+              <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest whitespace-nowrap">
+                {adminStats?.onlineNow ?? 0} Online
+              </span>
             </div>
           </div>
 
@@ -142,7 +159,106 @@ export default function Admin() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="p-4 lg:p-8 space-y-6"
             >
-              {/* Dashboard Grid */}
+              {/* Premium User Stats Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { label: "Total Users", value: adminStats?.totalUsers ?? '-', icon: Users, color: "purple" },
+                  { label: "Online Now", value: adminStats?.onlineNow ?? '-', icon: Zap, color: "green", pulse: true },
+                  { label: "Active Today", value: adminStats?.activeToday ?? '-', icon: TrendingUp, color: "blue" },
+                  { label: "Active This Week", value: adminStats?.activeThisWeek ?? '-', icon: Clock, color: "indigo" },
+                  { label: "New Today", value: adminStats?.newToday ?? '-', icon: UserPlus, color: "orange" },
+                  { label: "New This Week", value: adminStats?.newThisWeek ?? '-', icon: UserPlus, color: "pink" },
+                ].map((card, idx) => (
+                  <motion.div
+                    key={card.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="relative group overflow-hidden rounded-3xl border border-white/5 bg-white/[0.02] p-5 text-left transition-all hover:bg-white/[0.04]"
+                  >
+                    <div className={`absolute top-0 right-0 w-24 h-24 bg-${card.color}-500/10 rounded-full blur-[30px] -mr-8 -mt-8`} />
+                    <div className="flex items-center justify-between mb-3 relative z-10">
+                      <card.icon size={18} className={`text-${card.color}-400`} />
+                      {card.pulse && (
+                        <span className="flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-2xl font-bold text-white tracking-tight relative z-10">{card.value}</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 mt-1 relative z-10">{card.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Charts Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* New Users Chart */}
+                <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <UserPlus size={14} className="text-orange-400" />
+                    New Users (Last 7 Days)
+                  </h3>
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={adminStats?.chartNew ?? []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#52525b" 
+                          fontSize={10} 
+                          tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                        />
+                        <YAxis stroke="#52525b" fontSize={10} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                          labelStyle={{ color: '#a1a1aa', fontSize: '10px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                        />
+                        <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Active Users Chart */}
+                <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <TrendingUp size={14} className="text-blue-400" />
+                    Active Users (Last 7 Days)
+                  </h3>
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={adminStats?.chartActive ?? []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#52525b" 
+                          fontSize={10} 
+                          tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                        />
+                        <YAxis stroke="#52525b" fontSize={10} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                          labelStyle={{ color: '#a1a1aa', fontSize: '10px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="count" 
+                          stroke="#3b82f6" 
+                          strokeWidth={3} 
+                          dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }} 
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Moderation Queue Summary */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <button
                   onClick={() => setTab("receipts")}

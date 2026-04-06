@@ -11,6 +11,7 @@ import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueri
 import { invalidateTicketQueries } from "@/lib/grantTickets";
 import { pad } from "@/lib/weeklyCountdown";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 
 interface CountdownState {
   days: number;
@@ -86,9 +87,11 @@ export default function LuckyShakeCard({
     setShakeLoading(true);
     setShakeWonTickets(null);
     triggerShakeAnimation();
+    const { updateLastSeen } = useUser();
     try {
       const result = await shakeToWin();
       if (result?.success) {
+        updateLastSeen();
         invalidateTicketQueries(queryClient);
         invalidateLotteryPoolQueries(queryClient);
         refetchStats(); // Refresh DB stats to lock button immediately

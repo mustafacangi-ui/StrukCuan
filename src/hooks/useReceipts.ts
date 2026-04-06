@@ -244,6 +244,7 @@ export interface CreateReceiptResult {
 
 export function useCreateReceipt() {
   const queryClient = useQueryClient();
+  const { updateLastSeen } = useUser();
 
   return useMutation({
     mutationFn: async (input: CreateReceiptInput) => {
@@ -419,6 +420,7 @@ export function useCreateReceipt() {
       return { receipt: { id: receiptId } as ReceiptRow, remaining: result.remaining };
     },
     onSuccess: (data, variables) => {
+      updateLastSeen();
       const remaining = (data as { receipt: ReceiptRow; remaining: number }).remaining;
       const newTodayCount = DAILY_RECEIPT_LIMIT - remaining;
       queryClient.setQueryData([...RECEIPTS_QUERY_KEY, "today", variables.userId], newTodayCount);
