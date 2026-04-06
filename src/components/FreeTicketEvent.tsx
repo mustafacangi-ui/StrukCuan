@@ -6,6 +6,7 @@ import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { useTodayRewardedTickets, TODAY_REWARDED_TICKETS_QUERY_KEY, ticketsFromAds } from "@/hooks/useTodayRewardedTickets";
 import { useUserTickets, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
+import { invalidateTicketQueries } from "@/lib/grantTickets";
 import RewardedAdModal from "@/components/RewardedAdModal";
 import { toast } from "sonner";
 import { AD_NETWORKS } from "@/config/adNetworks";
@@ -65,8 +66,7 @@ export default function FreeTicketEvent() {
       console.log("[FreeTicketEvent] grantTicket OK, result:", result);
       await invalidate();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateTicketQueries(queryClient);
       invalidateLotteryPoolQueries(queryClient);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
@@ -84,8 +84,7 @@ export default function FreeTicketEvent() {
       if (isLimitReached) {
         await invalidate();
         queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        invalidateTicketQueries(queryClient);
         invalidateLotteryPoolQueries(queryClient);
       }
       throw err;
@@ -168,7 +167,6 @@ export default function FreeTicketEvent() {
         open={showModal}
         onClose={handleModalClose}
         onComplete={handleAdComplete}
-        popupBlocked={popupBlocked}
       />
     </div>
   );

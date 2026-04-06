@@ -1,7 +1,9 @@
 import { supabase } from "@/lib/supabase";
+import { grantTickets } from "@/lib/grantTickets";
 
 /**
- * Convert 100 Cuan to 1 Ticket via Supabase RPC.
+ * Convert 100 Cuan to 1 Ticket.
+ * Uses shared grantTickets() to update BOTH user_stats.tiket + survey_profiles.
  */
 export async function convertCuanToTicket(): Promise<{ ticketsAdded: number }> {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -10,10 +12,10 @@ export async function convertCuanToTicket(): Promise<{ ticketsAdded: number }> {
   }
   const userId = sessionData.session.user.id;
 
-  // Read current cuan and tickets from survey_profiles
+  // Read current cuan from survey_profiles
   const { data: profile } = await supabase
     .from('survey_profiles')
-    .select('user_id, total_cuan, total_tickets')
+    .select('user_id, total_cuan')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -23,12 +25,11 @@ export async function convertCuanToTicket(): Promise<{ ticketsAdded: number }> {
     throw new Error("INSUFFICIENT_CUAN");
   }
 
-  // Deduct 100 Cuan, add 1 ticket
+  // Deduct 100 Cuan from survey_profiles
   const { error } = await supabase
     .from('survey_profiles')
     .update({
       total_cuan: currentCuan - 100,
-      total_tickets: (profile?.total_tickets || 0) + 1
     })
     .eq('user_id', userId);
 
@@ -36,7 +37,12 @@ export async function convertCuanToTicket(): Promise<{ ticketsAdded: number }> {
     throw new Error(error.message ?? "Failed to convert");
   }
 
-  // Best effort: keep legacy user_stats down in sync to avoid UI bugs
+  // Grant +1 ticket using shared helper (updates BOTH user_stats.tiket + survey_profiles.total_tickets)
+  console.log('[ConvertCuan] granting 1 ticket via grantTickets()');
+  await grantTickets(userId, 1);
+  console.log('[ConvertCuan] ticket granted successfully');
+
+  // Best effort: keep legacy user_stats.cuan in sync
   try {
     const { data: stats } = await supabase.from('user_stats').select('cuan').eq('user_id', userId).maybeSingle();
     if (stats) {

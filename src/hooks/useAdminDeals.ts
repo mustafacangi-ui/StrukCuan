@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/contexts/UserContext";
 import { DEALS_QUERY_KEY } from "./useDeals";
+import { grantTickets, invalidateTicketQueries } from "@/lib/grantTickets";
+import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 
 export interface PendingDeal {
   id: number | string;
@@ -45,8 +47,8 @@ export function useApproveDeal() {
   const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
-      console.log('Approving deal', dealId)
-      console.log('[useApproveDeal] Current user:', user?.id);
+      console.log('[DealApprove] start', dealId);
+      console.log('[DealApprove] Current admin user:', user?.id);
 
       const { data: existingDeal, error: fetchError } = await supabase
         .from('deals')
@@ -54,13 +56,26 @@ export function useApproveDeal() {
         .eq('id', dealId)
         .maybeSingle()
 
-      console.log('Existing deal:', existingDeal)
-      console.log('Fetch error:', fetchError)
+      console.log('[DealApprove] Existing deal:', existingDeal);
+      if (fetchError) console.error('[DealApprove] Fetch error:', fetchError);
 
       if (!existingDeal) {
         throw new Error(`Deal not found: ${dealId}`);
       }
 
+      // Determine reward amount
+      const rewardAmount = existingDeal.is_red_label ? 3 : 1;
+      console.log('[DealApprove] reward amount', rewardAmount);
+
+      // Step 1: Grant tickets FIRST — if this fails, deal stays pending
+      if (existingDeal.user_id) {
+        console.log('[DealApprove] profile before — granting', rewardAmount, 'tickets to', existingDeal.user_id);
+        await grantTickets(existingDeal.user_id, rewardAmount);
+        console.log('[DealApprove] profile after — tickets granted successfully');
+        console.log('[DealApprove] update success');
+      }
+
+      // Step 2: Only THEN update deal status (so it doesn't disappear before tickets are granted)
       const { data, error } = await supabase
         .from('deals')
         .update({
@@ -70,45 +85,25 @@ export function useApproveDeal() {
         .select();
 
       if (error) {
-        console.error('[useApproveDeal] Failed to approve deal. Full error:', JSON.stringify(error, null, 2));
+        console.error('[DealApprove] update error', error);
+        console.error('[DealApprove] Failed to approve deal. Full error:', JSON.stringify(error, null, 2));
         throw error;
       }
       
       if (!data || data.length === 0) {
-        console.error('[useApproveDeal] No rows were updated. RLS policy might be blocking the update, or ID not found. ID:', dealId);
-        throw new Error('No rows updated. RLS block or deal missing.');
+        const msg = 'No rows updated. RLS block or deal missing.';
+        console.error('[DealApprove] update error', msg, 'ID:', dealId);
+        throw new Error(msg);
       }
 
-      console.log('[useApproveDeal] Successfully approved deal:', dealId, 'Result Data:', data);
-
-      // Allocate rewards directly without relying on an RPC or backend triggers
-      if (existingDeal.user_id) {
-        const ticketReward = existingDeal.is_red_label ? 3 : 1;
-        
-        try {
-          const { data: profile } = await supabase
-            .from('survey_profiles')
-            .select('user_id, total_tickets')
-            .eq('user_id', existingDeal.user_id)
-            .maybeSingle();
-
-          await supabase
-            .from('survey_profiles')
-            .update({
-              total_tickets: (profile?.total_tickets || 0) + ticketReward
-            })
-            .eq('user_id', existingDeal.user_id);
-            
-          console.log(`[useApproveDeal] Rewarded ${ticketReward} tickets to ${existingDeal.user_id}`);
-        } catch (ticketError) {
-          console.error('[useApproveDeal] Deal approved, but failed to allocate tickets:', ticketError);
-        }
-      }
+      console.log('[DealApprove] Successfully approved deal:', dealId, 'Result Data:', data);
     },
     onSuccess: () => {
-      console.log('[useApproveDeal] Invalidate queries');
+      console.log('[DealApprove] Invalidate queries');
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: [...DEALS_QUERY_KEY, 'pending'] });
+      invalidateTicketQueries(queryClient);
+      invalidateLotteryPoolQueries(queryClient);
     },
   });
 }

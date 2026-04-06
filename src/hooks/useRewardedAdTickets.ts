@@ -1,19 +1,19 @@
 import { supabase } from "@/lib/supabase";
+import { grantTickets } from "@/lib/grantTickets";
 
 /**
  * Grants +1 ticket for watching an ad.
- * Writes to user_stats.tiket (primary cumulative store).
- * Also syncs to survey_profiles.total_tickets (secondary, non-fatal).
+ * Uses shared grantTickets() to update BOTH user_stats.tiket + survey_profiles.total_tickets.
  */
 export async function grantTicket() {
-  console.log("[grantTicket] Starting...");
+  console.log("[Ads] completed sequence");
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session) {
-    console.error("[grantTicket] No session - user not logged in");
+    console.error("[Ads] update error", "No session - user not logged in");
     throw new Error("Please login");
   }
   const userId = sessionData.session.user?.id;
-  console.log("[grantTicket] User:", userId);
+  console.log("[Ads] granting ticket for user:", userId);
 
   // 1. Track ad event for progress bars
   const { error: eventError } = await supabase
@@ -25,48 +25,28 @@ export async function grantTicket() {
     });
 
   if (eventError) {
-    console.error("[grantTicket] Event track failed:", eventError);
+    console.error("[Ads] update error", eventError);
     throw new Error("Failed to track ad view: " + eventError.message);
   }
 
-  // 2. Grant +1 to user_stats.tiket (primary — this is what UI reads)
+  // 2. Read current tiket for logging
   const { data: statsRow } = await supabase
     .from('user_stats')
     .select('tiket')
     .eq('user_id', userId)
     .maybeSingle();
 
-  const currentTiket = statsRow?.tiket ?? 0;
-  const { error: tiketError } = await supabase
-    .from('user_stats')
-    .update({ tiket: currentTiket + 1 })
-    .eq('user_id', userId);
+  const previousTickets = statsRow?.tiket ?? 0;
+  console.log("[Ads] previous tiket", previousTickets);
 
-  if (tiketError) {
-    console.error("[grantTicket] user_stats.tiket update failed:", tiketError);
-    throw new Error(tiketError.message ?? "Failed to grant ticket");
-  }
-
-  console.log("[grantTicket] user_stats.tiket updated to", currentTiket + 1);
-
-  // 3. Also sync to survey_profiles.total_tickets (non-fatal secondary store)
+  // 3. Grant +1 ticket using shared helper (updates BOTH stores)
   try {
-    const { data: profile } = await supabase
-      .from('survey_profiles')
-      .select('total_tickets')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    await supabase
-      .from('survey_profiles')
-      .update({ total_tickets: (profile?.total_tickets || 0) + 1 })
-      .eq('user_id', userId);
-
-    console.log("[grantTicket] survey_profiles synced");
-  } catch (spErr) {
-    console.warn("[grantTicket] survey_profiles sync failed (non-fatal):", spErr);
+    const newTickets = await grantTickets(userId, 1);
+    console.log("[Ads] new tiket", newTickets);
+    console.log("[Ads] update success");
+    return { success: true };
+  } catch (error: any) {
+    console.error("[Ads] update error", error);
+    throw error;
   }
-
-  console.log("[grantTicket] Ticket granted successfully");
-  return { success: true };
 }

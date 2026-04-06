@@ -16,6 +16,7 @@ import { grantTicket } from "@/hooks/useRewardedAdTickets";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { useMyLotteryBallots } from "@/hooks/useMyLotteryBallots";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
+import { invalidateTicketQueries } from "@/lib/grantTickets";
 import { MAX_TICKETS_PER_WEEK } from "@/lib/constants";
 import { AD_NETWORKS } from "@/config/adNetworks";
 import { StatsBar } from "@/components/StatsBar";
@@ -151,14 +152,16 @@ export default function Earn() {
 
   const handleAdComplete = useCallback(async () => {
     try {
+      console.log('[Ads] completed sequence — calling grantTicket()');
       await grantTicket();
       await refetch();
       queryClient.invalidateQueries({ queryKey: TODAY_REWARDED_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      invalidateTicketQueries(queryClient);
       invalidateLotteryPoolQueries(queryClient);
+      console.log('[Ads] all queries invalidated');
       toast.success(t("earn.watchAds.ticketEarned"));
     } catch (err: unknown) {
+      console.error('[Ads] handleAdComplete error:', err);
       const msg = err && typeof err === "object" && "message" in err
         ? String((err as { message?: string }).message)
         : t("common.error");

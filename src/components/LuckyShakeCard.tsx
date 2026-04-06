@@ -8,6 +8,7 @@ import { useShakeDetection, requestShakePermission, isShakeSupported } from "@/h
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
+import { invalidateTicketQueries } from "@/lib/grantTickets";
 import { pad } from "@/lib/weeklyCountdown";
 import { supabase } from "@/lib/supabase";
 
@@ -88,8 +89,7 @@ export default function LuckyShakeCard({
     try {
       const result = await shakeToWin();
       if (result?.success) {
-        queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        invalidateTicketQueries(queryClient);
         invalidateLotteryPoolQueries(queryClient);
         refetchStats(); // Refresh DB stats to lock button immediately
         
@@ -97,7 +97,7 @@ export default function LuckyShakeCard({
         setShakeWonTickets(result.ticketsAdded ?? 1);
         setShakeRightAvailable(false);
       } else {
-        const errMsg = !result.success ? (result.error ?? "FAILED") : "FAILED";
+        const errMsg = 'error' in result ? (result.error ?? "FAILED") : "FAILED";
         if (errMsg === "SHAKE_ALREADY_USED") {
           toast.error(t("shake.toast.alreadyUsed"));
           setShakeRightAvailable(false);

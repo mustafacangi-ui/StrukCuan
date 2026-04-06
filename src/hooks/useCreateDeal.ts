@@ -16,6 +16,7 @@ export interface CreateDealInput {
 }
 
 async function createDeal(input: CreateDealInput) {
+  console.log('[Deal] create start');
   const priceVal = input.price != null ? Number(input.price) : null;
   const discountVal = input.discount != null ? Number(input.discount) : null;
   const payload: Record<string, unknown> = {
@@ -31,6 +32,7 @@ async function createDeal(input: CreateDealInput) {
     is_red_label: Boolean(input.is_red_label ?? false),
   };
   if (input.user_id) payload.user_id = String(input.user_id);
+  console.log('[Deal] payload', payload);
   const { data, error } = await supabase
     .from("deals")
     .insert(payload)
@@ -39,7 +41,7 @@ async function createDeal(input: CreateDealInput) {
 
   if (error) {
     const err = error as { message?: string; code?: string; details?: string; hint?: string };
-    console.error("[useCreateDeal] Insert failed - 400 sebebi genelde yanlış kolon veya tip:", {
+    console.error('[Deal] create error', {
       message: err.message,
       code: err.code,
       details: err.details,
@@ -48,6 +50,7 @@ async function createDeal(input: CreateDealInput) {
     });
     throw error;
   }
+  console.log('[Deal] create response', data);
   return data;
 }
 

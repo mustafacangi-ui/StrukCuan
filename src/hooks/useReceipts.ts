@@ -5,6 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 import { DAILY_RECEIPT_LIMIT } from "@/hooks/useUploadLimits";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { extractReceiptData } from "@/utils/extractReceiptData";
+import { grantTickets, invalidateTicketQueries } from "@/lib/grantTickets";
 
 export type ReceiptStatus = "pending" | "approved" | "rejected";
 
@@ -248,6 +249,7 @@ export function useCreateReceipt() {
     mutationFn: async (input: CreateReceiptInput) => {
       const userId = input.userId;
 
+      console.log('[Receipt] upload start');
       const params = {
         p_user_id: userId,
         p_image_url: String(input.imageUrl),
@@ -257,23 +259,27 @@ export function useCreateReceipt() {
         // NOTE: p_image_hash omitted here — saved later in AI update payload
         // Prevents crash if DB was created before security_hardening.sql was applied
       };
+      console.log('[Receipt] create_receipt params', params);
       const { data, error } = await supabase.rpc("create_receipt", params);
 
       if (error) {
         const msg = (error as { message?: string }).message ?? "Upload failed. Please try again.";
-        console.error('[Upload] create_receipt RPC failed:', error);
+        console.error('[Receipt] RPC error', error);
         const err = new Error(msg);
         (err as unknown as { originalError: unknown }).originalError = error;
         throw err;
       }
 
+      console.log('[Receipt] RPC response', data);
+
       const result = data as { id: string | number; remaining: number };
       const receiptId = result.id;
 
       // Automatically run OCR Extraction Phase 1 MVP
-      console.log('[OCR] starting');
+      console.log('[Receipt] OCR start');
       try {
         const aiResult = await extractReceiptData(input.imageUrl);
+        console.log('[Receipt] OCR success');
         console.log('[OCR] parsed result', aiResult);
 
         // --- DUPLICATE DETECTION LOGIC ---
@@ -379,21 +385,15 @@ export function useCreateReceipt() {
               updatePayload.ai_processed_at = new Date().toISOString();
               updatePayload.ai_processing_reason = 'High confidence & low duplicate score';
 
-              // Grant Tickets securely
+              // Grant Tickets using shared helper (updates BOTH user_stats.tiket + survey_profiles)
               if (aiResult.suggested_ticket_reward && aiResult.suggested_ticket_reward > 0) {
-                 const { data: profile } = await supabase
-                    .from('survey_profiles')
-                    .select('user_id, total_tickets')
-                    .eq('user_id', userId)
-                    .single();
-                 
-                 await supabase
-                    .from('survey_profiles')
-                    .update({
-                       total_tickets: (profile?.total_tickets || 0) + aiResult.suggested_ticket_reward
-                    })
-                    .eq('user_id', userId);
-                 console.log(`[AI Auto Decision] Granted ${aiResult.suggested_ticket_reward} tickets to user`);
+                 try {
+                   await grantTickets(userId, aiResult.suggested_ticket_reward);
+                   console.log(`[AI Auto Decision] Granted ${aiResult.suggested_ticket_reward} tickets to user via grantTickets()`);
+                 } catch (ticketErr) {
+                   console.error('[AI Auto Decision] Failed to grant tickets:', ticketErr);
+                   // Non-fatal: receipt is still auto-approved, tickets may need manual grant
+                 }
               }
            } else if (aiDecision === 'reject') {
               console.log('[AI Auto Decision] Auto-rejecting receipt');
@@ -425,7 +425,7 @@ export function useCreateReceipt() {
         } else {
           console.log('[AI Auto Decision] Receipt AI update success');
           const { data: dbRow } = await supabase.from('receipts').select('*').eq('id', receiptId).single();
-          console.log('[OCR] DB values after update', dbRow);
+          console.log('[Receipt] final DB row', dbRow);
         }
       } catch (ocrError) {
         console.error('[OCR] failed', ocrError);
@@ -467,55 +467,17 @@ export function useApproveReceiptWithRewards() {
       cuanReward: number;
       ticketReward: number;
     }) => {
-      console.log('[Approve] Starting approval for receipt', receipt.id, '| user:', receipt.user_id);
+      console.log('[Receipt] Approve start for receipt', receipt.id, '| user:', receipt.user_id, '| tickets:', ticketReward);
 
-      // --- Step 1: Read current user_stats.tiket (this is what the UI shows) ---
-      const { data: stats, error: statsReadError } = await supabase
-        .from('user_stats')
-        .select('tiket')
-        .eq('user_id', receipt.user_id)
-        .maybeSingle();
-
-      if (statsReadError) {
-        console.error('[Approve] Failed to read user_stats:', statsReadError);
+      // --- Step 1: Grant tickets using shared helper (updates BOTH stores) ---
+      if (ticketReward > 0) {
+        console.log('[Receipt] granting', ticketReward, 'tickets via grantTickets()');
+        await grantTickets(receipt.user_id, ticketReward);
+        console.log('[Receipt] tickets granted successfully');
       }
 
-      const currentTiket = stats?.tiket ?? 0;
-      console.log('[Approve] Current tiket in user_stats:', currentTiket, '| Adding:', ticketReward);
-
-      // --- Step 2: Write to user_stats.tiket (primary ticket store read by UI) ---
-      const { error: statsUpdateError } = await supabase
-        .from('user_stats')
-        .update({ tiket: currentTiket + ticketReward })
-        .eq('user_id', receipt.user_id);
-
-      if (statsUpdateError) {
-        console.error('[Approve] Failed to update user_stats.tiket:', statsUpdateError);
-        throw statsUpdateError;
-      }
-      console.log('[Approve] user_stats.tiket updated to', currentTiket + ticketReward);
-
-      // --- Step 3: Also sync to survey_profiles.total_tickets (secondary store) ---
-      try {
-        const { data: profile } = await supabase
-          .from('survey_profiles')
-          .select('total_tickets')
-          .eq('user_id', receipt.user_id)
-          .maybeSingle();
-
-        await supabase
-          .from('survey_profiles')
-          .update({ total_tickets: (profile?.total_tickets ?? 0) + ticketReward })
-          .eq('user_id', receipt.user_id);
-
-        console.log('[Approve] survey_profiles.total_tickets synced');
-      } catch (spErr) {
-        // Non-fatal: UI doesn't read from here
-        console.warn('[Approve] survey_profiles sync failed (non-fatal):', spErr);
-      }
-
-      // --- Step 4: Update the receipt row ---
-      console.log('[Approve] Updating receipt status to approved');
+      // --- Step 2: Update the receipt row ---
+      console.log('[Receipt] Updating receipt status to approved');
       const { error: receiptError } = await supabase
         .from('receipts')
         .update({
@@ -527,17 +489,16 @@ export function useApproveReceiptWithRewards() {
         .eq('id', receipt.id);
 
       if (receiptError) {
-        console.error('[Approve] Receipt update failed:', receiptError);
+        console.error('[Receipt] Receipt update failed:', receiptError);
         throw receiptError;
       }
-      console.log('[Approve] Done. Receipt approved, tickets granted:', ticketReward);
+      console.log('[Receipt] Done. Receipt approved, tickets granted:', ticketReward);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['admin-pending-receipts'] });
-      queryClient.invalidateQueries({ queryKey: ['user_stats'] });
-      queryClient.invalidateQueries({ queryKey: ['user_tickets'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      invalidateTicketQueries(queryClient);
       invalidateLotteryPoolQueries(queryClient);
     },
   });

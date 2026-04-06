@@ -157,7 +157,11 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
           refetch();
           closeReview();
         },
-        onError: () => toast.error("Action failed"),
+        onError: (err: Error) => {
+          console.error('[AdminReceipts] Approve failed — keeping receipt in queue:', err);
+          toast.error("Approval failed: " + (err?.message || "Unknown error"));
+          // Do NOT close review modal, let admin retry
+        },
       }
     );
   };

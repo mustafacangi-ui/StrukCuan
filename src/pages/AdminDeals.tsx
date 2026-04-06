@@ -257,12 +257,16 @@ export default function AdminDeals() {
   const handleApprove = (dealId: number | string) => {
     approve.mutate(dealId, {
       onSuccess: () => {
-        toast.success("Deal Approved");
+        toast.success("Deal Approved & Tickets Granted");
         queryClient.invalidateQueries({ queryKey: ["deals"] });
         refetch();
         closeModal();
       },
-      onError: (err: Error) => toast.error(err?.message || "Failed"),
+      onError: (err: Error) => {
+        console.error('[AdminDeals] Approve failed — deal kept visible:', err);
+        toast.error("Approval failed: " + (err?.message || "Unknown error"));
+        // Do NOT close modal or remove item — let admin retry
+      },
     });
   };
 
