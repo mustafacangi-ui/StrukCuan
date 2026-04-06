@@ -385,14 +385,17 @@ export function useCreateReceipt() {
               updatePayload.ai_processed_at = new Date().toISOString();
               updatePayload.ai_processing_reason = 'High confidence & low duplicate score';
 
-              // Grant Tickets using shared helper (updates BOTH user_stats.tiket + survey_profiles)
+              // Grant Tickets using shared helper
               if (aiResult.suggested_ticket_reward && aiResult.suggested_ticket_reward > 0) {
                  try {
-                   await grantTickets(userId, aiResult.suggested_ticket_reward);
-                   console.log(`[AI Auto Decision] Granted ${aiResult.suggested_ticket_reward} tickets to user via grantTickets()`);
+                    await grantTickets(userId, aiResult.suggested_ticket_reward);
+                    console.log('[ReceiptApprove] reward success');
                  } catch (ticketErr) {
-                   console.error('[AI Auto Decision] Failed to grant tickets:', ticketErr);
-                   // Non-fatal: receipt is still auto-approved, tickets may need manual grant
+                    console.log('[ReceiptApprove] reward error', ticketErr);
+                    // For AI auto-approval, if ticket grant fails, we might still want to mark it as approved?
+                    // The user said: "If any reward fails: keep item visible, show exact error toast, log exact reason".
+                    // But AI auto-approval is background. I'll make it throw so the update doesn't happen.
+                    throw ticketErr;
                  }
               }
            } else if (aiDecision === 'reject') {
@@ -460,24 +463,26 @@ export function useApproveReceiptWithRewards() {
   return useMutation({
     mutationFn: async ({
       receipt,
-      cuanReward,
       ticketReward,
     }: {
       receipt: ReceiptRow;
       cuanReward: number;
       ticketReward: number;
     }) => {
-      console.log('[Receipt] Approve start for receipt', receipt.id, '| user:', receipt.user_id, '| tickets:', ticketReward);
+      console.log('[ReceiptApprove] start', { receiptId: receipt.id, userId: receipt.user_id, ticketReward });
 
-      // --- Step 1: Grant tickets using shared helper (updates BOTH stores) ---
+      // --- Step 1: Grant tickets FIRST ---
       if (ticketReward > 0) {
-        console.log('[Receipt] granting', ticketReward, 'tickets via grantTickets()');
-        await grantTickets(receipt.user_id, ticketReward);
-        console.log('[Receipt] tickets granted successfully');
+        try {
+          await grantTickets(receipt.user_id, ticketReward);
+          console.log('[ReceiptApprove] reward success');
+        } catch (error) {
+          console.log('[ReceiptApprove] reward error', error);
+          throw error;
+        }
       }
 
       // --- Step 2: Update the receipt row ---
-      console.log('[Receipt] Updating receipt status to approved');
       const { error: receiptError } = await supabase
         .from('receipts')
         .update({
@@ -489,10 +494,11 @@ export function useApproveReceiptWithRewards() {
         .eq('id', receipt.id);
 
       if (receiptError) {
-        console.error('[Receipt] Receipt update failed:', receiptError);
+        console.log('[ReceiptApprove] reward error', receiptError);
         throw receiptError;
       }
-      console.log('[Receipt] Done. Receipt approved, tickets granted:', ticketReward);
+      
+      console.log('[ReceiptApprove] Successfully approved receipt:', receipt.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });

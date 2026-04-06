@@ -21,85 +21,78 @@ export async function grantTickets(userId: string, amount: number): Promise<numb
     throw new Error(msg);
   }
 
-  // ── Step 1: Read current user_stats.tiket ──
-  const { data: currentUserStats, error: statsReadError } = await supabase
-    .from('user_stats')
-    .select('tiket')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (statsReadError) {
-    console.error('[grantTickets] user_stats read error', statsReadError);
-    throw new Error('Failed to read user stats: ' + statsReadError.message);
-  }
-
-  const currentTiket = currentUserStats?.tiket ?? 0;
-  console.log('[grantTickets] user_stats before', { tiket: currentTiket });
-
-  const newTotal = currentTiket + amount;
-
-  // ── Step 2: Update user_stats.tiket (PRIMARY — UI reads this) ──
-  const { error: statsUpdateError } = await supabase
-    .from('user_stats')
-    .update({ tiket: newTotal })
-    .eq('user_id', userId);
-
-  if (statsUpdateError) {
-    console.error('[grantTickets] user_stats update error', statsUpdateError);
-    throw new Error('Failed to update user_stats.tiket: ' + statsUpdateError.message);
-  }
-
-  console.log('[grantTickets] user_stats.tiket updated', { previous: currentTiket, new: newTotal });
-
-  // ── Step 3: Also update survey_profiles.total_tickets (SECONDARY — keep in sync) ──
   try {
-    const { data: currentProfile, error: profileReadError } = await supabase
+    // ── Step 1: Read current user_stats.tiket ──
+    const { data: currentUserStats, error: statsReadError } = await supabase
+      .from('user_stats')
+      .select('tiket')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (statsReadError) {
+      console.error('[grantTickets] error fetching stats', statsReadError);
+      throw new Error('Failed to read user stats: ' + statsReadError.message);
+    }
+
+    console.log('[grantTickets] user_stats before', currentUserStats);
+
+    // Also fetch current profile for logging as requested
+    const { data: currentProfile } = await supabase
       .from('survey_profiles')
       .select('total_tickets')
       .eq('user_id', userId)
       .maybeSingle();
+    
+    console.log('[grantTickets] survey_profiles before', currentProfile);
 
-    if (profileReadError) {
-      console.warn('[grantTickets] survey_profiles read error (non-fatal)', profileReadError);
-    } else {
-      const currentProfileTickets = currentProfile?.total_tickets ?? 0;
-      console.log('[grantTickets] survey_profiles before', { total_tickets: currentProfileTickets });
+    const currentTickets = currentUserStats?.tiket ?? 0;
+    const newTotal = currentTickets + amount;
+    console.log('[grantTickets] new total', newTotal);
 
-      const { error: profileUpdateError } = await supabase
-        .from('survey_profiles')
-        .update({ total_tickets: currentProfileTickets + amount })
-        .eq('user_id', userId);
+    // ── Step 2: Update BOTH tables — Single Source of Truth ──
+    // 1. Update user_stats.tiket
+    const { error: statsUpdateError } = await supabase
+      .from('user_stats')
+      .update({ tiket: newTotal })
+      .eq('user_id', userId);
 
-      if (profileUpdateError) {
-        console.warn('[grantTickets] survey_profiles update error (non-fatal)', profileUpdateError);
-      } else {
-        console.log('[grantTickets] survey_profiles.total_tickets updated', {
-          previous: currentProfileTickets,
-          new: currentProfileTickets + amount,
-        });
-      }
+    if (statsUpdateError) {
+      console.error('[grantTickets] user_stats update error', statsUpdateError);
+      throw new Error('Failed to update user_stats.tiket: ' + statsUpdateError.message);
     }
-  } catch (spErr) {
-    console.warn('[grantTickets] survey_profiles sync failed (non-fatal)', spErr);
+
+    // 2. Update survey_profiles.total_tickets
+    const { error: profileUpdateError } = await supabase
+      .from('survey_profiles')
+      .update({ total_tickets: newTotal })
+      .eq('user_id', userId);
+
+    if (profileUpdateError) {
+      console.warn('[grantTickets] survey_profiles update error (non-fatal)', profileUpdateError);
+      // We don't throw here to ensure the primary update stands, but it will be logged
+    }
+
+    console.log('[grantTickets] success');
+
+    // ── Step 3: Invalidate all ticket-related queries ──
+    invalidateTicketQueries(queryClient);
+
+    return newTotal;
+  } catch (error) {
+    console.log('[grantTickets] error', error);
+    throw error;
   }
-
-  console.log('[grantTickets] new total', newTotal);
-  console.log('[grantTickets] success');
-
-  // ── Step 4: Invalidate all ticket-related queries ──
-  invalidateTicketQueries(queryClient);
-
-  return newTotal;
 }
 
 /**
  * Standard set of query keys to invalidate after any ticket-granting action.
- * Call invalidateTicketQueries(queryClient) after every grantTickets() call.
  */
 export const TICKET_QUERY_KEYS = [
   ['user_stats'],
+  ['user-stats'],
   ['survey-profile'],
   ['user_tickets'],
+  ['user-tickets'],
   ['weekly-draw'],
   ['weeklyDraw', 'lotteryTicketsCount'],
   ['user_stats_shake'],
@@ -110,7 +103,6 @@ export const TICKET_QUERY_KEYS = [
 
 /**
  * Invalidate all ticket-related queries in one call.
- * Import and use after every grantTickets().
  */
 export function invalidateTicketQueries(queryClient: {
   invalidateQueries: (opts: { queryKey: readonly string[] }) => void;

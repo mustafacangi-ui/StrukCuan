@@ -47,35 +47,35 @@ export function useApproveDeal() {
   const { user } = useUser();
   return useMutation({
     mutationFn: async (dealId: number | string) => {
-      console.log('[DealApprove] start', dealId);
-      console.log('[DealApprove] Current admin user:', user?.id);
+      console.log('[DealApprove] start', { dealId });
 
       const { data: existingDeal, error: fetchError } = await supabase
         .from('deals')
         .select('*')
         .eq('id', dealId)
-        .maybeSingle()
+        .maybeSingle();
 
-      console.log('[DealApprove] Existing deal:', existingDeal);
-      if (fetchError) console.error('[DealApprove] Fetch error:', fetchError);
-
-      if (!existingDeal) {
-        throw new Error(`Deal not found: ${dealId}`);
+      if (fetchError || !existingDeal) {
+        const err = fetchError || new Error(`Deal not found: ${dealId}`);
+        console.log('[DealApprove] reward error', err);
+        throw err;
       }
 
       // Determine reward amount
       const rewardAmount = existingDeal.is_red_label ? 3 : 1;
-      console.log('[DealApprove] reward amount', rewardAmount);
 
       // Step 1: Grant tickets FIRST — if this fails, deal stays pending
       if (existingDeal.user_id) {
-        console.log('[DealApprove] profile before — granting', rewardAmount, 'tickets to', existingDeal.user_id);
-        await grantTickets(existingDeal.user_id, rewardAmount);
-        console.log('[DealApprove] profile after — tickets granted successfully');
-        console.log('[DealApprove] update success');
+        try {
+          await grantTickets(existingDeal.user_id, rewardAmount);
+          console.log('[DealApprove] reward success');
+        } catch (error) {
+          console.log('[DealApprove] reward error', error);
+          throw error;
+        }
       }
 
-      // Step 2: Only THEN update deal status (so it doesn't disappear before tickets are granted)
+      // Step 2: Only THEN update deal status
       const { data, error } = await supabase
         .from('deals')
         .update({
@@ -84,19 +84,13 @@ export function useApproveDeal() {
         .eq('id', dealId)
         .select();
 
-      if (error) {
-        console.error('[DealApprove] update error', error);
-        console.error('[DealApprove] Failed to approve deal. Full error:', JSON.stringify(error, null, 2));
-        throw error;
-      }
-      
-      if (!data || data.length === 0) {
-        const msg = 'No rows updated. RLS block or deal missing.';
-        console.error('[DealApprove] update error', msg, 'ID:', dealId);
-        throw new Error(msg);
+      if (error || !data || data.length === 0) {
+        const err = error || new Error('No rows updated. RLS block or deal missing.');
+        console.log('[DealApprove] reward error', err);
+        throw err;
       }
 
-      console.log('[DealApprove] Successfully approved deal:', dealId, 'Result Data:', data);
+      console.log('[DealApprove] Successfully approved deal:', dealId);
     },
     onSuccess: () => {
       console.log('[DealApprove] Invalidate queries');

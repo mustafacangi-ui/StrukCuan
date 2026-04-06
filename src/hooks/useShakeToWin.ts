@@ -3,34 +3,18 @@ import { grantTickets } from "@/lib/grantTickets";
 
 export type ShakeResult = { success: true; ticketsAdded: number; streak: number; totalTickets: number; lastReward: number } | { success: false; error: string };
 
-/**
- * Get the current date in Jakarta timezone (WIB) as "YYYY-MM-DD"
- */
-function getJakartaDateString(): string {
-  const jakartaTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-  const year = jakartaTime.getFullYear();
-  const month = String(jakartaTime.getMonth() + 1).padStart(2, '0');
-  const date = String(jakartaTime.getDate()).padStart(2, '0');
-  return `${year}-${month}-${date}`;
-}
-
-/**
- * Shake to Win: grants 1-5 random tickets based on configured 50/25/15/7/3 odds.
- * RPC enforces exactly 1x per day natively locked to Jakarta Timezone.
- */
 export async function shakeToWin(): Promise<ShakeResult> {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session) {
     return { success: false, error: "Please login" };
   }
   const userId = sessionData.session.user.id;
-  const jakartaDateString = getJakartaDateString();
   const jakartaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
-  console.log('[LuckyShake] Jakarta today', jakartaToday);
+  console.log('[LuckyShake] start', { userId, jakartaToday });
 
   try {
-    // 1. Fetch user_stats (check last shake date natively in Jakarta time)
+    // 1. Fetch user_stats (check last shake date)
     const { data: userStats, error: statsError } = await supabase
       .from('user_stats')
       .select('shake_last_at, shake_total_tickets, shake_streak, shake_days_this_week, shake_last_reward, tiket')
@@ -38,23 +22,17 @@ export async function shakeToWin(): Promise<ShakeResult> {
       .maybeSingle();
 
     if (statsError) {
-      console.error("[LuckyShake] Failed to verify last shake:", statsError);
+      console.error("[LuckyShake] Fetch error", statsError);
+      throw statsError;
     }
 
-    console.log('[LuckyShake] user before', userStats);
-
     let currentStreak = userStats?.shake_streak || 0;
-    const totalTickets = userStats?.shake_total_tickets || 0;
+    const totalShakeTickets = userStats?.shake_total_tickets || 0;
 
     if (userStats?.shake_last_at) {
-      // Parse last shake time as Jakarta
       const lastShakeDate = new Date(userStats.shake_last_at).toLocaleDateString('en-CA', {
         timeZone: 'Asia/Jakarta'
       });
-
-      console.log('[LuckyShake] shake_last_at', userStats.shake_last_at);
-      console.log('[LuckyShake] lastShakeDate (Jakarta)', lastShakeDate);
-      console.log('[LuckyShake] jakartaToday', jakartaToday);
 
       if (lastShakeDate === jakartaToday) {
         console.log('[LuckyShake] BLOCKED — already used today');
@@ -64,19 +42,9 @@ export async function shakeToWin(): Promise<ShakeResult> {
       // Streak Calculation (If yesterday in Jakarta, increment. Otherwise, reset to 1)
       const yesterday = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
       yesterday.setDate(yesterday.getDate() - 1);
-      const yYear = yesterday.getFullYear();
-      const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
-      const yDate = String(yesterday.getDate()).padStart(2, '0');
-      const yesterdayJakartaStr = `${yYear}-${yMonth}-${yDate}`;
+      const yesterdayJakartaStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
       
-      const lastShakeTime = new Date(userStats.shake_last_at);
-      const lastJakartaTime = new Date(lastShakeTime.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-      const lastYear = lastJakartaTime.getFullYear();
-      const lastMonth = String(lastJakartaTime.getMonth() + 1).padStart(2, '0');
-      const lastDate2 = String(lastJakartaTime.getDate()).padStart(2, '0');
-      const lastJakartaDateString = `${lastYear}-${lastMonth}-${lastDate2}`;
-
-      if (lastJakartaDateString === yesterdayJakartaStr) {
+      if (lastShakeDate === yesterdayJakartaStr) {
         currentStreak += 1;
       } else {
         currentStreak = 1;
@@ -94,56 +62,48 @@ export async function shakeToWin(): Promise<ShakeResult> {
     else if (r < 0.97) tickets = 4;
     else tickets = 5;
 
-    console.log('[LuckyShake] reward generated', tickets);
+    console.log('[LuckyShake] generated reward', tickets);
 
-    // 3. FIRST lock the shake by writing shake_last_at — BEFORE granting tickets
-    //    This prevents double-use even if ticket grant fails.
-    console.log('[LuckyShake] writing shake_last_at BEFORE granting tickets');
-    const newTotalTickets = totalTickets + tickets;
-
+    // 3. FIRST lock the shake by writing shake_last_at and shake_last_reward
+    console.log('[LuckyShake] locking turn...');
     const { error: lockError } = await supabase
       .from('user_stats')
       .update({ 
         shake_last_at: new Date().toISOString(),
-        shake_total_tickets: newTotalTickets,
+        shake_last_reward: tickets,
         shake_streak: currentStreak,
         shake_days_this_week: (userStats?.shake_days_this_week || 0) + 1,
-        shake_last_reward: tickets
+        shake_total_tickets: totalShakeTickets + tickets
       })
       .eq('user_id', userId);
 
     if (lockError) {
-      console.error('[LuckyShake] shake_last_at update FAILED — aborting', lockError);
-      console.log('[LuckyShake] update error', lockError);
-      return { success: false, error: 'Failed to lock shake: ' + lockError.message };
+      console.log('[LuckyShake] lock error', lockError);
+      return { success: false, error: 'LOCK_FAILED' };
     }
 
-    console.log('[LuckyShake] shake_last_at locked successfully');
+    console.log('[LuckyShake] lock success');
 
-    // 4. Grant tickets using shared helper (updates BOTH user_stats.tiket + survey_profiles)
+    // 4. Grant tickets using shared helper
     try {
-      console.log('[LuckyShake] updating user_stats.tiket');
-      console.log('[LuckyShake] updating survey_profiles.total_tickets');
       await grantTickets(userId, tickets);
-      console.log('[LuckyShake] update success');
+      console.log('[LuckyShake] reward success');
     } catch (grantError: any) {
-      console.error('[LuckyShake] update error', grantError);
-      // Tickets failed but shake is already locked. This is safer than allowing double-use.
-      return { success: false, error: 'Shake locked but ticket grant failed: ' + (grantError?.message ?? 'unknown') };
+      console.log('[LuckyShake] reward error', grantError);
+      // Turn is locked, but ticket grant failed. 
+      // Return false so UI doesn't show success, but error indicates turn was used.
+      return { success: false, error: 'GRANT_FAILED' };
     }
-
-    const shakeRightAvailable = false;
-    console.log('[LuckyShake] available', shakeRightAvailable);
 
     return { 
       success: true, 
       ticketsAdded: tickets, 
       streak: currentStreak, 
-      totalTickets: newTotalTickets,
+      totalTickets: totalShakeTickets + tickets, // Note: this is total from shakes specifically
       lastReward: tickets
     };
   } catch (err: any) {
-    console.error('[LuckyShake] update error', err);
+    console.log('[LuckyShake] error', err);
     return { success: false, error: err.message ?? "Failed" };
   }
 }
