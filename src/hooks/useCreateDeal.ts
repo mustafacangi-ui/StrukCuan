@@ -13,6 +13,7 @@ export interface CreateDealInput {
   expiry?: string;
   is_red_label?: boolean;
   user_id?: string;
+  ticket_reward?: number;
 }
 
 async function createDeal(input: CreateDealInput) {
@@ -30,6 +31,7 @@ async function createDeal(input: CreateDealInput) {
     discount: discountVal != null && !Number.isNaN(discountVal) ? discountVal : null,
     expiry: input.expiry ? String(input.expiry) : null,
     is_red_label: Boolean(input.is_red_label ?? false),
+    ticket_reward: input.ticket_reward ?? 3,
   };
   if (input.user_id) payload.user_id = String(input.user_id);
   console.log('[Deal] payload', payload);

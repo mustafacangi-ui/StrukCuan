@@ -154,7 +154,7 @@
       "duplicateReceipt": "This receipt was already uploaded.",
       "ticketsEarned": "You earned +{{count}} ticket(s) 🎉",
       "scanNoTickets": "Scan received! Daily ticket limit reached (0 tickets today)",
-      "redLabelTickets": "You earned +3 tickets 🔥"
+      "redLabelTickets": "Deal submitted successfully. Pending admin approval."
     },
     "processing": "Uploading..."
   },

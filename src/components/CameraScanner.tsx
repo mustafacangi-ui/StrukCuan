@@ -7,7 +7,6 @@ import { useUser } from "@/contexts/UserContext";
 import { useCreateReceipt, useReceiptsToday, RECEIPTS_QUERY_KEY, fetchReceiptsTodayCount, isDailyLimitError, isDuplicateReceiptError, DAILY_LIMIT_ERROR } from "@/hooks/useReceipts";
 import { useCreateDeal } from "@/hooks/useCreateDeal";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { grantDealTickets } from "@/hooks/useGrantDealTickets";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
@@ -372,10 +371,10 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
         user_id: userId,
       });
 
-      await grantDealTickets();
-      queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
-      invalidateLotteryPoolQueries(queryClient);
+      // await grantDealTickets(); // REMOVED: No more automatic ticket grants on upload
+      // queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+      // queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      // invalidateLotteryPoolQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
       toast.success(t("scanner.toast.redLabelTickets"));
 
@@ -386,7 +385,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
       setPreviewUrl(null);
       setCapturedBlob(null);
       setRedLabelForm({ product_name: "", price: "", store: "", discount: "" });
-      setTicketsAwarded(3);
+      setTicketsAwarded(0);
       setScanStreak((s) => s + 1);
       setStep("success");
     } catch (e) {
@@ -791,7 +790,7 @@ function SuccessCelebration({
     const showTimer = setTimeout(() => setVisible(true), 120);
 
     const confettiTimer = setTimeout(() => {
-      if (limitReached) return; // no confetti when 0 tickets
+      if (limitReached || isRedLabel) return; // no confetti when 0 tickets or deal pending
 
       const colors = isRedLabel
         ? ["#FF3B3B", "#FF6B6B", "#FFD166", "#FFE066", "#FFFFFF"]
@@ -841,7 +840,7 @@ function SuccessCelebration({
 
         {/* Headline */}
         <p className="text-3xl font-extrabold text-white mb-2" style={{ letterSpacing: "-0.5px" }}>
-          {limitReached ? t("scanner.success.scanReceived") : t("scanner.success.nice")}
+          {limitReached ? t("scanner.success.scanReceived") : isRedLabel ? "Submitted!" : t("scanner.success.nice")}
         </p>
 
         {/* Ticket reward / limit message */}
@@ -851,7 +850,9 @@ function SuccessCelebration({
         >
           {limitReached
             ? t("scanner.success.dailyLimitTitle")
-            : t("scanner.success.ticketsAdded", { count: ticketsAwarded })}
+            : isRedLabel 
+              ? "Pending Admin Approval"
+              : t("scanner.success.ticketsAdded", { count: ticketsAwarded })}
         </p>
 
         {/* Daily limit explanation */}
