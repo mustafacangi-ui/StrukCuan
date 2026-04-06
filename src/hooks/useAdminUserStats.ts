@@ -10,6 +10,10 @@ export interface AdminDashboardStats {
   newThisWeek: number;
   chartNew: { date: string; count: number }[];
   chartActive: { date: string; count: number }[];
+  adTotalViewsToday: number;
+  adTotalRewardedToday: number;
+  adTotalRevenueToday: number;
+  topAdUsers: { nickname: string; count: number }[];
 }
 
 export function useAdminUserStats() {

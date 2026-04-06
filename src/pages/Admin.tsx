@@ -7,6 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import AdminReceipts from "./AdminReceipts";
 import AdminDeals from "./AdminDeals";
 import AdminNotifications from "./AdminNotifications";
+import AdminAds from "./AdminAds";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAdminUserStats } from "@/hooks/useAdminUserStats";
@@ -22,9 +23,9 @@ import {
   Line,
   Cell
 } from "recharts";
-import { Users, UserPlus, Zap, Clock, TrendingUp } from "lucide-react";
+import { Users, UserPlus, Zap, Clock, TrendingUp, Play, DollarSign, Award } from "lucide-react";
 
-type Tab = "dashboard" | "receipts" | "deals" | "notifications";
+type Tab = "dashboard" | "receipts" | "deals" | "notifications" | "ads";
 
 export default function Admin() {
   const { t } = useTranslation();
@@ -118,7 +119,8 @@ export default function Admin() {
                 { id: "dashboard", icon: LayoutDashboard, label: "Overview" },
                 { id: "receipts", icon: Receipt, label: "Receipts", count: stats.pendingReceipts },
                 { id: "deals", icon: MapPin, label: "Deals" },
-                { id: "notifications", icon: Bell, label: "Pushes" }
+                { id: "notifications", icon: Bell, label: "Pushes" },
+                { id: "ads", icon: Play, label: "Ads" }
               ].map((t) => (
                 <button
                   key={t.id}
@@ -191,11 +193,35 @@ export default function Admin() {
                   </motion.div>
                 ))}
               </div>
+              
+              {/* Ads Performance Statistics Row */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-2">
+                {[
+                  { label: "Ad Views Today", value: adminStats?.adTotalViewsToday ?? 0, icon: Play, color: "blue" },
+                  { label: "Rewarded Ads", value: adminStats?.adTotalRewardedToday ?? 0, icon: Award, color: "purple" },
+                  { label: "Est. Ad Revenue", value: `$${adminStats?.adTotalRevenueToday?.toFixed(2) ?? '0.00'}`, icon: DollarSign, color: "green" },
+                  { label: "Reward Rate", value: `${Math.round(((adminStats?.adTotalRewardedToday ?? 0) / (adminStats?.adTotalViewsToday || 1)) * 100)}%`, icon: Zap, color: "orange" },
+                ].map((card, idx) => (
+                  <motion.div
+                    key={card.label}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + idx * 0.05 }}
+                    className="relative rounded-3xl border border-white/5 bg-white/[0.01] p-4 text-left"
+                  >
+                    <div className="flex items-center gap-2 text-zinc-500 mb-1">
+                      <card.icon size={12} className={`text-${card.color}-400/80`} />
+                      <span className="text-[10px] uppercase font-bold tracking-widest">{card.label}</span>
+                    </div>
+                    <p className="text-lg font-bold text-white">{card.value}</p>
+                  </motion.div>
+                ))}
+              </div>
 
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Charts & Leadboards Column Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* New Users Chart */}
-                <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6">
+                <div className="lg:col-span-2 rounded-3xl border border-white/5 bg-white/[0.02] p-6">
                   <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
                     <UserPlus size={14} className="text-orange-400" />
                     New Users (Last 7 Days)
@@ -222,39 +248,36 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Active Users Chart */}
-                <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <TrendingUp size={14} className="text-blue-400" />
-                    Active Users (Last 7 Days)
+                {/* Top Ad Watchers Leaderboard */}
+                <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 flex flex-col h-full">
+                   <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Zap size={14} className="text-purple-400" />
+                    Top Ad Watchers (Today)
                   </h3>
-                  <div className="h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={adminStats?.chartActive ?? []}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="#52525b" 
-                          fontSize={10} 
-                          tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                        />
-                        <YAxis stroke="#52525b" fontSize={10} />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                          labelStyle={{ color: '#a1a1aa', fontSize: '10px' }}
-                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="count" 
-                          stroke="#3b82f6" 
-                          strokeWidth={3} 
-                          dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }} 
-                          activeDot={{ r: 6, strokeWidth: 0 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <div className="space-y-4 flex-1">
+                    {(adminStats?.topAdUsers ?? []).length === 0 ? (
+                      <p className="text-xs text-zinc-600 text-center py-10 italic">No activity yet today</p>
+                    ) : (
+                      adminStats?.topAdUsers.map((u, i) => (
+                        <div key={i} className="flex items-center justify-between group">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-bold text-zinc-600 group-hover:text-zinc-400 w-4">{i+1}.</span>
+                            <span className="text-xs text-zinc-300 font-medium group-hover:text-white transition-colors truncate max-w-[120px]">{u.nickname}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+                            <span className="text-[10px] font-bold text-purple-400">{u.count}</span>
+                            <Play size={8} className="text-purple-400" />
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
+                  <button 
+                    onClick={() => setTab("ads")}
+                    className="mt-6 w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all"
+                  >
+                    View All Logs
+                  </button>
                 </div>
               </div>
 
@@ -336,6 +359,17 @@ export default function Admin() {
               exit={{ opacity: 0, scale: 0.98 }}
             >
               <AdminNotifications />
+            </motion.div>
+          )}
+
+          {tab === "ads" && (
+            <motion.div
+              key="ads"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+            >
+              <AdminAds />
             </motion.div>
           )}
         </AnimatePresence>

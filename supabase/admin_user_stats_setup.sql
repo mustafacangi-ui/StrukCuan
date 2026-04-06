@@ -42,6 +42,10 @@ declare
   v_new_week bigint;
   v_chart_new jsonb;
   v_chart_active jsonb;
+  v_ad_views_today bigint;
+  v_ad_rewards_today bigint;
+  v_ad_revenue_today numeric;
+  v_top_ad_users jsonb;
 begin
   /* 
      We join with survey_profiles or use user_stats.updated_at 
@@ -102,6 +106,21 @@ begin
     group by 1 order by 1
   ) d;
 
+  -- Ad Stats Today
+  select count(*) into v_ad_views_today from public.ad_views where ad_started_at >= current_date;
+  select count(*) into v_ad_rewards_today from public.ad_views where ad_completed_at >= current_date and reward_granted = true;
+  select coalesce(sum(revenue_estimate), 0) into v_ad_revenue_today from public.ad_views where ad_completed_at >= current_date and reward_granted = true;
+
+  -- Top Ad Users Today
+  select jsonb_agg(d) into v_top_ad_users from (
+    select coalesce(p.nickname, s.user_id) as nickname, count(*) as count
+    from public.ad_views v
+    join public.user_stats s on v.user_id = s.user_id
+    left join public.survey_profiles p on s.user_id = p.user_id
+    where v.ad_started_at >= current_date
+    group by 1 order by 2 desc limit 5
+  ) d;
+
   return jsonb_build_object(
     'totalUsers', v_total,
     'onlineNow', v_online,
@@ -110,7 +129,11 @@ begin
     'newToday', v_new_today,
     'newThisWeek', v_new_week,
     'chartNew', coalesce(v_chart_new, '[]'::jsonb),
-    'chartActive', coalesce(v_chart_active, '[]'::jsonb)
+    'chartActive', coalesce(v_chart_active, '[]'::jsonb),
+    'adTotalViewsToday', v_ad_views_today,
+    'adTotalRewardedToday', v_ad_rewards_today,
+    'adTotalRevenueToday', v_ad_revenue_today,
+    'topAdUsers', coalesce(v_top_ad_users, '[]'::jsonb)
   );
 end;
 $$;
