@@ -1,11 +1,14 @@
 import { IRewardedAdProvider } from "../IAdProvider";
 import { AdProviderName, AdRewardInfo, AdError, AdEventMetadata } from "../types";
-import { AdMob, RewardAdOptions, AdMobRewardItem } from "@capacitor-community/admob";
 import { Capacitor } from "@capacitor/core";
+
+// Use import type to avoid bundling the actual package on web/Vercel
+import type { AdMobRewardItem, RewardAdOptions } from "@capacitor-community/admob";
 
 /**
  * AdMobRewardedProvider: 
  * Implementation for Native Android using Capacitor Community AdMob SDK.
+ * Uses dynamic imports to prevent Vercel build failures.
  */
 export class AdMobRewardedProvider implements IRewardedAdProvider {
   readonly name: AdProviderName = "admob";
@@ -18,7 +21,11 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
 
   private async init() {
     if (!Capacitor.isNativePlatform()) return;
+    
     try {
+      // Dynamic import to avoid Vercel "Module not found" errors
+      const { AdMob } = await import("@capacitor-community/admob");
+      
       await AdMob.initialize({
         requestTrackingAuthorization: true,
         testingDevices: ["2077ef9a63d2b398840261c8221a0c9b"],
@@ -26,7 +33,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
       });
       console.log("[Ads/AdMob] Native SDK Initialized");
     } catch (err) {
-      console.warn("[Ads/AdMob] Initialisation failed:", err);
+      console.warn("[Ads/AdMob] Native SDK Initialisation failed:", err);
     }
   }
 
@@ -42,6 +49,8 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
 
     try {
       console.log(`[Ads/AdMob] Preloading ad unit: ${this.adUnitId}...`);
+      
+      const { AdMob } = await import("@capacitor-community/admob");
       
       const options: RewardAdOptions = {
         adId: this.adUnitId,
@@ -74,6 +83,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
     try {
       console.log("[Ads/AdMob] [rewardedAd] showing native video");
       
+      const { AdMob } = await import("@capacitor-community/admob");
       const reward: AdMobRewardItem = await AdMob.showRewardVideoAd();
       
       this.isLoaded = false; // Reset after show
@@ -96,7 +106,6 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
       onClose();
     } catch (err: any) {
       console.error("[Ads/AdMob] [rewardedAd] failed", err);
-      // Fail silently if user closed it early - check library behavior
       onError({ code: "ADMOB_SHOW_FAIL", message: err.message });
       onClose(); 
     }

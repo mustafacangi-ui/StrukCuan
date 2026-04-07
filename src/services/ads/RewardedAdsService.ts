@@ -2,7 +2,8 @@ import { supabase } from "@/lib/supabase";
 import { IRewardedAdProvider } from "./IAdProvider";
 import { AdRewardInfo, AdError } from "./types";
 import { DemoAdProvider } from "./providers/DemoAdProvider";
-import { AdMobRewardedProvider } from "./providers/AdMobRewardedProvider";
+// Remove static import of native provider to prevent bundling on web
+// import { AdMobRewardedProvider } from "./providers/AdMobRewardedProvider";
 
 import { Capacitor } from "@capacitor/core";
 
@@ -36,15 +37,17 @@ export class RewardedAdsService {
       const adMobUnitId = import.meta.env.VITE_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
 
       if (isNative && adMobUnitId) {
-        console.log("[RewardedAdsService] Platform: Native. Selecting AdMobRewardedProvider.");
-        this.currentProvider = new AdMobRewardedProvider();
+        console.log("[RewardedAdsService] Platform: Native. Lazily loading AdMobRewardedProvider.");
+        // Dynamic import ensures this code is never bundled/loaded on Vercel/Web
+        import("./providers/AdMobRewardedProvider").then(({ AdMobRewardedProvider }) => {
+          this.currentProvider = new AdMobRewardedProvider();
+          this.preloadRewardedAd();
+        });
       } else {
         console.log("[RewardedAdsService] Platform: Web/PWA. Selecting DemoAdProvider.");
         this.currentProvider = new DemoAdProvider();
+        this.preloadRewardedAd();
       }
-
-      // Preload immediately if provider is set
-      this.preloadRewardedAd();
     } catch (err) {
       console.error("[RewardedAdsService] Initialization failed, falling back to Demo.", err);
       this.currentProvider = new DemoAdProvider();
@@ -278,7 +281,7 @@ export class RewardedAdsService {
 
   public getPlatformDetails() {
     return {
-      isNative: (window as any).Capacitor?.isNative || (window as any).android !== undefined,
+      isNative: Capacitor.isNativePlatform(),
       hasAdMobEnv: !!import.meta.env.VITE_ADMOB_REWARDED_AD_UNIT_ID_ANDROID && !!import.meta.env.VITE_ADMOB_APP_ID_ANDROID,
       provider: this.getProviderName()
     };
