@@ -5,6 +5,7 @@ import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
 import { APP_URL, getAuthRedirectUrl, IS_LOCALHOST } from "@/config/app";
 import { grantTickets } from "@/lib/grantTickets";
 import { dailyRewardService } from "@/services/DailyRewardService";
+import { DailyGiftCelebrationModal } from "@/components/DailyGiftCelebrationModal";
 
 export interface UserData {
   id: string;
@@ -47,6 +48,8 @@ interface UserContextType {
   authMode: "phone" | "email";
   setAuthMode: (mode: "phone" | "email") => void;
   updateLastSeen: () => Promise<void>;
+  showDailyGiftModal: boolean;
+  setShowDailyGiftModal: (show: boolean) => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -85,6 +88,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [showLoginSheet, setShowLoginSheet] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [authMode, setAuthMode] = useState<"phone" | "email">("phone");
+  const [showDailyGiftModal, setShowDailyGiftModal] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -243,8 +247,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const initSession = async () => {
       try {
+        console.log('[dailyGift] initSession starting');
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
+        console.log('[dailyGift] initSession session found:', !!session);
         await applySession(session);
       } catch (err) {
         console.warn("Session restore error:", err);
@@ -311,13 +317,32 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Daily Welcome Reward Check
   useEffect(() => {
+    console.log('[dailyGift] useEffect trigger', { hasUserId: !!user?.id, userId: user?.id });
     if (user?.id) {
+      console.log('[dailyGift] starting async claim process for user:', user.id);
       (async () => {
-        const res = await dailyRewardService.checkAndClaimDailyReward(user.id);
-        if (res?.success && res.granted_ticket_count > 0) {
-          console.log('[dailyGift] refreshing user balance');
-          await refreshUser();
-          console.log('[dailyGift] updated ticket count');
+        try {
+          const res = await dailyRewardService.checkAndClaimDailyReward(user.id);
+          console.log('[dailyGift] checkAndClaimDailyReward finished with result:', res);
+          
+            if (res?.success && res.granted_ticket_count > 0) {
+              console.log('[dailyGift] reward granted branch entered');
+              console.log('[dailyGift] calling refreshUser()');
+              await refreshUser();
+              console.log('[dailyGift] refreshUser complete');
+              
+              // Trigger the premium celebration modal
+              setShowDailyGiftModal(true);
+              
+              /* Note: We keep the toast as a fallback/additional confirmation 
+                 but the modal is the primary celebration now. */
+              const { toast } = await import("sonner");
+              toast.success('Selamat datang kembali 🎁 Hadiah harian kamu sudah masuk ke akun!');
+            } else {
+            console.log('[dailyGift] reward NOT granted (already claimed or error)', res);
+          }
+        } catch (err) {
+          console.error('[dailyGift] async claim process failed', err);
         }
       })();
     }
@@ -461,9 +486,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         authMode,
         setAuthMode,
         updateLastSeen,
+        showDailyGiftModal,
+        setShowDailyGiftModal,
       }}
     >
       {children}
+      <DailyGiftCelebrationModal 
+        visible={showDailyGiftModal}
+        userName={user?.nickname?.split(" ")[0] || "Teman"}
+        onClose={() => setShowDailyGiftModal(false)}
+      />
     </UserContext.Provider>
   );
 };

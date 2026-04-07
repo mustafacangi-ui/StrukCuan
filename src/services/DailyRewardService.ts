@@ -21,12 +21,17 @@ export class DailyRewardService {
    * Should be triggered once per session/mount.
    */
   public async checkAndClaimDailyReward(userId: string | undefined): Promise<{ success: boolean; already_claimed: boolean; granted_ticket_count: number } | null> {
-    if (!userId || this.isProcessing) return null;
+    console.log('[dailyGift] checkAndClaimDailyReward entry', { userId, isProcessing: this.isProcessing });
+    if (!userId || this.isProcessing) {
+        if (this.isProcessing) console.log('[dailyGift] skip: already processing');
+        return null;
+    }
 
     try {
       this.isProcessing = true;
       console.log('[dailyGift] checking eligibility');
 
+      console.log('[dailyGift] calling rpc');
       const { data, error } = await supabase.rpc('claim_daily_welcome_reward', {
           p_user_id: userId
       });

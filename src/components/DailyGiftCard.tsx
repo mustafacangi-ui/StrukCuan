@@ -18,12 +18,14 @@ export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
   useEffect(() => {
     const checkStatus = async () => {
       console.log('[dailyGift] refreshing Daily Gift card state');
+      console.log('[dailyGift] updating DailyGiftCard state');
       if (!userId) {
         setIsClaimed(true);
         setLoading(false);
         return;
       }
       const claimed = await dailyRewardService.isAlreadyClaimedToday(userId);
+      console.log('[dailyGift] isAlreadyClaimedToday result', claimed);
       setIsClaimed(claimed);
       setLoading(false);
     };
