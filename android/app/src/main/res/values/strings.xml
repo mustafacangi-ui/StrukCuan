@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">StrukCuan</string>
+    <string name="title_activity_main">StrukCuan</string>
+    <string name="package_name">com.strukcuan.app</string>
+    <string name="custom_url_scheme">com.strukcuan.app</string>
+</resources>

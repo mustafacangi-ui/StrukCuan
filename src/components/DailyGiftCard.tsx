@@ -39,23 +39,23 @@ export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
     <div
       className={`${CARD_BASE} relative overflow-hidden transition-all duration-300 hover:scale-[1.01]`}
       style={{
-        background: isClaimed 
-          ? "rgba(20,20,30,0.4)" 
+        background: isClaimed
+          ? "rgba(20,20,30,0.4)"
           : "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(236,72,153,0.1) 100%)",
-        border: isClaimed 
-          ? "1px solid rgba(255,255,255,0.05)" 
+        border: isClaimed
+          ? "1px solid rgba(255,255,255,0.05)"
           : "1px solid rgba(139,92,246,0.3)"
       }}
     >
       <div className="flex items-center gap-4 relative z-10">
-        <div 
+        <div
           className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform ${!isClaimed ? 'animate-bounce-slow' : ''}`}
           style={{
-            background: isClaimed 
-              ? "rgba(255,255,255,0.05)" 
+            background: isClaimed
+              ? "rgba(255,255,255,0.05)"
               : "rgba(139,92,246,0.2)",
-            border: isClaimed 
-              ? "1px solid rgba(255,255,255,0.1)" 
+            border: isClaimed
+              ? "1px solid rgba(255,255,255,0.1)"
               : "1px solid rgba(139,92,246,0.4)"
           }}
         >
@@ -71,8 +71,8 @@ export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
             {isClaimed ? "Hadiah harian sudah diambil 🎁" : "Hadiah gratis hari ini tersedia"}
           </h3>
           <p className="text-[11px] text-white/40 mt-0.5 font-medium">
-            {isClaimed 
-              ? "Kembali lagi besok untuk hadiah berikutnya." 
+            {isClaimed
+              ? "Kembali lagi besok untuk hadiah berikutnya."
               : "+1 hadiah harian"}
           </p>
         </div>
@@ -87,7 +87,7 @@ export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
 
       {!isClaimed && (
         <div className="absolute top-0 right-0 p-2">
-            <div className="w-2 h-2 rounded-full bg-[#ec4899] animate-ping" />
+          <div className="w-2 h-2 rounded-full bg-[#ec4899] animate-ping" />
         </div>
       )}
     </div>

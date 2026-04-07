@@ -60,16 +60,56 @@ export const useUser = () => {
   return ctx;
 };
 
-async function upsertProfile(userId: string, nickname: string, phone?: string, email?: string) {
-  const { error } = await supabase.from("survey_profiles").upsert(
-    {
-      user_id: userId,
-      nickname: nickname,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  );
-  if (error) console.error("Profile upsert error:", error);
+async function syncUserProfile(userId: string, nickname: string, phone?: string, email?: string) {
+  console.log(`[profileSync] starting sync for user: ${userId}`);
+  
+  try {
+    const now = new Date().toISOString();
+    
+    // 1. Sync 'profiles' (Admin relationship mapping)
+    const { error: profileErr } = await supabase.from("profiles").upsert(
+      {
+        user_id: userId,
+        nickname: nickname,
+        phone: phone || null,
+        email: email || null,
+        updated_at: now,
+      },
+      { onConflict: "user_id" }
+    );
+    if (profileErr) console.warn("[profileSync] profiles table error:", profileErr.message);
+
+    // 2. Sync 'survey_profiles' (Legacy tickets/cuan)
+    const { error: surveyErr } = await supabase.from("survey_profiles").upsert(
+      {
+        user_id: userId,
+        nickname: nickname,
+        updated_at: now,
+      },
+      { onConflict: "user_id" }
+    );
+    if (surveyErr) console.warn("[profileSync] survey_profiles table error:", surveyErr.message);
+
+    // 3. Sync 'user_stats' (Primary Source for Admin Metrics & Dashboard)
+    // We use a partial upsert here to avoid overwriting existing tickets/level
+    const { error: statsErr } = await supabase.from("user_stats").upsert(
+      {
+        user_id: userId,
+        nickname: nickname,
+        // We don't set tickets/cuan here to allow defaults or existing values to persist
+      },
+      { onConflict: "user_id" }
+    );
+    if (statsErr) console.warn("[profileSync] user_stats table error:", statsErr.message);
+
+    if (!profileErr && !surveyErr && !statsErr) {
+      console.log("[profileSync] profile sync success for all tables");
+    } else {
+      console.warn("[profileSync] profile sync partially failed or tables were missing");
+    }
+  } catch (err) {
+    console.error("[profileSync] profile sync error:", err);
+  }
 }
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
@@ -234,7 +274,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const u = session.user as SupabaseUser & { phone?: string };
         const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
         if (displayName || u.email) {
-          await upsertProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
+          await syncUserProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
         }
         await applyPendingCountry(u.id);
         processReferral(u.id).catch(() => {});
@@ -272,6 +312,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             .catch(() => {})
             .then(() => {
               processReferral(session.user.id).catch(() => {});
+              const meta = session.user.user_metadata;
+              const nickname = meta?.display_name ?? meta?.nickname ?? meta?.full_name ?? meta?.name ?? (session.user.email ? "User" : "");
+              if (nickname || session.user.email) {
+                syncUserProfile(session.user.id, nickname || "User", session.user.phone ?? undefined, session.user.email ?? undefined);
+              }
               return buildUserFromSession(session);
             })
             .then((userData) => {
@@ -390,10 +435,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     });
     if (error) throw error;
     if (data.session?.user?.user_metadata?.nickname) {
-      await upsertProfile(
+      await syncUserProfile(
         data.session.user.id,
         data.session.user.user_metadata.nickname,
-        data.session.user.phone ?? undefined
+        data.session.user.phone ?? undefined,
+        data.session.user.email ?? undefined
       );
     }
   }, []);
@@ -427,7 +473,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProfile = useCallback(async (nickname: string) => {
     if (!session?.user) return;
-    await upsertProfile(session.user.id, nickname);
+    await syncUserProfile(session.user.id, nickname, session.user.phone ?? undefined, session.user.email ?? undefined);
     setUser((prev) => (prev ? { ...prev, nickname } : null));
   }, [session?.user]);
 

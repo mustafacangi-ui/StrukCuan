@@ -4,6 +4,8 @@ import { AdRewardInfo, AdError } from "./types";
 import { DemoAdProvider } from "./providers/DemoAdProvider";
 import { AdMobRewardedProvider } from "./providers/AdMobRewardedProvider";
 
+import { Capacitor } from "@capacitor/core";
+
 export class RewardedAdsService {
   private static instance: RewardedAdsService;
   private currentProvider: IRewardedAdProvider | null = null;
@@ -29,8 +31,8 @@ export class RewardedAdsService {
     this.isInitializing = true;
 
     try {
-      // Platform Detection: Check for Capacitor or Android native bridge
-      const isNative = (window as any).Capacitor?.isNative || (window as any).android !== undefined;
+      // Platform Detection: Use Capacitor for robust native vs web check
+      const isNative = Capacitor.isNativePlatform();
       const adMobUnitId = import.meta.env.VITE_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
 
       if (isNative && adMobUnitId) {
