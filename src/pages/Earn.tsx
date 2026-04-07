@@ -138,6 +138,14 @@ export default function Earn() {
   const isRedirecting = !authLoading && !isOnboarded;
 
   const handleWatchAd = useCallback(() => {
+    console.log('[Ads/EarnParentTrace] handleWatchAd clicked');
+    console.log('[Ads/EarnParentTrace] Parent state:', {
+        adsWatched: adsWatched ?? 0,
+        weeklyTickets,
+        isWeeklyLimitReached,
+        adReady,
+        modalOpen: showModal
+    });
     try {
       if (!user?.id) {
         toast.error(t("auth.mustLogin"));
@@ -326,6 +334,15 @@ export default function Earn() {
         </div>
 
         {/* Bölüm 1: WATCH ADS (Üst) */}
+        {(() => {
+             console.log('[Ads/EarnParentTrace] Render Props:', {
+                 watched: adsWatched ?? 0,
+                 isWeeklyLimitReached,
+                 modalOpen: showModal,
+                 isReady: adReady
+             });
+             return null;
+        })()}
         <WatchAdsCard
           adsWatched={adsWatched ?? 0}
           maxAds={MAX_ADS_PER_DAY}

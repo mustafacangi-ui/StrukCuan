@@ -28,14 +28,26 @@ export default function WatchAdsCard({
   const isPlaying = rewardedAds.isPlaying();
   const isLoading = showModal;
   
-  const isDisabled = isFull || isWeeklyLimitReached || isLoading || isPlaying || !isReady;
+  // BYPASS requested: Remove isWeeklyLimitReached from the final check for debugging
+  const finalDisabled = isFull || isLoading || isPlaying || !isReady;
 
-  console.log('--- [WatchAdsCard] Debug ---');
-  console.log('currentDailyCount:', watched);
+  console.log('--- [WatchAdsCard] Trace ---');
+  console.log('watchedToday (from props):', adsWatched);
+  console.log('currentDailyCount (internal):', watched);
+  console.log('maxAds:', maxAds);
+  console.log('isFull:', isFull);
+  console.log('isWeeklyLimitReached (PASSIVE):', isWeeklyLimitReached);
   console.log('isLoading:', isLoading);
   console.log('isPlaying:', isPlaying);
   console.log('isReady:', isReady);
-  console.log('isDisabled final value:', isDisabled);
+  
+  console.log('[WatchAdsButton] finalDisabled', {
+    watchedToday: watched,
+    isLoading,
+    isPlaying,
+    isReady,
+    finalDisabled
+  });
   console.log('----------------------------');
 
   const progressPct = Math.min(100, (watched / maxAds) * 100);
@@ -217,7 +229,7 @@ export default function WatchAdsCard({
       <button
         type="button"
         onClick={handleClick}
-        disabled={isDisabled}
+        disabled={finalDisabled} /* [DEBUG] Set to false to force-enable */
         className="
           relative z-10 w-full py-3.5 rounded-2xl
           font-display font-bold text-sm text-white tracking-wide
@@ -228,7 +240,7 @@ export default function WatchAdsCard({
           transition-all duration-200 ease-out
         "
         style={
-          !isDisabled
+          !finalDisabled
             ? {
                 boxShadow: "0 0 24px rgba(236,72,153,0.55), 0 4px 12px rgba(0,0,0,0.4)",
                 animation: "unified-pulse 2s ease-in-out infinite",
