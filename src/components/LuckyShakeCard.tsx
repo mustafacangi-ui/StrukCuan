@@ -35,6 +35,7 @@ export default function LuckyShakeCard({
 }: LuckyShakeCardProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { user, updateLastSeen } = useUser();
   const [shakeLoading, setShakeLoading] = useState(false);
   const [shakeModalOpen, setShakeModalOpen] = useState(false);
   const [shakeWonTickets, setShakeWonTickets] = useState<number | null>(null);
@@ -72,6 +73,10 @@ export default function LuckyShakeCard({
     }
   }, [countdownReady, userStats]);
 
+  useEffect(() => {
+    console.log('[luckyShake] component mounted', { userId, hasStats: !!userStats });
+  }, []);
+
   const triggerShakeAnimation = () => {
     setIsShaking(true);
     setProgressFill(true);
@@ -79,18 +84,27 @@ export default function LuckyShakeCard({
   };
 
   const handleShake = useCallback(async () => {
-    if (shakeLoading || !userId) return;
+    console.log('[luckyShake] handleShake called', { shakeLoading, userId, shakeRightAvailable });
+    if (shakeLoading) {
+      console.log('[luckyShake] early return: already loading');
+      return;
+    }
+    if (!userId) {
+      console.log('[luckyShake] early return: no userId');
+      return;
+    }
     if (!shakeRightAvailable) {
+      console.log('[luckyShake] early return: shake not available');
       toast.error(t("shake.toast.waitCountdown"));
       return;
     }
 
-    console.log('[luckyShake] started');
+    console.log('[luckyShake] started - valid state');
     setShakeLoading(true);
     setShakeWonTickets(null);
     triggerShakeAnimation();
 
-    const { updateLastSeen } = useUser();
+    // No longer calling useUser() here!
     
     // 8-second safety timeout
     const timeoutId = setTimeout(() => {
@@ -146,21 +160,40 @@ export default function LuckyShakeCard({
   });
 
   const handleOpenShake = async () => {
+    console.log('[luckyShake] handleOpenShake clicked', { userId, isWeeklyLimitReached, shakeRightAvailable });
     try {
-      if (!userId) { toast.error(t("shake.toast.loginToPlay")); return; }
-      if (isWeeklyLimitReached) { toast.error(t("shake.toast.weeklyLimit")); return; }
+      if (!userId) { 
+        console.log('[luckyShake] open error: no userId');
+        toast.error(t("shake.toast.loginToPlay")); 
+        return; 
+      }
+      if (isWeeklyLimitReached) { 
+        console.log('[luckyShake] open error: weekly limit reached');
+        toast.error(t("shake.toast.weeklyLimit")); 
+        return; 
+      }
       if (!shakeRightAvailable) {
+        console.log('[luckyShake] open error: shake not available');
         toast.error("Next shake unlocks at midnight Jakarta time");
         return;
       }
-      if (!isShakeSupported()) { toast.error(t("shake.toast.unsupportedDevice")); return; }
+      if (!isShakeSupported()) { 
+        console.log('[luckyShake] open error: unsupported device');
+        toast.error(t("shake.toast.unsupportedDevice")); 
+        return; 
+      }
       const granted = await requestShakePermission();
-      if (!granted) { toast.error(t("shake.toast.sensorPermission")); return; }
+      if (!granted) { 
+        console.log('[luckyShake] open error: permission denied');
+        toast.error(t("shake.toast.sensorPermission")); 
+        return; 
+      }
+      console.log('[luckyShake] opening modal');
       setShakeWonTickets(null);
       setProgressFill(false);
       setShakeModalOpen(true);
     } catch (err) {
-      console.error("[LuckyShake] open error:", err);
+      console.error("[luckyShake] open error catch:", err);
       toast.error(t("shake.toast.failed"));
     }
   };
@@ -475,6 +508,28 @@ export default function LuckyShakeCard({
                   >
                     {t("common.cancel")}
                   </button>
+                </div>
+
+                {/* DEBUG UI TEXT */}
+                <div className="mt-4 pt-4 border-t border-white/5 space-y-1">
+                   <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Debug Info</p>
+                   <div className="flex flex-wrap justify-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${userId ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                         UID: {userId ? 'YES' : 'NO'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${shakeLoading ? 'bg-blue-500/20 text-blue-400 animate-pulse' : 'bg-zinc-800 text-white/40'}`}>
+                         LOADING: {shakeLoading ? 'YES' : 'NO'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${shakeRightAvailable ? 'bg-purple-500/20 text-purple-400' : 'bg-zinc-800 text-white/40'}`}>
+                         AVAIL: {shakeRightAvailable ? 'YES' : 'NO'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${isWeeklyLimitReached ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                         WEEKLY_LIMIT: {isWeeklyLimitReached ? 'YES' : 'NO'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-white/40">
+                          Jakarta Date Check: {userStats?.shake_last_at ? 'SET' : 'NONE'}
+                      </span>
+                   </div>
                 </div>
               </>
             )}
