@@ -312,9 +312,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   // Daily Welcome Reward Check
   useEffect(() => {
     if (user?.id) {
-      dailyRewardService.checkAndClaimDailyReward(user.id);
+      (async () => {
+        const res = await dailyRewardService.checkAndClaimDailyReward(user.id);
+        if (res?.success && res.granted_ticket_count > 0) {
+          console.log('[dailyGift] refreshing user balance');
+          await refreshUser();
+          console.log('[dailyGift] updated ticket count');
+        }
+      })();
     }
   }, [user?.id]);
+  // Note: refreshUser depends on search, so we add it to deps for safety, 
+  // but we must be careful not to create a loop.
+  // Actually refreshUser uses buildUserFromSession which is stable.
 
   const updateLastSeen = useCallback(async () => {
     if (!session?.user?.id) return;

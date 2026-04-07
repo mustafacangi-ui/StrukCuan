@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Gift, CheckCircle2, Clock } from "lucide-react";
 import { dailyRewardService } from "@/services/DailyRewardService";
 import { CARD_BASE } from "@/lib/designTokens";
+import { useUser } from "@/contexts/UserContext";
 
 interface DailyGiftCardProps {
   userId: string | undefined;
@@ -10,11 +11,13 @@ interface DailyGiftCardProps {
 
 export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
   const { t } = useTranslation();
+  const { user } = useUser();
   const [isClaimed, setIsClaimed] = useState(true); // Default to true while loading
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkStatus = async () => {
+      console.log('[dailyGift] refreshing Daily Gift card state');
       if (!userId) {
         setIsClaimed(true);
         setLoading(false);
@@ -26,10 +29,7 @@ export default function DailyGiftCard({ userId }: DailyGiftCardProps) {
     };
 
     checkStatus();
-    
-    // Refresh status if we hear a "reward granted" event (or just rely on the service's toast/UI refresh elsewhere)
-    // For now we just check on mount.
-  }, [userId]);
+  }, [userId, user?.tiket]); // Re-sync with Daily Gift card state whenever ticket balance changes
 
   if (loading && userId) return null;
 

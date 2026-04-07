@@ -20,8 +20,8 @@ export class DailyRewardService {
    * Automatically checks eligibility and claims the daily login reward (+1 ticket).
    * Should be triggered once per session/mount.
    */
-  public async checkAndClaimDailyReward(userId: string | undefined): Promise<void> {
-    if (!userId || this.isProcessing) return;
+  public async checkAndClaimDailyReward(userId: string | undefined): Promise<{ success: boolean; already_claimed: boolean; granted_ticket_count: number } | null> {
+    if (!userId || this.isProcessing) return null;
 
     try {
       this.isProcessing = true;
@@ -31,9 +31,11 @@ export class DailyRewardService {
           p_user_id: userId
       });
 
+      console.log('[dailyGift] rpc response', data);
+
       if (error) {
         console.error('[dailyGift] error', error);
-        return;
+        return null;
       }
 
       const res = data as { success: boolean; already_claimed: boolean; granted_ticket_count: number };
@@ -49,8 +51,11 @@ export class DailyRewardService {
       } else if (res.already_claimed) {
         console.log('[dailyGift] already claimed today');
       }
+
+      return res;
     } catch (err) {
       console.error('[dailyGift] error', err);
+      return null;
     } finally {
       this.isProcessing = false;
     }
