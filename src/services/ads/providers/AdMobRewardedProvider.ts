@@ -2,13 +2,13 @@ import { IRewardedAdProvider } from "../IAdProvider";
 import { AdProviderName, AdRewardInfo, AdError, AdEventMetadata } from "../types";
 import { Capacitor } from "@capacitor/core";
 
-// Use import type to avoid bundling the actual package on web/Vercel
-import type { AdMobRewardItem, RewardAdOptions } from "@capacitor-community/admob";
+// No static imports of native packages to prevent Vercel build failures.
+// All native functionality is loaded dynamically inside methods.
 
 /**
  * AdMobRewardedProvider: 
  * Implementation for Native Android using Capacitor Community AdMob SDK.
- * Uses dynamic imports to prevent Vercel build failures.
+ * Uses PURE dynamic imports to prevent Vercel build failures.
  */
 export class AdMobRewardedProvider implements IRewardedAdProvider {
   readonly name: AdProviderName = "admob";
@@ -23,7 +23,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
     if (!Capacitor.isNativePlatform()) return;
     
     try {
-      // Dynamic import to avoid Vercel "Module not found" errors
+      // Direct dynamic import avoids Vercel resolution errors
       const { AdMob } = await import("@capacitor-community/admob");
       
       await AdMob.initialize({
@@ -52,7 +52,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
       
       const { AdMob } = await import("@capacitor-community/admob");
       
-      const options: RewardAdOptions = {
+      const options = {
         adId: this.adUnitId,
       };
 
@@ -84,21 +84,21 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
       console.log("[Ads/AdMob] [rewardedAd] showing native video");
       
       const { AdMob } = await import("@capacitor-community/admob");
-      const reward: AdMobRewardItem = await AdMob.showRewardVideoAd();
+      const reward = await AdMob.showRewardVideoAd();
       
       this.isLoaded = false; // Reset after show
       
       if (reward) {
         console.log("[Ads/AdMob] [rewardedAd] rewardGranted", reward);
         onReward({ 
-          ticketsAdded: reward.amount || 1, 
+          ticketsAdded: (reward as any).amount || 1, 
           dailyTotal: 0,
           metadata: {
               stepCount: 1,
               completedSteps: 1,
               closeReason: 'completed',
               provider_name: 'admob',
-              native_reward_type: reward.type
+              native_reward_type: (reward as any).type
           } as AdEventMetadata
         });
       }
