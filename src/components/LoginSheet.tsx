@@ -8,6 +8,8 @@ import { GoogleIcon } from "@/components/SocialIcons";
 
 type AuthMethod = "phone" | "email";
 
+const IS_PHONE_AUTH_ENABLED = false;
+
 const LoginSheet = () => {
   const { t } = useTranslation();
   const {
@@ -18,7 +20,7 @@ const LoginSheet = () => {
     loginWithEmail,
     loginWithGoogle,
   } = useUser();
-  const [authMethod, setAuthMethod] = useState<AuthMethod>("phone");
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(IS_PHONE_AUTH_ENABLED ? "phone" : "email");
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -206,31 +208,40 @@ const LoginSheet = () => {
         </div>
 
         {/* Auth method toggle */}
-        <div className="flex rounded-xl border border-border bg-secondary/30 p-1 mb-4">
-          <button
-            type="button"
-            onClick={() => { setAuthMethod("phone"); setError(""); setOtpSent(false); setOtp(""); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              authMethod === "phone" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Phone size={16} />
-            {t("auth.phoneNumber")}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setAuthMethod("email"); setError(""); setOtpSent(false); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              authMethod === "email" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Mail size={16} />
-            {t("auth.email")}
-          </button>
-        </div>
+        {IS_PHONE_AUTH_ENABLED && (
+          <div className="flex rounded-xl border border-border bg-secondary/30 p-1 mb-4">
+            <button
+              type="button"
+              onClick={() => { setAuthMethod("phone"); setError(""); setOtpSent(false); setOtp(""); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                authMethod === "phone" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Phone size={16} />
+              {t("auth.phoneNumber")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMethod("email"); setError(""); setOtpSent(false); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                authMethod === "email" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Mail size={16} />
+              {t("auth.email")}
+            </button>
+          </div>
+        )}
+
+        {!IS_PHONE_AUTH_ENABLED && (
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Mail size={16} className="text-primary" />
+            <span className="text-sm font-medium text-foreground">{t("auth.email")}</span>
+          </div>
+        )}
 
         {/* Phone OTP flow */}
-        {authMethod === "phone" && (
+        {IS_PHONE_AUTH_ENABLED && authMethod === "phone" && (
           <div className="space-y-3 mb-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t("auth.phoneNumber")}</label>
