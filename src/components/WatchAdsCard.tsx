@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
+import { rewardedAds } from "@/services/ads/RewardedAdsService";
 
 interface WatchAdsCardProps {
   adsWatched: number;
@@ -8,6 +9,7 @@ interface WatchAdsCardProps {
   isWeeklyLimitReached: boolean;
   showModal: boolean;
   onWatchAd: () => void;
+  isReady: boolean;
 }
 
 export default function WatchAdsCard({
@@ -16,14 +18,27 @@ export default function WatchAdsCard({
   isWeeklyLimitReached,
   showModal,
   onWatchAd,
+  isReady,
 }: WatchAdsCardProps) {
   const { t } = useTranslation();
   const [isProgressShaking, setIsProgressShaking] = useState(false);
 
   const watched = adsWatched ?? 0;
   const isFull = watched >= maxAds;
+  const isPlaying = rewardedAds.isPlaying();
+  const isLoading = showModal;
+  
+  const isDisabled = isFull || isWeeklyLimitReached || isLoading || isPlaying || !isReady;
+
+  console.log('--- [WatchAdsCard] Debug ---');
+  console.log('currentDailyCount:', watched);
+  console.log('isLoading:', isLoading);
+  console.log('isPlaying:', isPlaying);
+  console.log('isReady:', isReady);
+  console.log('isDisabled final value:', isDisabled);
+  console.log('----------------------------');
+
   const progressPct = Math.min(100, (watched / maxAds) * 100);
-  const isDisabled = isFull || isWeeklyLimitReached || showModal;
 
   const handleClick = () => {
     // Shake the liquid even when full / already disabled to give feedback

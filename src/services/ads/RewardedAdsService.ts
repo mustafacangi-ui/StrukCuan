@@ -11,6 +11,7 @@ export class RewardedAdsService {
   private currentAdViewId: string | null = null;
   private adStartedAt: number | null = null;
   private currentUserId: string | null = null;
+  private _isPlaying: boolean = false;
 
   private constructor() {
     this.initialize();
@@ -78,11 +79,17 @@ export class RewardedAdsService {
       return;
     }
 
+    if (this._isPlaying) {
+      console.warn("[RewardedAdsService] Ad is already playing.");
+      return;
+    }
+
     if (!this.currentProvider.isReady()) {
       onError({ code: 'NOT_READY', message: 'Ad not yet preloaded' });
       return;
     }
 
+    this._isPlaying = true;
     // Capture current user
     const { data: { user } } = await supabase.auth.getUser();
     this.currentUserId = user?.id || null;
@@ -226,6 +233,15 @@ export class RewardedAdsService {
   private resetSession() {
     this.adStartedAt = null;
     this.currentAdViewId = null;
+    this._isPlaying = false;
+  }
+
+  public isReady(): boolean {
+    return this.currentProvider?.isReady() || false;
+  }
+
+  public isPlaying(): boolean {
+    return this._isPlaying;
   }
 
   /**

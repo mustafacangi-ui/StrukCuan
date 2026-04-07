@@ -16,11 +16,26 @@ export class DemoAdProvider implements IRewardedAdProvider {
   }
 
   public async preload(): Promise<void> {
-    console.log("[Ads/Demo] Preloading...");
-    // Simulate short network delay
+    if (this.isAdReady) return;
+    
+    console.log('[rewardedAd] preload started');
+    
+    // Fail-safe: Mark as ready after 3 seconds even if loading hangs
+    const fallbackTimer = setTimeout(() => {
+        if (!this.isAdReady) {
+            this.isAdReady = true;
+            console.log('[rewardedAd] preload forced (fallback timeout)');
+            console.log('[rewardedAd] ready=true');
+        }
+    }, 3000);
+
+    // Simulate loading
     await new Promise((res) => setTimeout(res, 800));
+    
+    clearTimeout(fallbackTimer);
     this.isAdReady = true;
-    console.log("[Ads/Demo] Ad preloaded and ready.");
+    console.log('[rewardedAd] preload completed');
+    console.log('[rewardedAd] ready=true');
   }
 
   public async show(

@@ -55,6 +55,7 @@ export default function Earn() {
   const [shakeCountdown, setShakeCountdown] = useState(DEFAULT_COUNTDOWN);
   const [shakeCountdownReady, setShakeCountdownReady] = useState(false);
   const [showEntryAnimation, setShowEntryAnimation] = useState(false);
+  const [adReady, setAdReady] = useState(rewardedAds.isReady());
   const prevTicketsRef = useRef<number>(totalTickets);
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
@@ -87,6 +88,17 @@ export default function Earn() {
     };
     tick();
     const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Preload ads and track readiness
+  useEffect(() => {
+    rewardedAds.preloadRewardedAd();
+    
+    const id = setInterval(() => {
+      setAdReady(rewardedAds.isReady());
+    }, 1000);
+    
     return () => clearInterval(id);
   }, []);
 
@@ -320,6 +332,7 @@ export default function Earn() {
           isWeeklyLimitReached={isWeeklyLimitReached}
           showModal={showModal}
           onWatchAd={handleWatchAd}
+          isReady={adReady}
         />
 
         {/* Bölüm 2: SURVEYS (Orta) */}
