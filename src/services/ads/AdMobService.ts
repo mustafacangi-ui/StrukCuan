@@ -2,7 +2,6 @@ import { Capacitor } from "@capacitor/core";
 
 /**
  * AdMob Official Test IDs
- * DO NOT use these in production. Replace with real Unit IDs from AdMob dashboard.
  */
 export const ADMOB_TEST_IDS = {
   ANDROID: {
@@ -10,6 +9,19 @@ export const ADMOB_TEST_IDS = {
     BANNER: "ca-app-pub-3940256099942544/6300978111",
     INTERSTITIAL: "ca-app-pub-3940256099942544/1033173712",
     REWARDED: "ca-app-pub-3940256099942544/5224354917",
+  }
+};
+
+/**
+ * AdMob Production IDs
+ */
+export const ADMOB_PROD_IDS = {
+  ANDROID: {
+    APP_ID: "ca-app-pub-1526437909347510~8582512886",
+    // Keep Banners and Interstitial on Test IDs for now as per instructions
+    BANNER: ADMOB_TEST_IDS.ANDROID.BANNER,
+    INTERSTITIAL: ADMOB_TEST_IDS.ANDROID.INTERSTITIAL,
+    REWARDED: "ca-app-pub-1526437909347510/8390941190",
   }
 };
 
@@ -29,6 +41,15 @@ export class AdMobService {
   }
 
   /**
+   * Helper to get correct Ad Unit ID based on environment
+   */
+  private getUnitId(type: 'BANNER' | 'INTERSTITIAL' | 'REWARDED'): string {
+    const isDev = import.meta.env.DEV;
+    const ids = isDev ? ADMOB_TEST_IDS.ANDROID : ADMOB_PROD_IDS.ANDROID;
+    return ids[type];
+  }
+
+  /**
    * Initialize AdMob SDK
    */
   public async initialize() {
@@ -40,11 +61,13 @@ export class AdMobService {
 
     try {
       const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
+      const isDev = import.meta.env.DEV;
+      
       await AdMob.initialize({
-        initializeForTesting: true,
+        initializeForTesting: isDev,
       });
       this.isInitialized = true;
-      console.log("[AdMob] initialize");
+      console.log(`[AdMob] initialize (mode: ${isDev ? 'DEBUG/TEST' : 'PRODUCTION'})`);
     } catch (err: any) {
       console.error("[AdMob] error: initialize failed", err);
     }
@@ -61,7 +84,7 @@ export class AdMobService {
       const { AdMob, BannerAdPosition, BannerAdSize } = await import(/* @vite-ignore */ ADMOB_PKG);
       
       const options = {
-        adId: ADMOB_TEST_IDS.ANDROID.BANNER,
+        adId: this.getUnitId('BANNER'),
         adSize: BannerAdSize.BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,
@@ -98,7 +121,7 @@ export class AdMobService {
     try {
       const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
       await AdMob.prepareInterstitial({
-        adId: ADMOB_TEST_IDS.ANDROID.INTERSTITIAL,
+        adId: this.getUnitId('INTERSTITIAL'),
       });
       console.log("[AdMob] interstitial prepared");
     } catch (err: any) {
@@ -130,7 +153,7 @@ export class AdMobService {
     try {
       const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
       await AdMob.prepareRewardVideoAd({
-        adId: ADMOB_TEST_IDS.ANDROID.REWARDED,
+        adId: this.getUnitId('REWARDED'),
       });
       console.log("[AdMob] rewarded prepared");
     } catch (err: any) {
