@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS public.ad_daily_stats (
     user_id text NOT NULL,
     day date NOT NULL DEFAULT current_date,
     view_count integer NOT NULL DEFAULT 0,
+    reward_count integer NOT NULL DEFAULT 0,
     total_revenue_est numeric NOT NULL DEFAULT 0,
     last_view_at timestamptz,
     PRIMARY KEY (user_id, day)
@@ -103,10 +104,11 @@ BEGIN
     UPDATE public.ad_views SET reward_granted = true WHERE id = p_ad_view_id;
 
     -- b) Update Daily Stats
-    INSERT INTO public.ad_daily_stats (user_id, day, view_count, total_revenue_est, last_view_at)
-    VALUES (p_user_id, current_date, 1, v_ad_record.revenue_estimate, now())
+    INSERT INTO public.ad_daily_stats (user_id, day, view_count, reward_count, total_revenue_est, last_view_at)
+    VALUES (p_user_id, current_date, 1, 1, v_ad_record.revenue_estimate, now())
     ON CONFLICT (user_id, day) DO UPDATE SET
         view_count = public.ad_daily_stats.view_count + 1,
+        reward_count = public.ad_daily_stats.reward_count + 1,
         total_revenue_est = public.ad_daily_stats.total_revenue_est + v_ad_record.revenue_estimate,
         last_view_at = now();
 
@@ -125,5 +127,55 @@ BEGIN
         'tickets_added', 1, 
         'daily_total', v_daily_count + 1
     );
+END;
+$$;
+
+-- 5. ADMIN HELPER: get_latest_ad_logs
+CREATE OR REPLACE FUNCTION public.get_latest_ad_logs(p_limit int DEFAULT 50)
+RETURNS TABLE (
+    id uuid,
+    user_id text,
+    nickname text,
+    provider_name text,
+    status text,
+    reward_granted boolean,
+    completion_duration_seconds integer,
+    ad_started_at timestamptz,
+    metadata jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        v.id,
+        v.user_id,
+        p.nickname,
+        v.provider_name,
+        v.status,
+        v.reward_granted,
+        v.completion_duration_seconds,
+        v.ad_started_at,
+        v.metadata
+    FROM public.ad_views v
+    LEFT JOIN public.profiles p ON v.user_id = p.user_id
+    ORDER BY v.ad_started_at DESC
+    LIMIT p_limit;
+END;
+$$;
+
+-- 6. STATS HELPER: increment_ad_view_count
+CREATE OR REPLACE FUNCTION public.increment_ad_view_count(p_user_id text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    INSERT INTO public.ad_daily_stats (user_id, day, view_count, last_view_at)
+    VALUES (p_user_id, current_date, 1, now())
+    ON CONFLICT (user_id, day) DO UPDATE SET
+        view_count = public.ad_daily_stats.view_count + 1,
+        last_view_at = now();
 END;
 $$;

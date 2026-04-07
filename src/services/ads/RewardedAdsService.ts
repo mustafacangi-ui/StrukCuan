@@ -10,6 +10,7 @@ export class RewardedAdsService {
   private isInitializing: boolean = false;
   private currentAdViewId: string | null = null;
   private adStartedAt: number | null = null;
+  private currentUserId: string | null = null;
 
   private constructor() {
     this.initialize();
@@ -82,22 +83,33 @@ export class RewardedAdsService {
       return;
     }
 
+    // Capture current user
+    const { data: { user } } = await supabase.auth.getUser();
+    this.currentUserId = user?.id || null;
+
+    if (!this.currentUserId) {
+      onError({ code: 'AUTH_REQUIRED', message: 'User must be logged in' });
+      return;
+    }
+
     // Capture start time for duration tracking
     this.adStartedAt = Date.now();
-    this.currentAdViewId = crypto.randomUUID(); // Mock ID for current view
-
-    // Record start in DB
-    console.log(`[RewardedAdsService] [rewardedAd] started (Log ID: ${this.currentAdViewId})`);
+    
+    // 1. Log ad start in DB
+    await this.logAdStart();
 
     // Wrap the provider's show call to handle our server-side validation
     await this.currentProvider.show(
       async (info) => {
         const duration = this.calculateDuration();
-        console.log(`[RewardedAdsService] [rewardedAd] completed in ${duration}s. Granting reward...`);
         
-        // 1. Server-side validation and grant
+        // 2. Log completion in DB
+        await this.logAdComplete(duration, info.metadata);
+        
+        // 3. Grant actual reward via RPC
+        console.log(`[RewardedAdsService] [rewardedAd] completed in ${duration}s. Granting reward...`);
         const { data, error: rpcError } = await supabase.rpc('grant_ad_reward', { 
-            p_user_id: (await supabase.auth.getUser()).data.user?.id, 
+            p_user_id: this.currentUserId, 
             p_ad_view_id: this.currentAdViewId 
         });
 
@@ -105,22 +117,105 @@ export class RewardedAdsService {
             console.error("[RewardedAdsService] Reward grant failed:", rpcError.message);
         } else {
             console.log("[RewardedAdsService] [rewardedAd] rewardGranted successfully.");
+            console.log("[RewardedAdsService] [dailyStats] updated");
         }
         
         onReward(info);
         this.resetSession();
       },
-      () => {
+      async () => {
+        await this.logAdFailure('user_closed_early');
         console.log(`[RewardedAdsService] [rewardedAd] closed by user.`);
         onClose();
         this.resetSession();
       },
-      (error) => {
+      async (error) => {
+        await this.logAdFailure(error.code || 'error', error.message);
         console.error(`[RewardedAdsService] [rewardedAd] failed: ${error.message}`);
         onError(error);
         this.resetSession();
       }
     );
+  }
+
+  private async logAdStart() {
+    if (!this.currentUserId || !this.currentProvider) return;
+
+    const metadata = {
+        platform: this.getPlatformDetails().isNative ? 'native' : 'web',
+        provider: this.currentProvider.name,
+        stepCount: 3, // Default for demo
+        timestamp: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('ad_views')
+      .insert({
+        user_id: this.currentUserId,
+        provider_name: this.currentProvider.name,
+        status: 'started',
+        reward_granted: false,
+        ad_started_at: new Date().toISOString(),
+        metadata: metadata
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+        console.error("[RewardedAdsService] logAdStart error:", error.message);
+    } else {
+        this.currentAdViewId = data.id;
+        console.log(`[RewardedAdsService] [adLog] inserted ID: ${this.currentAdViewId}`);
+        
+        // Increment daily view_count (Start)
+        await supabase.rpc('increment_ad_view_count', { p_user_id: this.currentUserId });
+    }
+  }
+
+  private async logAdComplete(duration: number, metadata?: any) {
+    if (!this.currentAdViewId) return;
+
+    const { error } = await supabase
+      .from('ad_views')
+      .update({
+        status: 'completed',
+        ad_completed_at: new Date().toISOString(),
+        completion_duration_seconds: duration,
+        revenue_estimate: 0.01,
+        metadata: {
+            ...metadata,
+            completedAt: new Date().toISOString()
+        }
+      })
+      .eq('id', this.currentAdViewId);
+
+    if (error) {
+        console.error("[RewardedAdsService] logAdComplete error:", error.message);
+    } else {
+        console.log("[RewardedAdsService] [adLog] completed");
+    }
+  }
+
+  private async logAdFailure(reason: string, message?: string) {
+    if (!this.currentAdViewId) return;
+
+    const { error } = await supabase
+      .from('ad_views')
+      .update({
+        status: 'failed',
+        error_message: message || reason,
+        metadata: {
+            closeReason: reason,
+            failedAt: new Date().toISOString()
+        }
+      })
+      .eq('id', this.currentAdViewId);
+
+    if (error) {
+        console.error("[RewardedAdsService] logAdFailure error:", error.message);
+    } else {
+        console.log("[RewardedAdsService] [adLog] failed");
+    }
   }
 
   private calculateDuration(): number {
