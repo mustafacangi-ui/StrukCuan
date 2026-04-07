@@ -8,6 +8,7 @@ import AdminReceipts from "./AdminReceipts";
 import AdminDeals from "./AdminDeals";
 import AdminNotifications from "./AdminNotifications";
 import AdminAds from "./AdminAds";
+import AdminWeeklyDrawParticipants from "@/components/AdminWeeklyDrawParticipants";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAdminUserStats } from "@/hooks/useAdminUserStats";
@@ -279,6 +280,11 @@ export default function Admin() {
                     View All Logs
                   </button>
                 </div>
+              </div>
+
+              {/* Weekly Draw Participants Leaderboard (New Section) */}
+              <div className="w-full pt-2">
+                <AdminWeeklyDrawParticipants />
               </div>
 
               {/* Moderation Queue Summary */}
