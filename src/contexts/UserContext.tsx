@@ -334,10 +334,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
               // Trigger the premium celebration modal
               setShowDailyGiftModal(true);
               
-              /* Note: We keep the toast as a fallback/additional confirmation 
-                 but the modal is the primary celebration now. */
-              const { toast } = await import("sonner");
-              toast.success('Selamat datang kembali 🎁 Hadiah harian kamu sudah masuk ke akun!');
+              console.log('[dailyGift] celebration modal triggered, suppressing toast');
             } else {
             console.log('[dailyGift] reward NOT granted (already claimed or error)', res);
           }
