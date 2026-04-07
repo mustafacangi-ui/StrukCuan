@@ -19,6 +19,7 @@ import {
 // ── Always-visible chrome (keep eager) ───────────────────────────────────────
 import BottomNav from "@/components/BottomNav";
 import LanguageSelector from "@/components/LanguageSelector";
+import { AdMobDebugPanel } from "@/components/admin/AdMobDebugPanel";
 
 // ── Lazy-loaded: only downloaded when actually needed ────────────────────────
 // CameraScanner: ~60 KB chunk — only when user taps Scan
@@ -560,6 +561,9 @@ const Index = () => {
             </button>
           </div>
         </header>
+
+        {/* AdMob Debug Panel (Dev Only) */}
+        <AdMobDebugPanel />
 
         {/* ── User Header ── */}
         <div
