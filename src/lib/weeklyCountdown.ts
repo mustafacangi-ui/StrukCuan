@@ -54,32 +54,69 @@ export function pad(count: number): string {
 export function getNextJakartaMidnight(): Date {
   const now = new Date();
   
-  // Convert current time to Jakarta timezone
-  const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-  const jakartaYear = jakartaTime.getFullYear();
-  const jakartaMonth = jakartaTime.getMonth();
-  const jakartaDate = jakartaTime.getDate();
+  // Use Intl.DateTimeFormat to get Jakarta components reliably
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  });
   
-  // Create next midnight in Jakarta time
-  const nextMidnightJakarta = new Date(jakartaYear, jakartaMonth, jakartaDate + 1, 0, 0, 0, 0);
+  const parts = formatter.formatToParts(now);
+  const getPart = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0");
   
-  // Convert back to local/UTC for comparison
-  const nextMidnightUtc = new Date(nextMidnightJakarta.toLocaleString("en-US", { timeZone: "UTC" }));
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
   
-  return nextMidnightUtc;
+  // Next midnight in Jakarta: (Jakarta Date + 1) at 00:00:00 Jakarta.
+  // Since Jakarta is UTC+7, 00:00:00 Jakarta = 17:00:00 UTC of PREVIOUS DAY.
+  // Calculation: Start with next day (Year, Month, Day + 1) in UTC and subtract 7 hours.
+  const nextDayStartUtc = Date.UTC(year, month - 1, day + 1);
+  const nextResetUtc = new Date(nextDayStartUtc - (7 * 60 * 60 * 1000));
+  
+  // Console logs as requested
+  const jakartaNowString = formatter.format(now);
+  const nextResetJakartaString = formatter.format(nextResetUtc);
+  const remainingMs = nextResetUtc.getTime() - now.getTime();
+  
+  console.log('[LuckyShake/Time] Jakarta Diagnostic:', {
+    currentJakartaTime: jakartaNowString,
+    nextResetJakartaMidnight: nextResetJakartaString,
+    remainingMs: remainingMs,
+    remainingHours: (remainingMs / 3600000).toFixed(2)
+  });
+
+  return nextResetUtc;
 }
 
 export function getDailyShakeCountdownParts(): CountdownParts {
   try {
-    const diff = getNextJakartaMidnight().getTime() - Date.now();
+    const now = Date.now();
+    const target = getNextJakartaMidnight().getTime();
+    let diff = target - now;
+
+    // Ensure max remaining time is never greater than 24 hours
+    if (diff > 86400000) {
+      console.warn('[LuckyShake/Time] Clamping countdown to 24h limit', { diff });
+      diff = 86400000;
+    }
+
     if (diff <= 0) return DEFAULT_COUNTDOWN;
+    
     return {
-      days: Math.floor(diff / 86400000),
+      days: 0, // Requirement: Never show more than 00 days
       hours: Math.floor((diff / 3600000) % 24),
       minutes: Math.floor((diff / 60000) % 60),
       seconds: Math.floor((diff / 1000) % 60),
     };
-  } catch {
+  } catch (err) {
+    console.error("[LuckyShake/Time] Error calculating countdown:", err);
     return DEFAULT_COUNTDOWN;
   }
 }
+

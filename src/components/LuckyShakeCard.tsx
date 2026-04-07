@@ -62,16 +62,27 @@ export default function LuckyShakeCard({
       return;
     }
 
-    // Single authoritative check: compare Jakarta calendar dates
+    const jakartaNow = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    let lastShakeDate = "NEVER";
+
     if (userStats.shake_last_at) {
-      const jakartaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
-      const lastShakeDate = new Date(userStats.shake_last_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
-      setShakeRightAvailable(lastShakeDate !== jakartaToday);
+      lastShakeDate = new Date(userStats.shake_last_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      const isAvailable = lastShakeDate !== jakartaNow;
+      
+      console.log('[LuckyShake/Availability] Check:', {
+        userId,
+        jakartaNow,
+        lastShakeDateJakarta: lastShakeDate,
+        isAvailable
+      });
+      
+      setShakeRightAvailable(isAvailable);
     } else {
-      // Never shaken before
+      console.log('[LuckyShake/Availability] Check: Never shaken before', { userId, jakartaNow });
       setShakeRightAvailable(true);
     }
-  }, [countdownReady, userStats]);
+  }, [countdownReady, userStats, userId]);
+
 
   useEffect(() => {
     console.log('[luckyShake] component mounted', { userId, hasStats: !!userStats });
@@ -526,9 +537,12 @@ export default function LuckyShakeCard({
                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${isWeeklyLimitReached ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
                          WEEKLY_LIMIT: {isWeeklyLimitReached ? 'YES' : 'NO'}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-white/40">
-                          Jakarta Date Check: {userStats?.shake_last_at ? 'SET' : 'NONE'}
-                      </span>
+                       <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-white/40">
+                          JKT Now: {new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })}
+                       </span>
+                       <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-white/40">
+                          Last Shk JKT: {userStats?.shake_last_at ? new Date(userStats.shake_last_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) : "NEVER"}
+                       </span>
                    </div>
                 </div>
               </>
