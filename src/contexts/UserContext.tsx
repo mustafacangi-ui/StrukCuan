@@ -6,6 +6,7 @@ import { APP_URL, getAuthRedirectUrl, IS_LOCALHOST } from "@/config/app";
 import { grantTickets } from "@/lib/grantTickets";
 import { dailyRewardService } from "@/services/DailyRewardService";
 import { DailyGiftCelebrationModal } from "@/components/DailyGiftCelebrationModal";
+import { App as CapacitorApp } from '@capacitor/app';
 
 export interface UserData {
   id: string;
@@ -130,20 +131,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [authMode, setAuthMode] = useState<"phone" | "email">("phone");
   const [showDailyGiftModal, setShowDailyGiftModal] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.classList.toggle("light", theme === "light");
-    localStorage.setItem("struk_theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    if (session && showLoginSheet) {
-      setShowLoginSheet(false);
-      // Keep pendingAction so PostLoginRedirect can navigate before we clear
-      // (cleared by PostLoginRedirect after navigation)
-    }
-  }, [session, showLoginSheet]);
-
   const buildUserFromSession = useCallback(async (s: Session | null): Promise<UserData | null> => {
     if (!s?.user) return null;
     const u = s.user as SupabaseUser & { phone?: string };
@@ -151,12 +138,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const phone = u.phone ?? u.user_metadata?.phone ?? "";
     const email = u.email ?? u.user_metadata?.email ?? "";
     const nickname = u.user_metadata?.nickname ?? u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? "";
-
-    const { data: profile } = await supabase
-      .from("survey_profiles")
-      .select("user_id, total_tickets, nickname")
-      .eq("user_id", userId)
-      .maybeSingle();
 
     const { data: stats } = await supabase
       .from("user_stats")
@@ -176,6 +157,54 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       countryCode: (stats as { country_code?: string })?.country_code ?? "ID",
     };
   }, []);
+
+  // Capacitor Deep Link Handling for Android OAuth
+  useEffect(() => {
+    const setupDeepLink = async () => {
+      CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
+        console.log('[Auth] appUrlOpen', url);
+
+        if (url.includes('/auth/callback')) {
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+
+            console.log('[Auth] exchangeCodeForSession result', { data, error });
+
+            if (error) {
+              console.error('[Auth] exchangeCodeForSession error', error);
+            } else {
+              console.log('[Auth] Android login success');
+              if (data.session) {
+                setSession(data.session);
+                const userData = await buildUserFromSession(data.session);
+                setUser(userData);
+              }
+            }
+          } catch (err) {
+            console.error('[Auth] appUrlOpen unexpected error', err);
+          }
+        }
+      });
+    };
+
+    setupDeepLink();
+    
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, [buildUserFromSession]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle("light", theme === "light");
+    localStorage.setItem("struk_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (session && showLoginSheet) {
+      setShowLoginSheet(false);
+    }
+  }, [session, showLoginSheet]);
 
   useEffect(() => {
     let mounted = true;
@@ -230,11 +259,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const { error: insertError } = await supabase.from("referrals").insert({
           referrer_user_id: referrerId,
           referred_user_id: userId,
-          reward_given: false, // This is for Stage 2 (receipt) backwards compatibility
+          reward_given: false,
         });
 
         if (insertError) {
-          // If insert fails (likely unique constraint on referred_user_id), we stop
           console.log('[ReferralSignupReward] referral already registered or failed', insertError);
           localStorage.removeItem(REFERRAL_STORAGE_KEY);
           return;
@@ -242,14 +270,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         // 4. Grant Stage 1 Rewards
         console.log('[ReferralSignupReward] granting tickets', { referrerId, userId });
-        
-        // Reward Inviter (+10)
         await grantTickets(referrerId, 10);
-        console.log('[ReferralSignupReward] inviter rewarded (+10)');
-
-        // Reward New User (+3)
         await grantTickets(userId, 3);
-        console.log('[ReferralSignupReward] new user rewarded (+3)');
 
         // 5. Update user_stats with signup reward flags
         await supabase
@@ -290,7 +312,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         console.log('[dailyGift] initSession starting');
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
-        console.log('[dailyGift] initSession session found:', !!session);
         await applySession(session);
       } catch (err) {
         console.warn("Session restore error:", err);
@@ -346,13 +367,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     const pingLastSeen = async () => {
-      const { data, error } = await supabase.rpc('update_last_seen');
-      console.log('[update_last_seen] data', data);
-      console.log('[update_last_seen] error', error);
+      await supabase.rpc('update_last_seen');
     };
 
     pingLastSeen();
-
     const interval = setInterval(() => {
       pingLastSeen();
     }, 60000);
@@ -362,26 +380,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Daily Welcome Reward Check
   useEffect(() => {
-    console.log('[dailyGift] useEffect trigger', { hasUserId: !!user?.id, userId: user?.id });
     if (user?.id) {
-      console.log('[dailyGift] starting async claim process for user:', user.id);
       (async () => {
         try {
           const res = await dailyRewardService.checkAndClaimDailyReward(user.id);
-          console.log('[dailyGift] checkAndClaimDailyReward finished with result:', res);
-          
-            if (res?.success && res.granted_ticket_count > 0) {
-              console.log('[dailyGift] reward granted branch entered');
-              console.log('[dailyGift] calling refreshUser()');
-              await refreshUser();
-              console.log('[dailyGift] refreshUser complete');
-              
-              // Trigger the premium celebration modal
-              setShowDailyGiftModal(true);
-              
-              console.log('[dailyGift] celebration modal triggered, suppressing toast');
-            } else {
-            console.log('[dailyGift] reward NOT granted (already claimed or error)', res);
+          if (res?.success && res.granted_ticket_count > 0) {
+            await refreshUser();
+            setShowDailyGiftModal(true);
           }
         } catch (err) {
           console.error('[dailyGift] async claim process failed', err);
@@ -389,22 +394,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       })();
     }
   }, [user?.id]);
-  // Note: refreshUser depends on search, so we add it to deps for safety, 
-  // but we must be careful not to create a loop.
-  // Actually refreshUser uses buildUserFromSession which is stable.
 
   const updateLastSeen = useCallback(async () => {
     if (!session?.user?.id) return;
-    const { data, error } = await supabase.rpc('update_last_seen');
-    console.log('[updateLastSeen helper] data', data);
-    console.log('[updateLastSeen helper] error', error);
+    await supabase.rpc('update_last_seen');
   }, [session?.user?.id]);
 
   const loginWithPhone = useCallback(async (phone: string, nickname: string) => {
     const fullPhone = phone.startsWith("+") ? phone : `+62${phone.replace(/\D/g, "")}`;
-    console.log('[loginWithPhone] starting auth for:', fullPhone);
-    
-    // Log the full supabase response as requested
     const response = await supabase.auth.signInWithOtp({
       phone: fullPhone,
       options: {
@@ -412,13 +409,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       },
     });
 
-    console.log('[loginWithPhone] full supabase response:', response);
-
     if (response.error) {
-      // Specifically detect unsupported provider
       const errorMsg = response.error.message;
       if (errorMsg.toLowerCase().includes("unsupported phone provider")) {
-        console.warn('[loginWithPhone] CRITICAL: SMS provider is missing from Supabase dashboard');
         throw new Error("unsupported_provider"); 
       }
       throw response.error;
@@ -456,7 +449,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    // On localhost: NEVER redirect to production - always use current origin
     const redirectTo = getAuthRedirectUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -486,7 +478,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const requireLogin = useCallback(async (action: LoginRedirectAction) => {
     setPendingAction(action);
-    // Localhost: zorunlu anonim giriş - hiçbir yere yönlendirmeden arka planda signInAnonymously
     if (IS_LOCALHOST) {
       try {
         const { data, error } = await supabase.auth.signInAnonymously();
@@ -494,7 +485,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           setSession(data.session);
           const userData = await buildUserFromSession(data.session);
           setUser(userData);
-          // PostLoginRedirect will open camera - no external redirect
           return;
         }
       } catch (e) {
