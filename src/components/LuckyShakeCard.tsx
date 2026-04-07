@@ -84,23 +84,43 @@ export default function LuckyShakeCard({
       toast.error(t("shake.toast.waitCountdown"));
       return;
     }
+
+    console.log('[luckyShake] started');
     setShakeLoading(true);
     setShakeWonTickets(null);
     triggerShakeAnimation();
+
     const { updateLastSeen } = useUser();
+    
+    // 8-second safety timeout
+    const timeoutId = setTimeout(() => {
+      // Use a functional update check to see if we're still loading
+      setShakeLoading(current => {
+        if (current) {
+          console.warn('[luckyShake] timeout — force resetting state');
+          toast.error("Something went wrong. Please try again.");
+          setIsShaking(false);
+          setProgressFill(false);
+          return false;
+        }
+        return current;
+      });
+    }, 8000);
+
     try {
       const result = await shakeToWin();
       if (result?.success) {
+        console.log('[luckyShake] success');
         updateLastSeen();
         invalidateTicketQueries(queryClient);
         invalidateLotteryPoolQueries(queryClient);
         refetchStats(); // Refresh DB stats to lock button immediately
         
-        setShakeLoading(false);
         setShakeWonTickets(result.ticketsAdded ?? 1);
         setShakeRightAvailable(false);
       } else {
         const errMsg = 'error' in result ? (result.error ?? "FAILED") : "FAILED";
+        console.error('[luckyShake] error:', errMsg);
         if (errMsg === "SHAKE_ALREADY_USED") {
           toast.error(t("shake.toast.alreadyUsed"));
           setShakeRightAvailable(false);
@@ -109,12 +129,14 @@ export default function LuckyShakeCard({
         } else {
           toast.error(errMsg);
         }
-        setShakeLoading(false);
       }
     } catch (err) {
-      console.error("[LuckyShake] error:", err);
+      console.error("[luckyShake] error exception:", err);
       toast.error(t("shake.toast.failed"));
+    } finally {
+      clearTimeout(timeoutId);
       setShakeLoading(false);
+      console.log('[luckyShake] finished');
     }
   }, [shakeLoading, userId, queryClient, shakeRightAvailable, t, refetchStats]);
 
