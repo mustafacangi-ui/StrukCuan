@@ -141,8 +141,6 @@ export default function Earn() {
     console.log('[Ads/EarnParentTrace] handleWatchAd clicked');
     console.log('[Ads/EarnParentTrace] Parent state:', {
         adsWatched: adsWatched ?? 0,
-        weeklyTickets,
-        isWeeklyLimitReached,
         adReady,
         modalOpen: showModal
     });
@@ -152,11 +150,7 @@ export default function Earn() {
         return;
       }
       if ((adsWatched ?? 0) >= MAX_ADS_PER_DAY) {
-        toast.error(t("earn.watchAds.dailyLimit"));
-        return;
-      }
-      if (isWeeklyLimitReached) {
-        toast.error(t("earn.weeklyLimit"));
+        toast.error(t("earn.watchAds.limitReached"));
         return;
       }
       setPopupBlocked(false);
@@ -187,7 +181,7 @@ export default function Earn() {
         ? String((err as { message?: string }).message)
         : t("common.error");
       const isLimitReached = msg === "DAILY_LIMIT_REACHED";
-      toast.error(isLimitReached ? t("earn.watchAds.dailyLimit") : msg);
+      toast.error(isLimitReached ? 'Daily ad limit reached (10/10)' : msg);
       if (isLimitReached) await refetch();
       throw err;
     }
@@ -337,7 +331,6 @@ export default function Earn() {
         {(() => {
              console.log('[Ads/EarnParentTrace] Render Props:', {
                  watched: adsWatched ?? 0,
-                 isWeeklyLimitReached,
                  modalOpen: showModal,
                  isReady: adReady
              });
@@ -346,7 +339,6 @@ export default function Earn() {
         <WatchAdsCard
           adsWatched={adsWatched ?? 0}
           maxAds={MAX_ADS_PER_DAY}
-          isWeeklyLimitReached={isWeeklyLimitReached}
           showModal={showModal}
           onWatchAd={handleWatchAd}
           isReady={adReady}

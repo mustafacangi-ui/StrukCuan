@@ -179,3 +179,35 @@ BEGIN
         last_view_at = now();
 END;
 $$;
+-- 7. SECURITY: RLS Policies
+ALTER TABLE public.ad_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_daily_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reward_events ENABLE ROW LEVEL SECURITY;
+
+-- ad_views: User can INSERT their own starts and UPDATE their own completions
+CREATE POLICY "Users can insert their own ad views"
+ON public.ad_views FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid()::text = user_id);
+
+CREATE POLICY "Users can update their own ad views"
+ON public.ad_views FOR UPDATE
+TO authenticated
+USING (auth.uid()::text = user_id);
+
+CREATE POLICY "Users can view their own ad views"
+ON public.ad_views FOR SELECT
+TO authenticated
+USING (auth.uid()::text = user_id);
+
+-- ad_daily_stats: User can view their own stats
+CREATE POLICY "Users can view their own ad daily stats"
+ON public.ad_daily_stats FOR SELECT
+TO authenticated
+USING (auth.uid()::text = user_id);
+
+-- reward_events: User can view their own rewards
+CREATE POLICY "Users can view their own reward events"
+ON public.reward_events FOR SELECT
+TO authenticated
+USING (auth.uid()::text = user_id);

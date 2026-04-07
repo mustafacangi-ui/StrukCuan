@@ -115,13 +115,15 @@ export class RewardedAdsService {
         
         // 3. Grant actual reward via RPC
         console.log(`[RewardedAdsService] [rewardedAd] completed in ${duration}s. Granting reward...`);
-        const { data, error: rpcError } = await supabase.rpc('grant_ad_reward', { 
+        const result = await supabase.rpc('grant_ad_reward', { 
             p_user_id: this.currentUserId, 
             p_ad_view_id: this.currentAdViewId 
         });
 
-        if (rpcError) {
-            console.error("[RewardedAdsService] Reward grant failed:", rpcError.message);
+        console.log('[grantReward] result', result);
+
+        if (result.error) {
+            console.error('[grantReward] error', result.error);
         } else {
             console.log("[RewardedAdsService] [rewardedAd] rewardGranted successfully.");
             console.log("[RewardedAdsService] [dailyStats] updated");
@@ -155,7 +157,8 @@ export class RewardedAdsService {
         timestamp: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    console.log('[adLog] inserting start row');
+    const result = await supabase
       .from('ad_views')
       .insert({
         user_id: this.currentUserId,
@@ -168,21 +171,28 @@ export class RewardedAdsService {
       .select('id')
       .single();
 
-    if (error) {
-        console.error("[RewardedAdsService] logAdStart error:", error.message);
+    console.log('[adLog] insert result', result);
+
+    if (result.error) {
+        console.error('[adLog] insert error', result.error);
     } else {
-        this.currentAdViewId = data.id;
+        this.currentAdViewId = result.data.id;
         console.log(`[RewardedAdsService] [adLog] inserted ID: ${this.currentAdViewId}`);
         
         // Increment daily view_count (Start)
-        await supabase.rpc('increment_ad_view_count', { p_user_id: this.currentUserId });
+        const statsRow = await supabase.rpc('increment_ad_view_count', { p_user_id: this.currentUserId });
+        console.log('[dailyStats] increment result', statsRow);
+        if (statsRow.error) {
+            console.error('[dailyStats] error', statsRow.error);
+        }
     }
-  }
+}
 
   private async logAdComplete(duration: number, metadata?: any) {
     if (!this.currentAdViewId) return;
 
-    const { error } = await supabase
+    console.log('[adLog] updating completion row');
+    const result = await supabase
       .from('ad_views')
       .update({
         status: 'completed',
@@ -196,8 +206,10 @@ export class RewardedAdsService {
       })
       .eq('id', this.currentAdViewId);
 
-    if (error) {
-        console.error("[RewardedAdsService] logAdComplete error:", error.message);
+    console.log('[adLog] update result', result);
+
+    if (result.error) {
+        console.error('[adLog] update error', result.error);
     } else {
         console.log("[RewardedAdsService] [adLog] completed");
     }

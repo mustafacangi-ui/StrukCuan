@@ -6,7 +6,6 @@ import { rewardedAds } from "@/services/ads/RewardedAdsService";
 interface WatchAdsCardProps {
   adsWatched: number;
   maxAds: number;
-  isWeeklyLimitReached: boolean;
   showModal: boolean;
   onWatchAd: () => void;
   isReady: boolean;
@@ -15,7 +14,6 @@ interface WatchAdsCardProps {
 export default function WatchAdsCard({
   adsWatched,
   maxAds,
-  isWeeklyLimitReached,
   showModal,
   onWatchAd,
   isReady,
@@ -28,7 +26,6 @@ export default function WatchAdsCard({
   const isPlaying = rewardedAds.isPlaying();
   const isLoading = showModal;
   
-  // BYPASS requested: Remove isWeeklyLimitReached from the final check for debugging
   const finalDisabled = isFull || isLoading || isPlaying || !isReady;
 
   console.log('--- [WatchAdsCard] Trace ---');
@@ -36,7 +33,6 @@ export default function WatchAdsCard({
   console.log('currentDailyCount (internal):', watched);
   console.log('maxAds:', maxAds);
   console.log('isFull:', isFull);
-  console.log('isWeeklyLimitReached (PASSIVE):', isWeeklyLimitReached);
   console.log('isLoading:', isLoading);
   console.log('isPlaying:', isPlaying);
   console.log('isReady:', isReady);

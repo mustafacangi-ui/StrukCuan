@@ -51,11 +51,7 @@ export default function Promo() {
       return;
     }
     if (adsWatched >= MAX_ADS_PER_DAY) {
-      toast.error("Daily limit reached (17 videos). Come back tomorrow.");
-      return;
-    }
-    if (isWeeklyLimitReached) {
-      toast.error("Weekly ticket limit reached.");
+      toast.error("Daily ad limit reached (10/10). Come back tomorrow.");
       return;
     }
     setPopupBlocked(false);
@@ -109,7 +105,7 @@ export default function Promo() {
             const current = Math.min(adsWatched, tier.target);
             const progress = (current / tier.target) * 100;
             const isCompleted = adsWatched >= tier.target;
-            const canWatch = !isCompleted && !isWeeklyLimitReached && adsWatched < MAX_ADS_PER_DAY;
+            const canWatch = !isCompleted && adsWatched < MAX_ADS_PER_DAY;
 
             return (
               <div key={tier.target} className="card-radar rounded-2xl p-4">
