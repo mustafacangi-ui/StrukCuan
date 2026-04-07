@@ -29,6 +29,21 @@ const LoginSheet = () => {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isPhoneProviderUnavailable, setIsPhoneProviderUnavailable] = useState(false);
+
+  const formatPhoneNumber = (val: string) => {
+    let cleaned = val.replace(/\D/g, "");
+    if (cleaned.startsWith("08")) {
+      return "+628" + cleaned.slice(2);
+    }
+    if (cleaned.startsWith("628")) {
+      return "+" + cleaned;
+    }
+    if (val.startsWith("+628")) {
+      return val;
+    }
+    return val;
+  };
 
   if (!showLoginSheet) return null;
 
@@ -77,7 +92,12 @@ const LoginSheet = () => {
       setError("");
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err?.message ?? t("auth.errorOtpFailed"));
+      if (err?.message === "unsupported_provider") {
+        setIsPhoneProviderUnavailable(true);
+        setError("Phone login is temporarily unavailable. Please use Google or Email login.");
+      } else {
+        setError(err?.message ?? t("auth.errorOtpFailed"));
+      }
     } finally {
       setLoading(false);
     }
@@ -217,11 +237,23 @@ const LoginSheet = () => {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => { setError(""); setPhone(e.target.value); }}
+                onChange={(e) => { 
+                  setError(""); 
+                  const formatted = formatPhoneNumber(e.target.value);
+                  setPhone(formatted); 
+                }}
+                onBlur={(e) => {
+                  setPhone(formatPhoneNumber(e.target.value));
+                }}
                 placeholder={t("auth.phonePlaceholder")}
-                disabled={otpSent}
+                disabled={otpSent || (isPhoneProviderUnavailable && !otpSent)}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
               />
+              {!otpSent && (
+                <p className="mt-1.5 text-[10px] text-muted-foreground ml-1 italic">
+                  Example: +628123456789
+                </p>
+              )}
             </div>
             {!otpSent && (
               <div>
@@ -329,10 +361,10 @@ const LoginSheet = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={loading}
-          className="w-full rounded-xl bg-primary py-3.5 font-display font-bold text-primary-foreground text-base disabled:opacity-60"
+          disabled={loading || (authMethod === "phone" && isPhoneProviderUnavailable && !otpSent)}
+          className="w-full rounded-xl bg-primary py-3.5 font-display font-bold text-primary-foreground text-base disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          {loading ? t("auth.processing") : t("auth.submit")}
+          {loading ? t("auth.processing") : (isPhoneProviderUnavailable && authMethod === "phone" && !otpSent ? "Phone Login Unavailable" : t("auth.submit"))}
         </button>
       </div>
     </div>

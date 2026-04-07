@@ -357,13 +357,27 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithPhone = useCallback(async (phone: string, nickname: string) => {
     const fullPhone = phone.startsWith("+") ? phone : `+62${phone.replace(/\D/g, "")}`;
-    const { error } = await supabase.auth.signInWithOtp({
+    console.log('[loginWithPhone] starting auth for:', fullPhone);
+    
+    // Log the full supabase response as requested
+    const response = await supabase.auth.signInWithOtp({
       phone: fullPhone,
       options: {
         data: { nickname },
       },
     });
-    if (error) throw error;
+
+    console.log('[loginWithPhone] full supabase response:', response);
+
+    if (response.error) {
+      // Specifically detect unsupported provider
+      const errorMsg = response.error.message;
+      if (errorMsg.toLowerCase().includes("unsupported phone provider")) {
+        console.warn('[loginWithPhone] CRITICAL: SMS provider is missing from Supabase dashboard');
+        throw new Error("unsupported_provider"); 
+      }
+      throw response.error;
+    }
   }, []);
 
   const verifyOtp = useCallback(async (phone: string, token: string) => {
