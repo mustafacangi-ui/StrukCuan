@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 import { queryClient } from "@/lib/queryClient";
 import { UserProvider } from "@/contexts/UserContext";
@@ -50,9 +51,14 @@ function PageLoader() {
 }
 
 const App = () => {
-  // Register service worker for push notifications
+  // Register service worker and init status bar for native Android
   useEffect(() => {
     registerServiceWorker();
+    
+    // Set native status bar to dark (light icons) to match premium theme
+    StatusBar.setStyle({ style: Style.Dark }).catch(err => {
+      console.log('StatusBar error (likely web/unsupported):', err);
+    });
   }, []);
 
   return (
