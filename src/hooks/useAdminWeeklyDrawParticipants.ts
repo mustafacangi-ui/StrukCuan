@@ -20,13 +20,16 @@ export function useAdminWeeklyDrawParticipants() {
       const { data, error } = await supabase.rpc("get_admin_weekly_draw_participants");
       
       if (error) {
-        console.error("[AdminWeeklyDraw] error:", error);
+        console.error("[AdminWeeklyDraw] rpcError:", error);
         throw error;
       }
       
-      console.log("[AdminWeeklyDraw] success", { count: data?.length ?? 0 });
-      return (data as ParticipantStats[]) ?? [];
+      console.log("[AdminWeeklyDraw] rawData", data);
+      const participants = (data as ParticipantStats[]) ?? [];
+      console.log("[AdminWeeklyDraw] parsedData", participants);
+      
+      return participants;
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 }

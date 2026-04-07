@@ -305,7 +305,7 @@ const Index = () => {
   const markRead = useMarkNotificationsRead(user?.id);
   const [scannerMode, setScannerMode] = useState<ScannerMode>(null);
   const [showNotifs, setShowNotifs] = useState(false);
-  const [onlineCount, setOnlineCount] = useState(341);
+
   // Defer the complex 3-D phone decoration so React can paint the LCP hero
   // text first, then add non-critical animations in the next frame.
   const [showPhone, setShowPhone] = useState(false);
@@ -322,13 +322,7 @@ const Index = () => {
     "Guest";
   const level = stats?.level ?? user?.level ?? 1;
 
-  // Live online count flicker
-  useEffect(() => {
-    const id = setInterval(() => {
-      setOnlineCount((p) => Math.max(280, Math.min(420, p + Math.floor(Math.random() * 7) - 3)));
-    }, 3500);
-    return () => clearInterval(id);
-  }, []);
+
 
   // Defer 3D phone so the LCP hero text paints first
   useEffect(() => {
@@ -450,37 +444,7 @@ const Index = () => {
               </span>
           </div>
 
-          {/* LIVE pill — coral/orange in light */}
-          <div
-            className="flex items-center gap-1.5 rounded-2xl px-3 py-2"
-            style={
-              L
-                ? {
-                    background: "rgba(249,115,22,0.12)",
-                    border: "1px solid rgba(249,115,22,0.28)",
-                  }
-                : {
-                    background: "rgba(255,68,68,0.1)",
-                    border: "1px solid rgba(255,68,68,0.22)",
-                  }
-            }
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                background: L ? "#f97316" : "#ff4444",
-                boxShadow: L ? "0 0 6px #f97316" : "0 0 6px #ff4444",
-                animation: "live-badge-pulse 1.2s ease infinite",
-                display: "inline-block",
-              }}
-            />
-            <span
-              className="text-[11px] font-bold whitespace-nowrap"
-              style={{ color: L ? "#c2410c" : "#ff7070" }}
-            >
-              LIVE {onlineCount}
-            </span>
-          </div>
+
 
           <div className="flex items-center gap-2 ml-auto">
             {/* Notification bell */}

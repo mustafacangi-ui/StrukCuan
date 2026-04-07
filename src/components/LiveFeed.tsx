@@ -56,10 +56,6 @@ const PromoCard = ({ store, branch, discount, product, price, distance, time, ex
         </span>
       )}
       <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
-        <Eye size={9} />
-        <span>{views} Orang Dilihat</span>
-      </span>
-      <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
         <Clock size={9} />
         <span>{time}</span>
       </span>

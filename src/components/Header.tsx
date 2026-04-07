@@ -59,17 +59,8 @@ const Header = ({ onUploadReceipt, onShareDiscount, hideCuan = false }: HeaderPr
     onShareDiscount?.();
   };
 
-  // Dynamic online user count
-  const [onlineCount, setOnlineCount] = useState(342);
-
   useEffect(() => {
-    const id = setInterval(() => {
-      setOnlineCount((prev) => {
-        const delta = Math.floor(Math.random() * 7) - 3;
-        return Math.max(280, Math.min(420, prev + delta));
-      });
-    }, 3500);
-    return () => clearInterval(id);
+    // Background tracking continues via UserContext/last_seen logic
   }, []);
 
   const cuan = stats?.cuan ?? 0;
@@ -126,13 +117,7 @@ const Header = ({ onUploadReceipt, onShareDiscount, hideCuan = false }: HeaderPr
             )}
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-red-500/10 border border-red-500/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[9px] font-bold tracking-wider text-red-400">LIVE</span>
-              <span className="text-[9px] font-mono font-semibold text-slate-800">
-                {onlineCount.toLocaleString()}
-              </span>
-            </div>
+
             <div className="relative">
             <button
               className="relative rounded-xl bg-white/30 border border-white/40 p-2"
