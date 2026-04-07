@@ -5,10 +5,12 @@ import { Capacitor } from "@capacitor/core";
 // No static imports of native packages to prevent Vercel build failures.
 // All native functionality is loaded dynamically inside methods.
 
+const ADMOB_PKG = "@capacitor-community/" + "admob";
+
 /**
  * AdMobRewardedProvider: 
  * Implementation for Native Android using Capacitor Community AdMob SDK.
- * Uses PURE dynamic imports to prevent Vercel build failures.
+ * Uses PURE dynamic imports with @vite-ignore to prevent Vercel build failures.
  */
 export class AdMobRewardedProvider implements IRewardedAdProvider {
   readonly name: AdProviderName = "admob";
@@ -23,8 +25,8 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
     if (!Capacitor.isNativePlatform()) return;
     
     try {
-      // Direct dynamic import avoids Vercel resolution errors
-      const { AdMob } = await import("@capacitor-community/admob");
+      // Direct dynamic import with vite-ignore avoids Vercel resolution errors
+      const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
       
       await AdMob.initialize({
         requestTrackingAuthorization: true,
@@ -50,7 +52,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
     try {
       console.log(`[Ads/AdMob] Preloading ad unit: ${this.adUnitId}...`);
       
-      const { AdMob } = await import("@capacitor-community/admob");
+      const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
       
       const options = {
         adId: this.adUnitId,
@@ -83,7 +85,7 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
     try {
       console.log("[Ads/AdMob] [rewardedAd] showing native video");
       
-      const { AdMob } = await import("@capacitor-community/admob");
+      const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
       const reward = await AdMob.showRewardVideoAd();
       
       this.isLoaded = false; // Reset after show

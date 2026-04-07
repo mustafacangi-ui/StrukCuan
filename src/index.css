@@ -233,4 +233,12 @@
     0%   { opacity: 0; transform: translateX(32px) scale(0.95); }
     100% { opacity: 1; transform: translateX(0)    scale(1); }
   }
+
+  /* 3D Utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
 }
