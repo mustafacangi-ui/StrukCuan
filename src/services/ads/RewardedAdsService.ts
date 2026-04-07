@@ -146,6 +146,18 @@ export class RewardedAdsService {
       
     return { data, error };
   }
+
+  public getProviderName(): string {
+    return this.currentProvider?.name || 'none';
+  }
+
+  public getPlatformDetails() {
+    return {
+      isNative: (window as any).Capacitor?.isNative || (window as any).android !== undefined,
+      hasAdMobEnv: !!import.meta.env.VITE_ADMOB_REWARDED_AD_UNIT_ID_ANDROID && !!import.meta.env.VITE_ADMOB_APP_ID_ANDROID,
+      provider: this.getProviderName()
+    };
+  }
 }
 
 export const rewardedAds = RewardedAdsService.getInstance();

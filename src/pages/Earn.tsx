@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Monitor, Smartphone, Terminal } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserTickets } from "@/hooks/useUserTickets";
@@ -29,6 +29,7 @@ import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
 import { getCountdownParts, getDailyShakeCountdownParts } from "@/lib/weeklyCountdown";
 import { CARD_BASE, BTN_GLASS, PREMIUM_PAGE_BACKGROUND } from "@/lib/designTokens";
+import { rewardedAds } from "@/services/ads/RewardedAdsService";
 
 const TICKETS_PER_ENTRY = 10;
 
@@ -336,6 +337,45 @@ export default function Earn() {
           userId={user?.id}
           isWeeklyLimitReached={isWeeklyLimitReached}
         />
+
+        {/* --- DEVELOPMENT DEBUG CARD --- */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className={`${CARD_BASE} border border-yellow-500/30 bg-yellow-500/5 mt-8`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Terminal size={14} className="text-yellow-500" />
+              <span className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Dev Ad Diagnostics</span>
+            </div>
+            
+            <div className="space-y-2 text-[10px] font-mono">
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <span className="text-white/40">Active Provider:</span>
+                <span className="text-white font-bold uppercase">{rewardedAds.getProviderName()}</span>
+              </div>
+              
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <span className="text-white/40">Platform Mode:</span>
+                <div className="flex items-center gap-1">
+                  {rewardedAds.getPlatformDetails().isNative ? (
+                    <><Smartphone size={10} className="text-green-500" /> <span className="text-green-500 font-bold">NATIVE</span></>
+                  ) : (
+                    <><Monitor size={10} className="text-blue-500" /> <span className="text-blue-500 font-bold">WEB/PWA</span></>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <span className="text-white/40">AdMob Credentials:</span>
+                <span className={rewardedAds.getPlatformDetails().hasAdMobEnv ? "text-green-500 font-bold" : "text-red-500 font-bold"}>
+                  {rewardedAds.getPlatformDetails().hasAdMobEnv ? "CONFIGURED" : "MISSING"}
+                </span>
+              </div>
+
+              <div className="mt-2 p-2 rounded-lg bg-black/40 text-[9px] text-white/60 leading-tight">
+                <p>Native target uses <b>AdMob</b>. Web/browser target uses <b>Demo</b>. This card is hidden in production build.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <BottomNav />

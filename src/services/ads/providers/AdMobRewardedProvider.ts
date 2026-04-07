@@ -11,6 +11,7 @@ import { AdProviderName, AdRewardInfo, AdError, AdEventMetadata } from "../types
 export class AdMobRewardedProvider implements IRewardedAdProvider {
   readonly name: AdProviderName = "admob";
   private isLoaded: boolean = false;
+  private appId: string = import.meta.env.VITE_ADMOB_APP_ID_ANDROID || "";
   private adUnitId: string = import.meta.env.VITE_ADMOB_REWARDED_AD_UNIT_ID_ANDROID || "";
 
   public isReady(): boolean {
@@ -18,8 +19,11 @@ export class AdMobRewardedProvider implements IRewardedAdProvider {
   }
 
   public async preload(): Promise<void> {
-    if (!this.adUnitId) {
-      console.warn("[Ads/AdMob] Missing AdMob Unit ID. Check environment variables.");
+    console.log(`[Ads/AdMob] AdMob App ID: ${this.appId || "MISSING"}`);
+    console.log(`[Ads/AdMob] AdMob Unit ID: ${this.adUnitId || "MISSING"}`);
+
+    if (!this.appId || !this.adUnitId) {
+      console.warn("[Ads/AdMob] Missing AdMob credentials. Check environment variables.");
       return;
     }
 
