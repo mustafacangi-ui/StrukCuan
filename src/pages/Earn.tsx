@@ -25,6 +25,7 @@ import LuckyShakeCard from "@/components/LuckyShakeCard";
 import WatchAdsCard from "@/components/WatchAdsCard";
 import SurveysCard from "@/components/SurveysCard";
 import RewardedAdModal from "@/components/RewardedAdModal";
+import DailyGiftCard from "@/components/DailyGiftCard";
 import SurveyModal from "@/components/SurveyModal";
 import { toast } from "sonner";
 import { getCountdownParts, getDailyShakeCountdownParts } from "@/lib/weeklyCountdown";
@@ -398,6 +399,11 @@ export default function Earn() {
             </div>
           </div>
         )}
+
+        {/* Daily Welcome Gift Status */}
+        <div className="mt-2 mb-6">
+            <DailyGiftCard userId={user?.id} />
+        </div>
       </div>
 
       <BottomNav />

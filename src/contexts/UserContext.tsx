@@ -4,6 +4,7 @@ import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import { REFERRAL_STORAGE_KEY } from "@/components/ReferralCapture";
 import { APP_URL, getAuthRedirectUrl, IS_LOCALHOST } from "@/config/app";
 import { grantTickets } from "@/lib/grantTickets";
+import { dailyRewardService } from "@/services/DailyRewardService";
 
 export interface UserData {
   id: string;
@@ -307,6 +308,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     return () => clearInterval(interval);
   }, [user]);
+
+  // Daily Welcome Reward Check
+  useEffect(() => {
+    if (user?.id) {
+      dailyRewardService.checkAndClaimDailyReward(user.id);
+    }
+  }, [user?.id]);
 
   const updateLastSeen = useCallback(async () => {
     if (!session?.user?.id) return;
