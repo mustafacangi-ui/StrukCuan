@@ -8,13 +8,14 @@ export default function AdminLuckyShakeControls() {
   const [loading, setLoading] = useState(false);
 
   const handleResetDaily = async () => {
-    if (!userId) {
+    const trimmedId = userId.trim();
+    if (!trimmedId) {
       toast.error("Please enter a User ID");
       return;
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('admin_reset_lucky_shake', { p_user_id: userId });
+      const { data, error } = await supabase.rpc('admin_reset_lucky_shake', { p_user_id: trimmedId });
       if (error) throw error;
       toast.success("Daily Lucky Shake reset successfully for " + userId);
     } catch (err: any) {
@@ -26,7 +27,8 @@ export default function AdminLuckyShakeControls() {
   };
 
   const handleClearWeekly = async () => {
-    if (!userId) {
+    const trimmedId = userId.trim();
+    if (!trimmedId) {
       toast.error("Please enter a User ID");
       return;
     }
@@ -35,7 +37,7 @@ export default function AdminLuckyShakeControls() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('admin_clear_weekly_limit', { p_user_id: userId });
+      const { data, error } = await supabase.rpc('admin_clear_weekly_limit', { p_user_id: trimmedId });
       if (error) throw error;
       toast.success("Weekly limits cleared successfully for " + userId);
     } catch (err: any) {
