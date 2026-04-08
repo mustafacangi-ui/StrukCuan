@@ -25,6 +25,7 @@ import {
   Cell
 } from "recharts";
 import { Users, UserPlus, Zap, Clock, TrendingUp, Play, DollarSign, Award } from "lucide-react";
+import AdminLuckyShakeControls from "@/components/AdminLuckyShakeControls";
 
 type Tab = "dashboard" | "receipts" | "deals" | "notifications" | "ads";
 
@@ -322,6 +323,11 @@ export default function Admin() {
                   <p className="text-3xl font-light text-white tracking-tight relative z-10">-</p>
                   <p className="text-xs text-zinc-400 mt-1 relative z-10">High Confidence AI</p>
                 </div>
+              </div>
+
+              {/* Admin Lucky Shake Controls */}
+              <div className="pt-2">
+                <AdminLuckyShakeControls />
               </div>
 
               {/* Tips Section */}

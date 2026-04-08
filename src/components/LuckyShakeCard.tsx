@@ -88,6 +88,8 @@ export default function LuckyShakeCard({
     console.log('[luckyShake] component mounted', { userId, hasStats: !!userStats });
   }, []);
 
+  const [showRetry, setShowRetry] = useState(false);
+
   const triggerShakeAnimation = () => {
     setIsShaking(true);
     setProgressFill(true);
@@ -95,75 +97,92 @@ export default function LuckyShakeCard({
   };
 
   const handleShake = useCallback(async () => {
-    console.log('[luckyShake] handleShake called', { shakeLoading, userId, shakeRightAvailable });
+    // 1. Immediate duplicate tap protection
     if (shakeLoading) {
-      console.log('[luckyShake] early return: already loading');
-      return;
-    }
-    if (!userId) {
-      console.log('[luckyShake] early return: no userId');
-      return;
-    }
-    if (!shakeRightAvailable) {
-      console.log('[luckyShake] early return: shake not available');
-      toast.error(t("shake.toast.waitCountdown"));
+      console.log('[LuckyShake/Security] Blocked: Request already in progress');
       return;
     }
 
-    console.log('[luckyShake] started - valid state');
+    if (!userId) {
+      console.log('[LuckyShake/Logic] Blocked: No UserId');
+      toast.error(t("shake.toast.loginToPlay"));
+      return;
+    }
+
+    console.log('[LuckyShake/Action] Starting shake sequence...', { userId });
+    
+    // Set loading immediately to disable buttons
     setShakeLoading(true);
+    setShowRetry(false);
     setShakeWonTickets(null);
     triggerShakeAnimation();
 
-    // No longer calling useUser() here!
-    
-    // 8-second safety timeout
+    // 2. 15-second safety timeout (User Requirement)
     const timeoutId = setTimeout(() => {
-      // Use a functional update check to see if we're still loading
       setShakeLoading(current => {
         if (current) {
-          console.warn('[luckyShake] timeout — force resetting state');
-          toast.error("Something went wrong. Please try again.");
-          setIsShaking(false);
-          setProgressFill(false);
+          console.error('[LuckyShake/Timeout] Request timed out after 15s', { userId });
+          toast.error("Request timed out. Please try again.");
+          setShowRetry(true);
           return false;
         }
         return current;
       });
-    }, 8000);
+      setIsShaking(false);
+      setProgressFill(false);
+    }, 15000);
 
     try {
+      // 3. Call atomic RPC
       const result = await shakeToWin();
-      if (result?.success) {
-        console.log('[luckyShake] success');
+      
+      console.log('[LuckyShake/Result] RPC Response:', {
+        userId,
+        success: result.success,
+        ...result
+      });
+
+      if (result.success) {
         updateLastSeen();
+        
+        // Invalidate all related queries
         invalidateTicketQueries(queryClient);
         invalidateLotteryPoolQueries(queryClient);
-        refetchStats(); // Refresh DB stats to lock button immediately
+        refetchStats(); 
         
-        setShakeWonTickets(result.ticketsAdded ?? 1);
+        setShakeWonTickets(result.ticketsAdded);
         setShakeRightAvailable(false);
+        setShowRetry(false);
+        toast.success(t("shake.modal.won", { count: result.ticketsAdded }));
       } else {
-        const errMsg = 'error' in result ? (result.error ?? "FAILED") : "FAILED";
-        console.error('[luckyShake] error:', errMsg);
+        const errMsg = (result as { error: string }).error;
+        console.warn('[LuckyShake/Error] Failed logic:', { userId, error: errMsg });
+        
         if (errMsg === "SHAKE_ALREADY_USED") {
           toast.error(t("shake.toast.alreadyUsed"));
           setShakeRightAvailable(false);
         } else if (errMsg === "WEEKLY_LIMIT_REACHED") {
           toast.error(t("shake.toast.weeklyLimit"));
         } else {
-          toast.error(errMsg);
+          toast.error(`Error: ${errMsg}`);
+          setShowRetry(true);
         }
       }
-    } catch (err) {
-      console.error("[luckyShake] error exception:", err);
+    } catch (err: any) {
+      console.error("[LuckyShake/Exception] Global error catcher:", {
+        userId,
+        message: err.message,
+        stack: err.stack
+      });
       toast.error(t("shake.toast.failed"));
+      setShowRetry(true);
     } finally {
+      // 4. Guaranteed reset path
       clearTimeout(timeoutId);
       setShakeLoading(false);
-      console.log('[luckyShake] finished');
+      console.log('[LuckyShake/Status] State sequence finalized');
     }
-  }, [shakeLoading, userId, queryClient, shakeRightAvailable, t, refetchStats]);
+  }, [shakeLoading, userId, queryClient, shakeRightAvailable, t, refetchStats, updateLastSeen]);
 
   useShakeDetection({
     onShake: handleShake,
@@ -499,7 +518,7 @@ export default function LuckyShakeCard({
                   <p className="text-xs text-white/40 mb-5">{t("shake.modal.orTap")}</p>
                 )}
                 <div className="flex flex-col gap-2">
-                  {!shakeLoading && (
+                  {!shakeLoading && !showRetry && (
                     <button
                       type="button"
                       onClick={handleShake}
@@ -508,11 +527,22 @@ export default function LuckyShakeCard({
                       {t("shake.modal.tapToShake")}
                     </button>
                   )}
+                  {showRetry && !shakeLoading && (
+                    <button
+                      type="button"
+                      onClick={handleShake}
+                      className="w-full py-3 rounded-2xl font-display font-bold text-sm text-white bg-yellow-600 shadow-[0_0_20px_rgba(202,138,4,0.4)] hover:scale-[1.02] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                    >
+                      <Smartphone size={16} />
+                      Retry Shake
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       setShakeModalOpen(false);
                       setShakeLoading(false);
+                      setShowRetry(false);
                     }}
                     disabled={shakeLoading}
                     className="text-white/40 text-sm font-medium hover:text-white/70 transition-colors py-1 disabled:opacity-30"

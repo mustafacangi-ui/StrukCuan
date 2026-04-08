@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ShieldAlert, Monitor, Smartphone, Terminal } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
-import { useUserTickets } from "@/hooks/useUserTickets";
+import { useUserTickets, useWeeklyTicketCount, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import {
   useTodayRewardedTickets,
   TODAY_REWARDED_TICKETS_QUERY_KEY,
@@ -13,7 +13,6 @@ import {
 import { useBitLabsSurveys, type SurveyDisplay } from "@/hooks/useBitLabsSurveys";
 import { useQueryClient } from "@tanstack/react-query";
 import { grantTicket } from "@/hooks/useRewardedAdTickets";
-import { USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
 import { useMyLotteryBallots } from "@/hooks/useMyLotteryBallots";
 import { invalidateLotteryPoolQueries } from "@/hooks/invalidateLotteryPoolQueries";
 import { invalidateTicketQueries } from "@/lib/grantTickets";
@@ -42,7 +41,8 @@ export default function Earn() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user, isOnboarded, isLoading: authLoading } = useUser();
-  const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
+  const { data: globalTickets = 0 } = useUserTickets(user?.id);
+  const { data: weeklyTickets = 0 } = useWeeklyTicketCount(user?.id);
   const { data: stats } = useUserStats(user?.id);
   const totalTickets = stats?.tiket ?? 0;
   const { data: myBallotIds = [], isLoading: ballotsLoading, isError: ballotsError } = useMyLotteryBallots(user?.id);
@@ -104,6 +104,19 @@ export default function Earn() {
   }, []);
 
   const isWeeklyLimitReached = (weeklyTickets ?? 0) >= MAX_TICKETS_PER_WEEK;
+  
+  useEffect(() => {
+    if (user?.id) {
+      console.log('[Earn/Limits] Diagnostic:', {
+        userId: user.id,
+        weeklyTickets,
+        maxLimit: MAX_TICKETS_PER_WEEK,
+        isWeeklyLimitReached,
+        todayAds: adsWatched ?? 0
+      });
+    }
+  }, [user?.id, weeklyTickets, adsWatched]);
+
   const todayAds = adsWatched ?? 0;
   const entriesEarned = Math.floor(totalTickets / TICKETS_PER_ENTRY);
   const progressInBatch = totalTickets % TICKETS_PER_ENTRY;

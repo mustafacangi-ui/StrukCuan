@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { getDrawWeekJakarta } from "@/hooks/useTodayRewardedTickets";
 
 export const USER_TICKETS_QUERY_KEY = ["user_tickets"] as const;
 
@@ -26,6 +25,43 @@ export function useUserTickets(userId: string | undefined) {
   return useQuery({
     queryKey: [...USER_TICKETS_QUERY_KEY, "total_cumulative", userId],
     queryFn: () => fetchUserTickets(userId!),
+    enabled: !!userId,
+  });
+}
+
+/**
+ * Fetch tickets earned THIS WEEK from user_tickets table (capped for draw)
+ */
+async function fetchWeeklyTicketCount(userId: string): Promise<number> {
+  // Get current Jakarta date/time for week calculation
+  const now = new Date();
+  const jktString = now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
+  const jktDate = new Date(jktString);
+  
+  // Calculate ISO week number (approximate to match Postgres extract(week))
+  const startOfYear = new Date(jktDate.getFullYear(), 0, 1);
+  const days = Math.floor((jktDate.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  const currentWeek = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+
+  const { data, error } = await supabase
+    .from("user_tickets")
+    .select("tickets, draw_week")
+    .eq("user_id", userId)
+    .eq("draw_week", currentWeek) // Explicitly filter for current week
+    .maybeSingle();
+
+  if (error) {
+    console.error("[useWeeklyTicketCount] Error:", error);
+    return 0;
+  }
+
+  return data?.tickets ?? 0;
+}
+
+export function useWeeklyTicketCount(userId: string | undefined) {
+  return useQuery({
+    queryKey: [...USER_TICKETS_QUERY_KEY, "weekly_count", userId],
+    queryFn: () => fetchWeeklyTicketCount(userId!),
     enabled: !!userId,
   });
 }
