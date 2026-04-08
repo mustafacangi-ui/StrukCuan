@@ -8,7 +8,8 @@ export const ADMOB_TEST_IDS = {
     APP_ID: "ca-app-pub-3940256099942544~3347511713",
     BANNER: "ca-app-pub-3940256099942544/6300978111",
     INTERSTITIAL: "ca-app-pub-3940256099942544/1033173712",
-    REWARDED: "ca-app-pub-3940256099942544/5224354917",
+    // REMOVED DEMO REWARDED ID - Use production ID only
+    REWARDED: "ca-app-pub-1526437909347510/8390941190",
   }
 };
 
@@ -44,9 +45,19 @@ export class AdMobService {
    * Helper to get correct Ad Unit ID based on environment
    */
   private getUnitId(type: 'BANNER' | 'INTERSTITIAL' | 'REWARDED'): string {
-    const isDev = import.meta.env.DEV;
-    const ids = isDev ? ADMOB_TEST_IDS.ANDROID : ADMOB_PROD_IDS.ANDROID;
-    return ids[type];
+    const isProd = import.meta.env.PROD;
+    // Strictly use production IDs in production mode
+    const ids = isProd ? ADMOB_PROD_IDS.ANDROID : ADMOB_TEST_IDS.ANDROID;
+    
+    const adId = ids[type];
+    
+    // Safety check for rewarded ads to ensure no demo ID leaks into production
+    if (isProd && type === 'REWARDED' && adId.includes('3940256099942544')) {
+      console.error("[AdMob] Critical Error: Production mode is active but Rewarded Ad ID is a Test ID. Falling back to configured production ID.");
+      return ADMOB_PROD_IDS.ANDROID.REWARDED;
+    }
+
+    return adId;
   }
 
   /**
@@ -61,13 +72,14 @@ export class AdMobService {
 
     try {
       const { AdMob } = await import(/* @vite-ignore */ ADMOB_PKG);
-      const isDev = import.meta.env.DEV;
+      const isProd = import.meta.env.PROD;
       
+      // initializeForTesting MUST be false in production
       await AdMob.initialize({
-        initializeForTesting: isDev,
+        initializeForTesting: !isProd,
       });
       this.isInitialized = true;
-      console.log(`[AdMob] initialize (mode: ${isDev ? 'DEBUG/TEST' : 'PRODUCTION'})`);
+      console.log(`[AdMob] initialize (mode: ${isProd ? 'PRODUCTION' : 'DEBUG/TEST'})`);
     } catch (err: any) {
       console.error("[AdMob] error: initialize failed", err);
     }

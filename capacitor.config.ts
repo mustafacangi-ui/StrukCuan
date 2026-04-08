@@ -20,6 +20,9 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#0a0a0c',
     },
+    AdMob: {
+      androidAppId: 'ca-app-pub-1526437909347510~8582512886',
+    },
   },
 };
 

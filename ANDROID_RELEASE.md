@@ -28,20 +28,22 @@ keytool -list -v -keystore C:\Users\Mustafa\Desktop\StrukCuan\keystore\strukcuan
 
 ---
 
-## 🛠️ 3. Generate Signed Bundle / APK (Android Studio)
+## 🛠️ 3. Generate Signed Bundle / APK
 
-Open the `android/` folder of your project in **Android Studio** and follow these steps:
+To ensure your app contains fresh production code and real AdMob ads, use the provided build script:
 
-1.  **Build** > **Generate Signed Bundle / APK...**
-2.  Choose **Android App Bundle** (recommended for Play Store) or **APK**.
-3.  Click **Next**.
-4.  **Key store path**: Click "Choose existing..." and select:
-    `C:\Users\Mustafa\Desktop\StrukCuan\keystore\strukcuan-release.jks`
-5.  **Key alias**: `strukcuan`
-6.  **Key store password** & **Key password**: (Enter the passwords you set in Step 1).
-7.  Click **Next**.
-8.  Select **release** build variant.
-9.  Click **Finish**.
+### Recommended: Using the Build Script
+Run this in PowerShell from the project root. This script automatically builds the web assets, syncs them to Android, and generates the APK:
+```powershell
+./build_release.bat
+```
+
+### Manual Method (Android Studio)
+If you prefer using Android Studio, you **MUST** run the web build first:
+1. Run `npm run build`
+2. Run `npx cap sync android`
+3. In Android Studio: **Build > Generate Signed Bundle / APK...**
+4. Follow the wizard selecting the `release` build variant.
 
 ---
 

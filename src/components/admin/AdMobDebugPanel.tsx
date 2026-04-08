@@ -14,7 +14,7 @@ export const AdMobDebugPanel: React.FC = () => {
   const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   // Security: Never show this in production builds
-  if (!import.meta.env.DEV) return null;
+  if (import.meta.env.PROD) return null;
 
   const handleShowBanner = async () => {
     try {

@@ -86,7 +86,7 @@ export async function fetchTodayRewardedCount(): Promise<number> {
     throw error;
   }
   const count = typeof data === "number" ? data : 0;
-  if (import.meta.env.DEV) {
+  if (!import.meta.env.PROD) {
     console.log("[useTodayRewardedTickets] get_today_rewarded_count RPC returned:", count);
   }
   return count;
