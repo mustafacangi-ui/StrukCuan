@@ -301,6 +301,11 @@ const Index = () => {
   const L = theme === "light";
   const { deals } = useRadar();
   const { data: stats } = useUserStats(user?.id);
+
+  useEffect(() => {
+    console.log('[AuthState] Index mount:', { isOnboarded, userId: user?.id, sessionUserId: session?.user?.id });
+  }, [isOnboarded, user?.id, session?.user?.id]);
+
   const ticketCount = stats?.tiket ?? 0;
   const { data: notifications = [] } = useNotifications(user?.id);
   const markRead = useMarkNotificationsRead(user?.id);

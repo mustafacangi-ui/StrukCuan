@@ -134,23 +134,40 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [showDailyGiftModal, setShowDailyGiftModal] = useState(false);
 
   const buildUserFromSession = useCallback(async (s: Session | null): Promise<UserData | null> => {
-    if (!s?.user) return null;
+    if (!s?.user) {
+      console.log('[AuthState] buildUserFromSession: No user in session, returning null');
+      return null;
+    }
+
+    if (s.user.is_anonymous) {
+      console.warn('[AuthState] buildUserFromSession: Anonymous user rejected');
+      return null;
+    }
+
     const u = s.user as SupabaseUser & { phone?: string };
     const userId = u.id;
     const phone = u.phone ?? u.user_metadata?.phone ?? "";
     const email = u.email ?? u.user_metadata?.email ?? "";
     const nickname = u.user_metadata?.nickname ?? u.user_metadata?.display_name ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? "";
 
-    const { data: stats } = await supabase
+    console.log('[AuthState] buildUserFromSession fetching stats for:', userId);
+    const { data: stats, error: statsErr } = await supabase
       .from("user_stats")
       .select("tiket, nickname, level, total_receipts, country_code")
       .eq("user_id", userId)
       .maybeSingle();
 
+    if (statsErr) {
+      console.error('[AuthState] buildUserFromSession stats fetch error:', statsErr.message);
+    }
+
+    const finalNickname = stats?.nickname ?? (nickname || "");
+    console.log('[AuthState] buildUserFromSession complete. Nickname:', finalNickname || '(empty)');
+
     return {
       id: userId,
       phone: phone,
-      nickname: stats?.nickname ?? (nickname || ""),
+      nickname: finalNickname,
       email: email || undefined,
       cuan: 0,
       tiket: stats?.tiket ?? 0,
@@ -158,8 +175,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       isNewUser: !stats?.nickname,
       countryCode: (stats as { country_code?: string })?.country_code ?? "ID",
     };
-
   }, []);
+
 
   // Capacitor Deep Link Handling for Android OAuth
   useEffect(() => {
@@ -294,8 +311,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const applySession = async (session: Session | null) => {
       if (!mounted) return;
-      setSession(session);
+      console.log('[AuthState] applySession:', session ? `User ${session.user.id}` : 'null');
+      
       if (session) {
+        if (session.user.is_anonymous) {
+          console.warn('[AuthState] applySession blocked anonymous user');
+          setSession(null);
+          setUser(null);
+          return;
+        }
+
+        setSession(session);
         const u = session.user as SupabaseUser & { phone?: string };
         const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "" : "");
         if (displayName || u.email) {
@@ -305,64 +331,85 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         await applyPendingCountry(u.id);
         processReferral(u.id).catch(() => {});
         const userData = await buildUserFromSession(session);
-        if (mounted) setUser(userData);
+        if (mounted) {
+          if (userData) {
+            console.log('[AuthState] setUser:', userData.id);
+            setUser(userData);
+          } else {
+            console.warn('[AuthState] buildUserFromSession returned null, clearing state');
+            setSession(null);
+            setUser(null);
+          }
+        }
       } else {
+        console.log('[AuthState] Clearing session and user state');
+        setSession(null);
         setUser(null);
       }
     };
 
     const initSession = async () => {
       try {
-        console.log('[Auth] initSession starting');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('[AuthState] initSession starting');
+        const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
 
-        console.log('[Auth] getSession result:', { 
+        console.log('[AuthState] getSession result:', { 
           hasSession: !!session, 
           userId: session?.user?.id,
-          error: error?.message 
+          isAnonymous: session?.user?.is_anonymous,
+          error: sessionErr?.message 
         });
-        console.log('[Auth] getUser result:', { 
+        console.log('[AuthState] getUser result:', { 
           hasUser: !!user, 
           userId: user?.id,
-          error: userError?.message 
+          isAnonymous: user?.is_anonymous,
+          error: userErr?.message 
         });
 
         if (!mounted) return;
 
-        if (session && user) {
-          if (user.is_anonymous) {
-            console.warn('[Auth] Anonymous session detected, rejecting for security');
-            await applySession(null);
-          } else {
-            console.log('[Auth] Valid session found, applying state');
-            await applySession(session);
-          }
+        // HARD GUARD: Only proceed if both verify a real, non-anonymous user
+        if (session && user && !user.is_anonymous) {
+          console.log('[AuthState] initSession success: applying non-anonymous session');
+          await applySession(session);
         } else {
-          console.log('[Auth] No valid session or user found, clearing state');
+          if (user?.is_anonymous || session?.user?.is_anonymous) {
+            console.warn('[AuthState] initSession: blocked anonymous account');
+          } else {
+            console.log('[AuthState] initSession: No valid session/user found');
+          }
           await applySession(null);
         }
-
       } catch (err) {
-        console.error("[Auth] Session restore critical error:", err);
+        console.error("[AuthState] initSession critical error:", err);
         if (mounted) {
           setSession(null);
           setUser(null);
         }
       } finally {
         if (mounted) {
-          console.log('[Auth] initSession complete, isLoading -> false');
+          console.log('[AuthState] initSession complete, isLoading -> false');
           setIsLoading(false);
         }
       }
     };
 
 
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (!mounted) return;
-        setSession(session);
+        console.log('[AuthState] onAuthStateChange event:', event, 'Has session:', !!session);
+
         if (session) {
+          if (session.user.is_anonymous) {
+            console.warn('[AuthState] onAuthStateChange: Ignoring anonymous session event');
+            setSession(null);
+            setUser(null);
+            return;
+          }
+
           applyPendingCountry(session.user.id)
             .catch(() => {})
             .then(() => {
@@ -376,13 +423,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
               return buildUserFromSession(session);
             })
             .then((userData) => {
-              if (mounted) setUser(userData);
+              if (mounted) {
+                setSession(session);
+                setUser(userData);
+                console.log('[AuthState] onAuthStateChange: State updated for user', userData?.id);
+              }
             });
         } else {
+          console.log('[AuthState] onAuthStateChange: session is null, clearing state');
+          setSession(null);
           setUser(null);
         }
       }
     );
+
 
     initSession();
 
@@ -531,23 +585,24 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     try {
-      console.log('[Auth] logout sequence started');
+      console.log('[AuthState] logout sequence started');
       const { error } = await supabase.auth.signOut({ scope: 'global' });
-      console.log('[Auth] signOut result:', { error: error?.message || 'success' });
+      console.log('[AuthState] signOut result:', { error: error?.message || 'success' });
       
       await clearAuthStorage();
       
       setUser(null);
       setSession(null);
-      console.log('[Auth] logout sequence complete');
+      console.log('[AuthState] logout sequence complete: State cleared');
     } catch (err) {
-      console.error('[Auth] Unexpected logout error:', err);
+      console.error('[AuthState] Unexpected logout error:', err);
       // Fallback: clear local state anyway
       await clearAuthStorage();
       setUser(null);
       setSession(null);
     }
   }, [clearAuthStorage]);
+
 
 
   const updateProfile = useCallback(async (nickname: string) => {
@@ -565,10 +620,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const requireLogin = useCallback(async (action: LoginRedirectAction) => {
     setPendingAction(action);
-    // REMOVED: Silent anonymous sign-in because of Capacitor localhost detection issues.
-    // Users must now explicitly log in via the LoginSheet.
+    console.log('[AuthState] requireLogin called for:', action);
+    
+    // Lock down: Anonymous sign-in is strictly forbidden here.
+    // IS_LOCALHOST check is removed to prevent Android native accidental triggers.
+    
+    console.log('[AuthState] login sheet forced');
     setShowLoginSheet(true);
   }, []);
+
 
 
   const dismissLogin = useCallback(() => {
