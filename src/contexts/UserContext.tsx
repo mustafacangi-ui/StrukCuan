@@ -7,6 +7,8 @@ import { grantTickets } from "@/lib/grantTickets";
 import { dailyRewardService } from "@/services/DailyRewardService";
 import { DailyGiftCelebrationModal } from "@/components/DailyGiftCelebrationModal";
 import { App as CapacitorApp } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
+
 
 export interface UserData {
   id: string;
@@ -148,7 +150,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return {
       id: userId,
       phone: phone,
-      nickname: stats?.nickname ?? (nickname || "User"),
+      nickname: stats?.nickname ?? (nickname || ""),
       email: email || undefined,
       cuan: 0,
       tiket: stats?.tiket ?? 0,
@@ -156,6 +158,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       isNewUser: !stats?.nickname,
       countryCode: (stats as { country_code?: string })?.country_code ?? "ID",
     };
+
   }, []);
 
   // Capacitor Deep Link Handling for Android OAuth
@@ -294,10 +297,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       if (session) {
         const u = session.user as SupabaseUser & { phone?: string };
-        const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "User" : "");
+        const displayName = u.user_metadata?.display_name ?? u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.user_metadata?.name ?? (u.email ? "" : "");
         if (displayName || u.email) {
-          await syncUserProfile(u.id, displayName || "User", u.phone ?? undefined, u.email ?? undefined);
+          await syncUserProfile(u.id, displayName || "", u.phone ?? undefined, u.email ?? undefined);
         }
+
         await applyPendingCountry(u.id);
         processReferral(u.id).catch(() => {});
         const userData = await buildUserFromSession(session);
@@ -309,20 +313,50 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const initSession = async () => {
       try {
-        console.log('[dailyGift] initSession starting');
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[Auth] initSession starting');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        console.log('[Auth] getSession result:', { 
+          hasSession: !!session, 
+          userId: session?.user?.id,
+          error: error?.message 
+        });
+        console.log('[Auth] getUser result:', { 
+          hasUser: !!user, 
+          userId: user?.id,
+          error: userError?.message 
+        });
+
         if (!mounted) return;
-        await applySession(session);
+
+        if (session && user) {
+          if (user.is_anonymous) {
+            console.warn('[Auth] Anonymous session detected, rejecting for security');
+            await applySession(null);
+          } else {
+            console.log('[Auth] Valid session found, applying state');
+            await applySession(session);
+          }
+        } else {
+          console.log('[Auth] No valid session or user found, clearing state');
+          await applySession(null);
+        }
+
       } catch (err) {
-        console.warn("Session restore error:", err);
+        console.error("[Auth] Session restore critical error:", err);
         if (mounted) {
           setSession(null);
           setUser(null);
         }
       } finally {
-        if (mounted) setIsLoading(false);
+        if (mounted) {
+          console.log('[Auth] initSession complete, isLoading -> false');
+          setIsLoading(false);
+        }
       }
     };
+
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -334,10 +368,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             .then(() => {
               processReferral(session.user.id).catch(() => {});
               const meta = session.user.user_metadata;
-              const nickname = meta?.display_name ?? meta?.nickname ?? meta?.full_name ?? meta?.name ?? (session.user.email ? "User" : "");
+              const nickname = meta?.display_name ?? meta?.nickname ?? meta?.full_name ?? meta?.name ?? (session.user.email ? "" : "");
               if (nickname || session.user.email) {
-                syncUserProfile(session.user.id, nickname || "User", session.user.phone ?? undefined, session.user.email ?? undefined);
+                syncUserProfile(session.user.id, nickname || "", session.user.phone ?? undefined, session.user.email ?? undefined);
               }
+
               return buildUserFromSession(session);
             })
             .then((userData) => {
@@ -380,7 +415,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Daily Welcome Reward Check
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !session?.user.is_anonymous) {
       (async () => {
         try {
           const res = await dailyRewardService.checkAndClaimDailyReward(user.id);
@@ -392,8 +427,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           console.error('[dailyGift] async claim process failed', err);
         }
       })();
+    } else if (session?.user.is_anonymous) {
+       console.log('[dailyGift] skipping check for anonymous user');
     }
-  }, [user?.id]);
+  }, [user?.id, session?.user.is_anonymous]);
+
 
   const updateLastSeen = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -457,11 +495,60 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (error) throw error;
   }, []);
 
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+  const clearAuthStorage = useCallback(async () => {
+    try {
+      console.log('[Auth] Performing targeted auth storage cleanup');
+      
+      // 1. Clear Supabase-related keys from localStorage
+      const lsKeys = Object.keys(localStorage);
+      lsKeys.forEach(key => {
+        if (key.includes('supabase.auth.token') || key.startsWith('sb-') || key.includes('struk_auth')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // 2. Clear Supabase-related keys from sessionStorage
+      const ssKeys = Object.keys(sessionStorage);
+      ssKeys.forEach(key => {
+        if (key.includes('supabase.auth.token') || key.startsWith('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+
+      // 3. Clear auth keys from Capacitor Preferences
+      const { keys } = await Preferences.getKeys();
+      for (const key of keys) {
+        if (key.includes('supabase.auth.token') || key.startsWith('sb-') || key.includes('struk_auth')) {
+          await Preferences.remove({ key });
+        }
+      }
+
+      console.log('[Auth] targeted storage cleanup complete');
+    } catch (err) {
+      console.error('[Auth] Error during targeted cleanup:', err);
+    }
   }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      console.log('[Auth] logout sequence started');
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      console.log('[Auth] signOut result:', { error: error?.message || 'success' });
+      
+      await clearAuthStorage();
+      
+      setUser(null);
+      setSession(null);
+      console.log('[Auth] logout sequence complete');
+    } catch (err) {
+      console.error('[Auth] Unexpected logout error:', err);
+      // Fallback: clear local state anyway
+      await clearAuthStorage();
+      setUser(null);
+      setSession(null);
+    }
+  }, [clearAuthStorage]);
+
 
   const updateProfile = useCallback(async (nickname: string) => {
     if (!session?.user) return;
@@ -478,21 +565,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const requireLogin = useCallback(async (action: LoginRedirectAction) => {
     setPendingAction(action);
-    if (IS_LOCALHOST) {
-      try {
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (!error && data.session) {
-          setSession(data.session);
-          const userData = await buildUserFromSession(data.session);
-          setUser(userData);
-          return;
-        }
-      } catch (e) {
-        console.warn("[UserContext] Localhost anonymous sign-in failed:", e);
-      }
-    }
+    // REMOVED: Silent anonymous sign-in because of Capacitor localhost detection issues.
+    // Users must now explicitly log in via the LoginSheet.
     setShowLoginSheet(true);
-  }, [buildUserFromSession]);
+  }, []);
+
 
   const dismissLogin = useCallback(() => {
     setShowLoginSheet(false);

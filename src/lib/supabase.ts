@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { Preferences } from "@capacitor/preferences"
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -10,19 +11,29 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 /**
- * Supabase client with auth session persistence.
- * persistSession: store session in localStorage
- * autoRefreshToken: refresh before expiry
- * detectSessionInUrl: read tokens from OAuth redirect URL
+ * Custom storage for Supabase using Capacitor Preferences.
+ * This is more reliable on native Android than standard localStorage.
  */
-const storage = typeof window !== "undefined" ? window.localStorage : undefined;
+const customStorage = {
+  getItem: async (key: string) => {
+    const { value } = await Preferences.get({ key });
+    return value;
+  },
+  setItem: async (key: string, value: string) => {
+    await Preferences.set({ key, value });
+  },
+  removeItem: async (key: string) => {
+    await Preferences.remove({ key });
+  },
+};
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: storage ?? undefined,
+    storage: customStorage,
     flowType: "pkce",
   },
 });
+

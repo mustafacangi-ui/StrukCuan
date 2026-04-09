@@ -38,4 +38,6 @@ export function getAuthRedirectUrl(): string {
 /** Localhost dev mode: never redirect to production, use anonymous auth for camera (testing only) */
 export const IS_LOCALHOST =
   typeof window !== "undefined" &&
-  ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
+  ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname) &&
+  !window.location.origin.includes('capacitor');
+

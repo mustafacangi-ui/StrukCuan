@@ -30,7 +30,7 @@ function useUserNicknames(userIds: string[]) {
         .in("user_id", userIds);
       const map = new Map<string, string>();
       (data ?? []).forEach((r: { user_id: string; nickname: string | null }) => {
-        map.set(r.user_id, r.nickname || "User");
+        map.set(r.user_id, r.nickname || "");
       });
       return map;
     },
@@ -312,8 +312,9 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
                          <span className="text-[8px] font-bold text-white">{(nicknames.get(r.user_id) || "U")[0]}</span>
                        </div>
                        <span className="text-xs font-semibold text-white truncate max-w-[100px]">
-                         {nicknames.get(r.user_id) || "User"}
+                         {nicknames.get(r.user_id) || ""}
                        </span>
+
                      </div>
                      <AIConfidenceBadge confidence={r.ai_confidence} />
                   </div>
@@ -356,7 +357,8 @@ export default function AdminReceipts({ embedded }: AdminReceiptsProps) {
                <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-white/[0.02]">
                   <div>
                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        {nicknames.get(reviewingReceipt.user_id) || "User"}
+                        {nicknames.get(reviewingReceipt.user_id) || ""}
+
                         <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] text-zinc-300 font-normal">
                           {formatDate(reviewingReceipt.created_at)}
                         </span>

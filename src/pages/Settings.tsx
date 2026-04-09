@@ -82,7 +82,7 @@ const Settings = () => {
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary glow-green">
               <span className="font-display text-2xl font-bold text-primary">
-                {user?.nickname?.[0]?.toUpperCase() || "?"}
+                {user?.nickname?.[0]?.toUpperCase()}
               </span>
             </div>
           )}
@@ -94,7 +94,7 @@ const Settings = () => {
               </>
             ) : (
               <>
-                <h2 className="font-display text-lg font-bold text-foreground">{user?.nickname || "User"}</h2>
+                <h2 className="font-display text-lg font-bold text-foreground">{user?.nickname}</h2>
                 <div className="flex items-center gap-1 mt-0.5">
                   <Shield size={10} className="text-primary" />
                   <span className="text-[10px] font-bold text-primary glow-green-text">
@@ -103,7 +103,7 @@ const Settings = () => {
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <Phone size={10} className="text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">{user?.phone || "+62..."}</span>
+                  <span className="text-[10px] text-muted-foreground">{user?.phone}</span>
                 </div>
               </>
             )}

@@ -320,7 +320,8 @@ const Index = () => {
     session?.user?.user_metadata?.name ??
     session?.user?.user_metadata?.display_name ??
     session?.user?.email ??
-    "Guest";
+    "";
+
   const level = stats?.level ?? user?.level ?? 1;
 
 

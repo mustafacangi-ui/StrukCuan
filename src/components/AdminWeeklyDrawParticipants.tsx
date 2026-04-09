@@ -83,7 +83,7 @@ export default function AdminWeeklyDrawParticipants() {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate max-w-[140px]">
-                          {p.nickname || "User"}
+                          {p.nickname || ""}
                         </span>
                         <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-tighter">
                           ID: {p.user_id.slice(0, 8)}...
