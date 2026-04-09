@@ -323,9 +323,9 @@ export default function Earn() {
               <p className="text-[10px] text-white/35">{t("earn.ballotNumbersEmpty")}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {myBallotIds.map((id) => (
+                {myBallotIds.map((id, index) => (
                   <span
-                    key={id}
+                    key={typeof id === 'string' ? id : `ballot-${index}`}
                     className="font-mono text-[11px] font-bold tabular-nums px-2 py-1 rounded-lg"
                     style={{
                       background: "rgba(0,230,118,0.12)",
@@ -333,7 +333,7 @@ export default function Earn() {
                       border: "1px solid rgba(0,230,118,0.35)",
                     }}
                   >
-                    #{id}
+                    #{typeof id === 'string' ? id : (id as any).id_text || String(id)}
                   </span>
                 ))}
               </div>

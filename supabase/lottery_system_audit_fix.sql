@@ -242,7 +242,34 @@ END;
 $$;
 
 -- ==========================================
--- 6. STABILIZED APPROVE_RECEIPT
+-- 6. STABILIZED HELPER RPCs
+-- ==========================================
+
+DROP FUNCTION IF EXISTS public.get_current_week_key();
+CREATE OR REPLACE FUNCTION public.get_current_week_key()
+RETURNS TEXT LANGUAGE SQL STABLE AS $$
+  SELECT to_char(NOW() AT TIME ZONE 'Asia/Jakarta', 'IYYY-"W"IW');
+$$;
+
+-- Return draw codes for the Earn page (Source of Truth)
+DROP FUNCTION IF EXISTS public.get_my_lottery_ballots();
+CREATE OR REPLACE FUNCTION public.get_my_lottery_ballots()
+RETURNS TABLE (id_text TEXT)
+LANGUAGE SQL SECURITY DEFINER SET search_path = public STABLE AS $$
+  -- Map to weekly_draw_entries for the current week
+  SELECT draw_code::text
+  FROM public.weekly_draw_entries
+  WHERE user_id::text = auth.uid()::text
+    AND week_key::text = public.get_current_week_key()::text
+  ORDER BY ticket_threshold ASC;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_current_week_key() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_current_week_key() TO anon;
+GRANT EXECUTE ON FUNCTION public.get_my_lottery_ballots() TO authenticated;
+
+-- ==========================================
+-- 7. STABILIZED APPROVE_RECEIPT
 -- ==========================================
 
 DROP FUNCTION IF EXISTS public.approve_receipt(BIGINT, TEXT);

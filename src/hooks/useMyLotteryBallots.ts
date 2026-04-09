@@ -10,8 +10,10 @@ async function fetchMyBallots(): Promise<string[]> {
     console.error("[useMyLotteryBallots] RPC failed:", error);
     throw error;
   }
-  // The RPC now returns an array of strings (draw codes)
-  return (data ?? []) as string[];
+  // Supabase RPC on TABLE returning functions always returns an array of objects
+  // e.g., [{ id_text: "ABCDEF" }]
+  const rows = (data ?? []) as any[];
+  return rows.map((r) => String(r.id_text || r.id || r));
 }
 
 export function useMyLotteryBallots(userId: string | undefined) {

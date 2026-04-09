@@ -407,17 +407,17 @@ export default function WeeklyDraw() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs text-white truncate">
-                                {w.winner_name ?? `User-${w.user_id?.slice(0, 6)}`}
+                                {String(w.winner_name ?? `User-${String(w.user_id).slice(0, 6)}`)}
                               </p>
-                              <p className="text-[9px] text-white/30">{dateStr}</p>
+                              <p className="text-[9px] text-white/30">{String(dateStr)}</p>
                             </div>
                           </div>
                           <div className="text-right shrink-0 ml-2">
                             <p className="text-xs font-bold text-amber-300">
-                              Rp{((w.voucher_amount ?? w.prize_amount ?? PRIZE_PER_WINNER)).toLocaleString("id-ID")}
+                              Rp{((w.voucher_amount ?? w.prize_amount ?? 50000)).toLocaleString("id-ID")}
                             </p>
                             {(w.draw_code ?? w.winning_ballot_id) && (
-                              <p className="text-[8px] text-purple-400/50 font-mono">#{w.draw_code ?? w.winning_ballot_id}</p>
+                              <p className="text-[8px] text-purple-400/50 font-mono">#{String(w.draw_code ?? w.winning_ballot_id)}</p>
                             )}
                           </div>
                         </div>

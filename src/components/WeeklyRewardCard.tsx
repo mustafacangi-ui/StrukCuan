@@ -110,11 +110,11 @@ export default function WeeklyRewardCard() {
                         <span className="text-[10px] font-bold text-amber-300">#{i + 1}</span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-white">{w.winner_name ?? "—"}</p>
-                        <p className="text-[10px] text-white/40">{formatDate(w.draw_date)}</p>
+                        <p className="text-xs font-semibold text-white">{String(w.winner_name ?? "—")}</p>
+                        <p className="text-[10px] text-white/40">{String(formatDate(w.draw_date))}</p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-amber-300">{t("weeklyReward.amount")}</span>
+                    <span className="text-[11px] font-bold text-amber-300">{String(t("weeklyReward.amount"))}</span>
                   </div>
                 ))
               )}
@@ -268,9 +268,9 @@ export default function WeeklyRewardCard() {
                       border: "1px solid rgba(255,255,255,0.06)",
                       boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)"
                     }}>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>#{entry.ticket_threshold}</span>
+                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>#{String(entry.ticket_threshold)}</span>
                     <span className="font-bold tabular-nums tracking-widest text-white text-xs">
-                      {entry.draw_code}
+                      {String(entry.draw_code)}
                     </span>
                   </div>
                 ))}
