@@ -50,18 +50,18 @@ BEGIN
   SELECT COUNT(*) INTO v_winner_count FROM public.weekly_winners WHERE draw_date = CURRENT_DATE;
   RAISE NOTICE 'Total winners today: %', v_winner_count;
 
-  -- Verify unique users
-  IF (SELECT COUNT(DISTINCT user_id) FROM public.weekly_winners WHERE draw_date = CURRENT_DATE) < v_winner_count THEN
+  -- Verify unique users with defensive casting
+  IF (SELECT COUNT(DISTINCT user_id::text) FROM public.weekly_winners WHERE draw_date = CURRENT_DATE) < v_winner_count THEN
     RAISE EXCEPTION 'Duplicate users found in winners list!';
   END IF;
 
-  -- Verify ticket reset
-  IF (SELECT SUM(tiket) FROM public.user_stats WHERE user_id IN (v_user1::text, v_user2::text)) > 0 THEN
+  -- Verify ticket reset with defensive casting
+  IF (SELECT SUM(tiket) FROM public.user_stats WHERE user_id::text IN (v_user1::text, v_user2::text)) > 0 THEN
     RAISE EXCEPTION 'user_stats.tiket was not reset to 0!';
   END IF;
 
   -- Verify archival
-  IF (SELECT COUNT(*) FROM public.weekly_draw_entries_history WHERE week_key = v_week) = 0 THEN
+  IF (SELECT COUNT(*) FROM public.weekly_draw_entries_history WHERE week_key::text = v_week::text) = 0 THEN
     RAISE EXCEPTION 'weekly_draw_entries were not moved to history!';
   END IF;
 

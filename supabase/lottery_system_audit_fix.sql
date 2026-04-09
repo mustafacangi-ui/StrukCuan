@@ -1,18 +1,15 @@
--- StrukCuan: Weekly Reward & Lottery System Audit Fixes
--- This script secures the lottery system, handles resets, and prevents fraud.
+-- StrukCuan: Weekly Reward & Lottery System Audit Fixes (STABILIZED)
+-- This version removes illegal COMMIT statements and adds defensive UUID/TEXT casting.
 
 -- ==========================================
 -- 1. RECEIPT HASH PROTECTION
 -- ==========================================
--- Add receipt_hash to prevent duplicate uploads
+-- Add receipt_hash column to prevent duplicate uploads
 ALTER TABLE public.receipts 
   ADD COLUMN IF NOT EXISTS receipt_hash TEXT;
 
--- Index for fast lookup
+-- Index for fast lookup (Safe to rerun)
 CREATE INDEX IF NOT EXISTS receipts_hash_idx ON public.receipts (receipt_hash);
-
--- Optional: If you want to force uniqueness at DB level (exact duplicate images)
--- CREATE UNIQUE INDEX IF NOT EXISTS receipts_unique_hash_idx ON public.receipts (receipt_hash) WHERE status <> 'rejected';
 
 -- ==========================================
 -- 2. HISTORY TABLES
@@ -20,7 +17,7 @@ CREATE INDEX IF NOT EXISTS receipts_hash_idx ON public.receipts (receipt_hash);
 
 -- weekly_draw_entries_history: records entries after the draw is completed
 CREATE TABLE IF NOT EXISTS public.weekly_draw_entries_history (
-  id             BIGINT PRIMARY KEY, -- Keep original ID
+  id             BIGINT, -- No Primary Key for safe idempotency
   user_id        UUID NOT NULL,
   draw_code      TEXT NOT NULL,
   ticket_threshold INTEGER NOT NULL,
@@ -29,31 +26,22 @@ CREATE TABLE IF NOT EXISTS public.weekly_draw_entries_history (
   archived_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Index for history lookups
+CREATE INDEX IF NOT EXISTS wdeh_user_week_idx ON public.weekly_draw_entries_history (user_id, week_key);
+
 -- ==========================================
--- 3. DRAW CODE UNIQUENESS
+-- 3. DRAW CODE UNIQUENESS & COLLISION PROTECTION
 -- ==========================================
 
 -- Ensure no duplicate codes in the same week
--- First, clean up any existing duplicates if they exist (unlikely but safe)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'weekly_draw_entries') THEN
-    -- No-op for now as we don't want to delete user data blindly
-    NULL;
-  END IF;
-END $$;
-
--- Add unique constraint
+-- Add unique constraint (Safe to rerun because of IF NOT EXISTS pattern in DROP/ADD)
 ALTER TABLE public.weekly_draw_entries
   DROP CONSTRAINT IF EXISTS wde_draw_code_week_key_unique;
 ALTER TABLE public.weekly_draw_entries
   ADD CONSTRAINT wde_draw_code_week_key_unique UNIQUE (draw_code, week_key);
 
--- ==========================================
--- 4. IMPROVED CODE GENERATION
--- ==========================================
-
 -- Update generate_draw_code to ensure uniqueness within the week
+DROP FUNCTION IF EXISTS public.generate_unique_draw_code(TEXT);
 CREATE OR REPLACE FUNCTION public.generate_unique_draw_code(p_week_key TEXT)
 RETURNS TEXT LANGUAGE PLPGSQL AS $$
 DECLARE
@@ -64,7 +52,7 @@ BEGIN
     v_code := LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
     SELECT EXISTS (
       SELECT 1 FROM public.weekly_draw_entries 
-      WHERE draw_code = v_code AND week_key = p_week_key
+      WHERE draw_code::text = v_code::text AND week_key::text = p_week_key::text
     ) INTO v_exists;
     EXIT WHEN NOT v_exists;
   END LOOP;
@@ -73,9 +61,10 @@ END;
 $$;
 
 -- ==========================================
--- 5. UPDATED ENSURE_DRAW_ENTRIES
+-- 4. STABILIZED ENSURE_DRAW_ENTRIES
 -- ==========================================
 
+DROP FUNCTION IF EXISTS public.ensure_draw_entries(UUID);
 CREATE OR REPLACE FUNCTION public.ensure_draw_entries(p_user_id UUID)
 RETURNS JSONB LANGUAGE PLPGSQL SECURITY DEFINER AS $$
 DECLARE
@@ -87,7 +76,7 @@ DECLARE
   v_new_entries INTEGER := 0;
   v_draw_code TEXT;
 BEGIN
-  -- Get current tiket count (This count is now weekly-reset)
+  -- Get current tiket count with defensive casting
   SELECT COALESCE(tiket, 0) INTO v_tiket
   FROM public.user_stats
   WHERE user_id::text = p_user_id::text;
@@ -108,7 +97,7 @@ BEGIN
   -- Find highest existing threshold for this week
   SELECT COALESCE(MAX(ticket_threshold), 0) INTO v_existing_max
   FROM public.weekly_draw_entries
-  WHERE user_id = p_user_id AND week_key = v_week_key;
+  WHERE user_id::text = p_user_id::text AND week_key::text = v_week_key::text;
 
   -- Create missing entries
   v_threshold := v_existing_max + 10;
@@ -128,9 +117,10 @@ END;
 $$;
 
 -- ==========================================
--- 6. MASTER RESET & DRAW LOGIC
+-- 5. STABILIZED MASTER RESET & DRAW LOGIC
 -- ==========================================
 
+DROP FUNCTION IF EXISTS public.run_weekly_draw();
 CREATE OR REPLACE FUNCTION public.run_weekly_draw()
 RETURNS VOID LANGUAGE PLPGSQL SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -151,8 +141,8 @@ BEGIN
   -- 1) COUNT POOL (Based on lottery_tickets)
   v_total := (SELECT COUNT(*) FROM public.lottery_tickets);
   IF v_total = 0 THEN 
-    -- Even if no winners, we might still want to reset the week
-    COMMIT; -- Allow reset logic to run
+    -- Even if no winners, we proceed to reset logic (NO COMMIT ALLOWED HERE)
+    NULL;
   END IF;
 
   -- 2) PICK 5 UNIQUE WINNERS
@@ -165,12 +155,13 @@ BEGIN
     FOR v_winner IN
       SELECT lt.id, lt.user_id FROM public.lottery_tickets lt ORDER BY lt.id
     LOOP
+      -- Defensive Casting
       IF v_winner.user_id::text = ANY(v_picked) THEN
         CONTINUE;
       END IF;
 
       IF v_offset = v_rnd THEN
-        -- Get User Identity
+        -- Get User Identity with defensive casting
         SELECT COALESCE(nickname, 'User')
           INTO v_nickname
           FROM public.user_stats
@@ -179,14 +170,14 @@ BEGIN
         v_display_id   := ABS(HASHTEXT(v_winner.user_id::text)) % 90000 + 10000;
         v_display_name := COALESCE(v_nickname, 'User') || ' #' || v_display_id::text;
 
-        -- Find user's last generated draw_code for this week
+        -- Find user's draw_code with defensive casting
         SELECT draw_code INTO v_winner_code
         FROM public.weekly_draw_entries
-        WHERE user_id::text = v_winner.user_id::text AND week_key = v_week_key
+        WHERE user_id::text = v_winner.user_id::text AND week_key::text = v_week_key::text
         ORDER BY ticket_threshold DESC
         LIMIT 1;
 
-        -- FALLBACK: If draw_code not found (unlikely), use their ticket ID
+        -- FALLBACK
         IF v_winner_code IS NULL THEN
           v_winner_code := v_winner.id::text;
         END IF;
@@ -213,7 +204,7 @@ BEGIN
           RAISE WARNING 'Notification failed for winner %: %', v_winner.user_id, SQLERRM;
         END;
 
-        -- Remove winner's tickets from current pool to ensure uniqueness
+        -- Remove winner's tickets from current pool
         v_picked := ARRAY_APPEND(v_picked, v_winner.user_id::text);
         DELETE FROM public.lottery_tickets WHERE user_id::text = v_winner.user_id::text;
         v_total := (SELECT COUNT(*) FROM public.lottery_tickets);
@@ -228,49 +219,44 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- ==========================================
-  -- 3. MASTER RESET LOGIC
-  -- ==========================================
+  -- 3) MASTER RESET LOGIC (Safe within function transaction)
 
   -- A) ARCHIVE weekly_draw_entries
   INSERT INTO public.weekly_draw_entries_history (id, user_id, draw_code, ticket_threshold, week_key, created_at)
   SELECT id, user_id, draw_code, ticket_threshold, week_key, created_at
   FROM public.weekly_draw_entries
-  WHERE week_key = v_week_key;
+  WHERE week_key::text = v_week_key::text;
 
-  DELETE FROM public.weekly_draw_entries WHERE week_key = v_week_key;
+  DELETE FROM public.weekly_draw_entries WHERE week_key::text = v_week_key::text;
 
   -- B) RESET user_stats.tiket for all users
   UPDATE public.user_stats SET tiket = 0, updated_at = NOW();
 
-  -- C) CLEAR lottery_tickets (Any leftovers)
+  -- C) CLEAR lottery_tickets
   DELETE FROM public.lottery_tickets;
 
-  -- D) CLEAR user_tickets for the drawn week
+  -- D) CLEAR user_tickets
   DELETE FROM public.user_tickets WHERE draw_week = v_draw_week;
 
 END;
 $$;
 
 -- ==========================================
--- 7. UPDATE RPC FOR FRONTEND SYNC
+-- 6. STABILIZED APPROVE_RECEIPT
 -- ==========================================
 
--- ==========================================
--- 8. DUPLICATE RECEIPT PROTECTION (In RPC)
--- ==========================================
-
+DROP FUNCTION IF EXISTS public.approve_receipt(BIGINT, TEXT);
 CREATE OR REPLACE FUNCTION public.approve_receipt(p_receipt_id BIGINT, p_receipt_hash TEXT DEFAULT NULL)
 RETURNS VOID LANGUAGE PLPGSQL SECURITY DEFINER AS $$
 DECLARE
   v_user_id TEXT;
   v_existing_id BIGINT;
 BEGIN
-  -- 1) Duplicate Check (Only if hash is provided)
+  -- 1) Duplicate Check
   IF p_receipt_hash IS NOT NULL AND p_receipt_hash <> '' THEN
     SELECT id INTO v_existing_id 
     FROM public.receipts 
-    WHERE receipt_hash = p_receipt_hash 
+    WHERE receipt_hash::text = p_receipt_hash::text 
       AND status = 'approved'
       AND id <> p_receipt_id
     LIMIT 1;
@@ -282,32 +268,31 @@ BEGIN
 
   -- 2) Lock receipt
   SELECT user_id INTO v_user_id
-  from public.receipts
-  where id = p_receipt_id and status = 'pending'
-  for update;
+  FROM public.receipts
+  WHERE id = p_receipt_id AND status = 'pending'
+  FOR UPDATE;
 
-  if v_user_id is null then
-    raise exception 'Receipt not found or not pending';
-  end if;
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Receipt not found or not pending';
+  END IF;
 
   -- 3) Update status and hash
-  update public.receipts
-  set status = 'approved',
+  UPDATE public.receipts
+  SET status = 'approved',
       receipt_hash = COALESCE(p_receipt_hash, receipt_hash)
-  where id = p_receipt_id;
+  WHERE id = p_receipt_id;
 
-  -- 4) Reward Ticket & Cuan
-  insert into public.user_stats (user_id, cuan, tiket)
-  values (v_user_id, 50, 1)
-  on conflict (user_id)
-  do update set
+  -- 4) Reward with defensive casting
+  INSERT INTO public.user_stats (user_id, cuan, tiket)
+  VALUES (v_user_id::text, 50, 1)
+  ON CONFLICT (user_id) DO UPDATE SET
     cuan = public.user_stats.cuan + 50,
     tiket = public.user_stats.tiket + 1;
 
   -- 5) Notification
-  insert into public.notifications (user_id, title, message)
-  values (
-    v_user_id,
+  INSERT INTO public.notifications (user_id, title, message)
+  VALUES (
+    v_user_id::text,
     'Receipt Approved',
     'Your receipt has been approved. You earned +50 cuan and +1 ticket.'
   );
