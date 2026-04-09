@@ -358,63 +358,77 @@ export default function WeeklyDraw() {
         )}
 
         {/* ── WINNER HISTORY ── */}
-        {allWinners.length > 1 && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="rounded-3xl overflow-hidden"
-            style={{
-              background: "rgba(0,0,0,0.4)",
-              border: "1px solid rgba(255,255,255,0.06)",
-            }}>
-            <button
-              onClick={() => setShowWinners(!showWinners)}
-              className="w-full flex items-center justify-between p-4 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <Trophy size={14} className="text-amber-400/70" />
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Winner History</span>
-              </div>
-              {showWinners ? <ChevronUp size={16} className="text-white/40" /> : <ChevronDown size={16} className="text-white/40" />}
-            </button>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="rounded-3xl overflow-hidden"
+          style={{
+            background: "rgba(0,0,0,0.4)",
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+          <button
+            onClick={() => setShowWinners(!showWinners)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Trophy size={14} className="text-amber-400/70" />
+              <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Winner History</span>
+            </div>
+            {showWinners ? <ChevronUp size={16} className="text-white/40" /> : <ChevronDown size={16} className="text-white/40" />}
+          </button>
 
-            <AnimatePresence>
-              {showWinners && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 pb-4 space-y-2 border-t border-white/5">
-                    {allWinners.slice(0, 10).map((w) => (
-                      <div key={w.id} className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="h-6 w-6 rounded-full shrink-0 flex items-center justify-center"
-                            style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                            <Trophy size={10} className="text-amber-400" />
+          <AnimatePresence>
+            {showWinners && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 space-y-2 border-t border-white/5">
+                  {allWinners.length === 0 ? (
+                    <div className="py-8 text-center px-4">
+                      <Clock size={24} className="text-white/20 mx-auto mb-2" />
+                      <p className="text-xs text-white/40 leading-relaxed">
+                        No winners announced yet. This week's winners will appear here after the Sunday draw!
+                      </p>
+                    </div>
+                  ) : (
+                    allWinners.slice(0, 10).map((w) => {
+                      // Safe date parsing to avoid Jan 1, 1970
+                      const d = w.draw_date ? new Date(w.draw_date) : null;
+                      const isValidDate = d && !isNaN(d.getTime()) && d.getFullYear() > 2000;
+                      const dateStr = isValidDate ? d!.toLocaleDateString("id-ID", { day: 'numeric', month: 'short' }) : "Recent";
+
+                      return (
+                        <div key={w.id} className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-6 w-6 rounded-full shrink-0 flex items-center justify-center"
+                              style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
+                              <Trophy size={10} className="text-amber-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs text-white truncate">
+                                {w.winner_name ?? `User-${w.user_id?.slice(0, 6)}`}
+                              </p>
+                              <p className="text-[9px] text-white/30">{dateStr}</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs text-white truncate">
-                              {w.winner_name ?? `User-${w.user_id?.slice(0, 6)}`}
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-xs font-bold text-amber-300">
+                              Rp{((w.voucher_amount ?? w.prize_amount ?? PRIZE_PER_WINNER)).toLocaleString("id-ID")}
                             </p>
-                            {w.draw_date && <p className="text-[9px] text-white/30">{w.draw_date}</p>}
+                            {(w.draw_code ?? w.winning_ballot_id) && (
+                              <p className="text-[8px] text-purple-400/50 font-mono">#{w.draw_code ?? w.winning_ballot_id}</p>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <p className="text-xs font-bold text-amber-300">
-                            Rp{((w.voucher_amount ?? w.prize_amount ?? PRIZE_PER_WINNER)).toLocaleString("id-ID")}
-                          </p>
-                          {(w.draw_code ?? w.winning_ballot_id) && (
-                            <p className="text-[8px] text-purple-400/50 font-mono">#{w.draw_code ?? w.winning_ballot_id}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
+                      );
+                    })
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* ── HOW IT WORKS ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
