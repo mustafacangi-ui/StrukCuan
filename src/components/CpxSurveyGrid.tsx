@@ -188,8 +188,7 @@ export function CpxSurveyGrid({
         >
           {surveys.map((survey) => {
             const minutes = getSurveyMinutes(survey);
-            const tickets = getTicketCount(minutes);
-            const amountLabel = formatSurveyAmountIdr(survey);
+            const tickets = getTicketCount(survey.payout);
             const category =
               formatCategoryLabel(survey.provider) ?? formatCategoryLabel(survey.category);
             const typeBadge = formatCategoryLabel(survey.type);
@@ -223,7 +222,7 @@ export function CpxSurveyGrid({
                   )}
                 >
                   <Ticket className="size-3.5 shrink-0" aria-hidden />
-                  {copy.earnTickets(tickets)}
+                  {getTicketCountLabel(tickets, isIndonesian)}
                 </span>
 
                 {(category || typeBadge) && (
@@ -241,12 +240,13 @@ export function CpxSurveyGrid({
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-theme-green mt-1">
-                  <Coins className="size-5 shrink-0" aria-hidden />
+                <div className="flex items-center gap-2 text-theme-pink mt-1">
+                  <Ticket className="size-5 shrink-0" aria-hidden />
                   <span className="font-display text-lg font-bold text-white tabular-nums">
-                    {amountLabel}
+                    {tickets} {copy.ticketWord}
                   </span>
                 </div>
+
 
                 <div className="mt-3 flex items-center gap-2 text-sm text-white/65">
                   <Clock className="size-4 shrink-0 text-theme-purple" aria-hidden />

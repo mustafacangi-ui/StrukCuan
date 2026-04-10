@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { invalidateTicketQueries } from "@/lib/grantTickets";
+
+console.log('💎 useUserTickets.ts file loaded');
 
 export const USER_TICKETS_QUERY_KEY = ["user_tickets"] as const;
 
@@ -58,10 +62,74 @@ async function fetchWeeklyTicketCount(userId: string): Promise<number> {
   return data?.tickets ?? 0;
 }
 
+
 export function useWeeklyTicketCount(userId: string | undefined) {
   return useQuery({
     queryKey: [...USER_TICKETS_QUERY_KEY, "weekly_count", userId],
     queryFn: () => fetchWeeklyTicketCount(userId!),
     enabled: !!userId,
   });
+}
+
+/**
+ * Realtime subscription hook for ticket and survey updates.
+ * Automatically invalidates relevant React Query keys to refresh the UI.
+ */
+export function useTicketsRealtime(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  
+  // UNIQUE TOP-LEVEL LOG
+  console.log('🚀 useTicketsRealtime hook running', userId);
+
+  useEffect(() => {
+    console.log('🔄 [useTicketsRealtime] useEffect triggered', { userId });
+
+    if (!userId) {
+      console.warn('🟠 [useTicketsRealtime] skipping subscription: userId is null/undefined');
+      return;
+    }
+
+    console.log('🟢 [useTicketsRealtime] SUBSCRIBING... (No filters version)');
+
+    const channel = supabase
+      .channel(`debug-all-rewards-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // ANY EVENT
+          schema: "public",
+          table: "user_tickets",
+        },
+        (payload) => {
+          console.log("⚡ [Realtime] user_tickets EVENT RECEIVED:", payload);
+          if (payload.new && (payload.new as any).user_id === userId) {
+            console.log("✅ [Realtime] Match! Invalidating.");
+            invalidateTicketQueries(queryClient);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_stats",
+        },
+        (payload) => {
+          console.log("⚡ [Realtime] user_stats EVENT RECEIVED:", payload);
+          if (payload.new && (payload.new as any).user_id === userId) {
+            console.log("✅ [Realtime] Match! Invalidating.");
+            invalidateTicketQueries(queryClient);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`🌐 [Realtime] Status for ${userId}: ${status.toUpperCase()}`);
+      });
+
+    return () => {
+      console.log('💀 [useTicketsRealtime] Cleanup - Removing channel');
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
 }

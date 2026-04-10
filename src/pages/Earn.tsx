@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ShieldAlert, Monitor, Smartphone, Terminal } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserStats } from "@/hooks/useUserStats";
-import { useUserTickets, useWeeklyTicketCount, USER_TICKETS_QUERY_KEY } from "@/hooks/useUserTickets";
+import {
+  useUserTickets,
+  useWeeklyTicketCount,
+  USER_TICKETS_QUERY_KEY,
+  useTicketsRealtime,
+} from "@/hooks/useUserTickets";
 import {
   useTodayRewardedTickets,
   TODAY_REWARDED_TICKETS_QUERY_KEY,
@@ -60,6 +65,12 @@ export default function Earn() {
   const prevTicketsRef = useRef<number>(totalTickets);
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
+
+  // DEBUG: Check user state
+  console.log('🔥 Earn is calling useTicketsRealtime NOW', { userId: user?.id, authLoading });
+
+  // Subscribe to realtime ticket & survey event updates
+  useTicketsRealtime(user?.id);
 
   const displaySurveys = useMemo(() => {
     try {
@@ -139,6 +150,54 @@ export default function Earn() {
     }
   }, [authLoading, isOnboarded, navigate]);
 
+  // Real-time listener for survey rewards
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = queryClient.getQueryCache().config.meta?.supabase?.channel(`survey_rewards:${user.id}`) ?? 
+                    (window as any).supabase?.channel(`survey_rewards:${user.id}`);
+    
+    // Fallback to creating a client if global one isn't exposed (or use standard way if available)
+    // In this app, we usually use the supabase client from lib/supabase
+    import("@/lib/supabase").then(({ supabase }) => {
+      const sub = supabase
+        .channel(`survey_rewards_realtime_${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "survey_rewards",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log("[SurveyRealtime] New reward detected:", payload);
+            const { status, tickets_granted } = payload.new as { status: string; tickets_granted: number };
+            
+            if (status === "completed") {
+              toast.success(t("earn.survey.completed"), {
+                description: t("earn.survey.ticketsEarned", { n: tickets_granted }),
+              });
+              // Invalidate all relevant queries
+              queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
+              invalidateTicketQueries(queryClient);
+              invalidateLotteryPoolQueries(queryClient);
+            } else if (status === "reversed" || status === "rejected" || status === "screenout" || status === "quota_full") {
+              const reason = status.replace(/_/g, " ");
+              toast.error(t("earn.survey.rejected"), {
+                description: `Outcome: ${reason}. No tickets granted.`,
+              });
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(sub);
+      };
+    });
+  }, [user?.id, queryClient, t]);
+
   // Handle auto-open surveys when redirected from /surveys route
   useEffect(() => {
     const locationState = location.state as { openSurveys?: boolean } | null;
@@ -148,6 +207,7 @@ export default function Earn() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate, surveysLoading, user?.id]);
+
 
   const isRedirecting = !authLoading && !isOnboarded;
 

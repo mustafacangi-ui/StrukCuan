@@ -205,10 +205,13 @@
       "emptyHint": "Cek lagi nanti!",
       "bestOffer": "🔥 Penawaran Terbaik",
       "fallbackTitle": "Survei BitLabs",
-      "tickets2": "🎟️ 2 TIKET",
-      "tickets1": "🎟️ 1 TIKET",
-      "start": "MULAI"
+      "tickets": "TIKET",
+      "start": "MULAI",
+      "completed": "Survei Selesai!",
+      "ticketsEarned": "Anda mendapatkan {{n}} tiket.",
+      "rejected": "Survei Tidak Berhasil"
     }
+
   },
   "shake": {
     "title": "Lucky Shake",

@@ -15,18 +15,32 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const body = await req.json();
-    const user_id = body.user_id ?? body.userId;
-    const provider = (body.provider ?? "other").toLowerCase();
-    const user_cuan = body.user_cuan ?? body.userCuan ?? 0;
-    const gross_profit = body.gross_profit ?? body.grossProfit ?? 0;
-    const transaction_id = body.transaction_id ?? body.transactionId ?? null;
-    const survey_id = body.survey_id ?? body.surveyId ?? null;
-    const country_code = (body.country_code ?? body.countryCode ?? "ID").toUpperCase().slice(0, 2);
+    const url = new URL(req.url);
+    const queryParams = Object.fromEntries(url.searchParams.entries());
+    let body = {};
+    try {
+      if (req.headers.get("content-type")?.includes("application/json")) {
+        body = await req.json();
+      }
+    } catch (e) {
+      // Ignored: body might be empty
+    }
 
-    if (!user_id || !provider) {
+    const payload = { ...queryParams, ...body };
+    console.log("[SurveyCallback] Incoming payload:", JSON.stringify(payload));
+
+    const user_id = payload.user_id ?? payload.userId ?? payload.ext_user_id;
+    const provider = (payload.provider ?? "cpx").toLowerCase();
+    const payout = payload.payout ?? payload.amount ?? 0;
+    const transaction_id = payload.transaction_id ?? payload.transactionId ?? payload.trans_id ?? null;
+    const status = String(payload.status ?? "completed");
+    const loi = payload.loi ?? null;
+    const survey_id = payload.survey_id ?? payload.surveyId ?? null;
+    const country_code = (payload.country_code ?? payload.countryCode ?? "ID").toUpperCase().slice(0, 2);
+
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ success: false, error: "user_id and provider required" }),
+        JSON.stringify({ success: false, error: "user_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -36,16 +50,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { data, error } = await supabase.rpc("survey_completion_callback", {
+    const { data, error } = await supabase.rpc("process_survey_completion", {
       p_user_id: user_id,
       p_provider: provider,
-      p_user_cuan: Number(user_cuan),
-      p_gross_profit: Number(gross_profit),
       p_transaction_id: transaction_id,
+      p_payout: Number(payout),
+      p_status: status,
+      p_loi: loi ? Number(loi) : null,
       p_survey_id: survey_id,
       p_country_code: country_code,
-      p_metadata: body.metadata ?? null,
+      p_metadata: payload,
     });
+
 
     if (error) {
       return new Response(

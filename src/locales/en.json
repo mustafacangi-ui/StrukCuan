@@ -205,10 +205,13 @@
       "empty": "No surveys available right now.",
       "emptyHint": "Check back later!",
       "bestOffer": "🔥 Best Offer",
-      "fallbackTitle": "BitLabs Survey",
       "tickets": "TICKETS",
-      "start": "START"
+      "start": "START",
+      "completed": "Survey Completed!",
+      "ticketsEarned": "You earned {{n}} tickets.",
+      "rejected": "Survey Unsuccessful"
     }
+
   },
   "shake": {
     "title": "Lucky Shake",

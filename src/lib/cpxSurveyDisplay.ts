@@ -1,10 +1,27 @@
 import type { CpxSurvey } from "@/lib/cpxResearch";
 
-export const getTicketCount = (minutes: number): number => {
-  if (minutes < 1) return 1;
-  if (minutes <= 3) return 2;
+/**
+ * Converts CPX payout (USD) to ticket count based on thresholds.
+ * payout < 0.20 => 1 ticket
+ * payout 0.20 - 0.75 => 2 tickets
+ * payout > 0.75 => 3 tickets
+ */
+export const getTicketCount = (payoutOrMinutes: number | string): number => {
+  const payout = typeof payoutOrMinutes === "string" 
+    ? parseFloat(payoutOrMinutes.replace(/,/g, "")) 
+    : payoutOrMinutes;
+    
+  if (isNaN(payout) || payout < 0.20) return 1;
+  if (payout <= 0.75) return 2;
   return 3;
 };
+
+export function getTicketCountLabel(tickets: number, isIndonesian = false): string {
+  if (isIndonesian) {
+    return `Dapatkan ${tickets} Tiket`;
+  }
+  return `Earn ${tickets} Tickets`;
+}
 
 export function getSurveyMinutes(survey: CpxSurvey): number {
   const est = survey.estimated_time;
@@ -18,21 +35,14 @@ export function getSurveyMinutes(survey: CpxSurvey): number {
   return 1;
 }
 
-export function formatSurveyAmountIdr(survey: CpxSurvey): string {
-  let amount = 0;
-  if (survey.amount_local_money != null) {
-    const raw = survey.amount_local_money;
-    amount = typeof raw === "number" ? raw : parseFloat(String(raw).replace(/,/g, ""));
-  } else {
-    amount = parseFloat(String(survey.payout ?? "0"));
-  }
-  if (!Number.isFinite(amount)) amount = 0;
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(amount);
+/**
+ * Payout amounts are now hidden from users. 
+ * This returns an empty string or generic label.
+ */
+export function formatSurveyAmountIdr(_survey: CpxSurvey): string {
+  return "";
 }
+
 
 function pickHttpUrl(
   ...candidates: Array<string | number | undefined | null>
