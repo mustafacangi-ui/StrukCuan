@@ -301,12 +301,14 @@ export default function AdminNotifications() {
         method: "POST", headers: await authHeaders(),
         body: JSON.stringify({ title: instTitle.trim(), body: instBody.trim(), segment: instSeg }),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (json.success) {
-        toast.success(`Sent to ${json.successful}/${json.total} devices`);
+        toast.success(json.message ?? `Sent to ${json.successful}/${json.total} devices`);
         setInstBody(""); setInstTitle("StrukCuan"); setInstSeg("all");
         fetchHistory();
-      } else toast.error(json.message ?? "Send failed");
+      } else {
+        toast.error(json.details || json.message || json.error || `Send failed (${res.status})`);
+      }
     } catch (e: any) { toast.error(e.message); } finally { setIsSending(false); }
   }
 
@@ -321,12 +323,14 @@ export default function AdminNotifications() {
         method: "POST", headers: await authHeaders(),
         body: JSON.stringify({ title: schedTitle.trim(), body: schedBody.trim(), segment: schedSeg, scheduled_for: new Date(schedFor).toISOString() }),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (json.success) {
         toast.success(`Scheduled for ${toWIB(schedFor)}`);
         setSchedBody(""); setSchedTitle("StrukCuan"); setSchedSeg("all"); setSchedFor("");
         setActiveTab("queue"); fetchQueue();
-      } else toast.error(json.message ?? "Failed");
+      } else {
+        toast.error(json.details || json.message || json.error || `Schedule failed (${res.status})`);
+      }
     } catch (e: any) { toast.error(e.message); } finally { setIsScheduling(false); }
   }
 
@@ -394,12 +398,14 @@ export default function AdminNotifications() {
         method: "POST", headers: await authHeaders(),
         body: JSON.stringify({ title, body, segment: audience }),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (json.success) {
-        toast.success(`"${tpl.name}" → ${json.successful}/${json.total} devices`);
+        toast.success(json.message ?? `"${tpl.name}" → ${json.successful}/${json.total} devices`);
         await supabase.from("push_notification_templates").update({ last_sent_at: new Date().toISOString() }).eq("id", tpl.id);
         fetchTemplates();
-      } else toast.error(json.message);
+      } else {
+        toast.error(json.details || json.message || json.error || `Send failed (${res.status})`);
+      }
     } catch (e: any) { toast.error(e.message); } finally { setSendingTpl(null); }
   }
 

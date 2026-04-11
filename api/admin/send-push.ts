@@ -14,12 +14,46 @@ interface SendPushBody {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "Method not allowed" });
-  }
-
   try {
-    const { title, body, segment = "all" } = req.body as SendPushBody;
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, message: "Method not allowed" });
+    }
+
+    console.log("[send-push] auth header", req.headers.authorization ? "present" : "missing");
+    console.log("[send-push] service role exists", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return res.status(500).json({
+        error: "send-push failed",
+        details: "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)",
+      });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ success: false, message: "Invalid token" });
+    }
+    if (!user.app_metadata?.is_admin) {
+      return res.status(403).json({ success: false, message: "Admin access required" });
+    }
+
+    console.log("[send-push] admin user", user?.id);
+
+    const { title, body, segment = "all" } = (req.body || {}) as SendPushBody;
 
     if (!title?.trim()) {
       return res.status(400).json({ success: false, message: "Title is required" });
@@ -34,105 +68,96 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, message: "Body must be ≤500 characters" });
     }
     if (!VALID_SEGMENTS.includes(segment as any)) {
-      return res.status(400).json({ success: false, message: `Invalid segment. Valid: ${VALID_SEGMENTS.join(", ")}` });
+      return res.status(400).json({
+        success: false,
+        message: `Invalid segment. Valid: ${VALID_SEGMENTS.join(", ")}`,
+      });
     }
 
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return res.status(500).json({ success: false, message: "Supabase not configured" });
-    }
-    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.VAPID_SUBJECT) {
-      return res.status(500).json({ success: false, message: "VAPID keys not configured" });
+    console.log("[send-push] segment", segment);
+
+    const pub = process.env.VAPID_PUBLIC_KEY;
+    const priv = process.env.VAPID_PRIVATE_KEY;
+    const subj = process.env.VAPID_SUBJECT;
+    if (!pub || !priv || !subj) {
+      return res.status(500).json({
+        error: "send-push failed",
+        details:
+          "Web Push VAPID keys missing (set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT). This endpoint uses Web Push subscriptions, not Expo push tokens.",
+      });
     }
 
-    webpush.setVapidDetails(
-      process.env.VAPID_SUBJECT,
-      process.env.VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
-    );
-
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-
-    // Verify admin
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ success: false, message: "Invalid token" });
-    }
-    if (!user.app_metadata?.is_admin) {
-      return res.status(403).json({ success: false, message: "Admin access required" });
+    try {
+      webpush.setVapidDetails(subj, pub, priv);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return res.status(500).json({
+        error: "send-push failed",
+        details: `Invalid VAPID configuration (webpush.setVapidDetails failed): ${msg}`,
+      });
     }
 
     const trimmedTitle = title.trim();
     const trimmedBody = body.trim();
 
-    // Save to push_notifications log
     const { data: notifRecord, error: insertError } = await supabase
       .from("push_notifications")
-      .insert({ title: trimmedTitle, body: trimmedBody, created_by: user.id, sent_at: new Date().toISOString() })
+      .insert({
+        title: trimmedTitle,
+        body: trimmedBody,
+        created_by: user.id,
+        sent_at: new Date().toISOString(),
+      })
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (insertError) {
-      console.error("[send-push] Failed to save notification log:", JSON.stringify(insertError));
+      console.error("[send-push] push_notifications insert:", JSON.stringify(insertError));
       return res.status(500).json({
-        success: false,
-        message: "Failed to save notification",
-        error: insertError.message,
-        details: {
-          code: (insertError as any).code,
-          hint: (insertError as any).hint,
-          details: (insertError as any).details,
-        },
+        error: "send-push failed",
+        details: `push_notifications insert failed: ${insertError.message}. code=${(insertError as any).code ?? "n/a"} hint=${(insertError as any).hint ?? "n/a"}`,
       });
     }
 
-    // Resolve device rows for requested segment (never throws from resolver)
-    let subscriptions: Awaited<ReturnType<typeof fetchSubscriptionsForSegment>>["subscriptions"];
-    let resolvedUserCount: number | null;
-    let pushDevicesTable: string | null;
-    try {
-      const resolved = await fetchSubscriptionsForSegment(supabase, segment);
-      subscriptions = resolved.subscriptions;
-      resolvedUserCount = resolved.resolvedUserCount;
-      pushDevicesTable = resolved.pushDevicesTable;
-    } catch (err: any) {
-      console.error("[send-push] fetchSubscriptionsForSegment threw:", err);
+    if (!notifRecord?.id) {
       return res.status(500).json({
-        success: false,
-        error: "Failed to resolve push audience",
-        details: err?.message ?? String(err),
+        error: "send-push failed",
+        details:
+          "push_notifications insert returned no row id (check RLS with service role, or table schema / select policy).",
       });
     }
 
-    console.log(
-      "[send-push] segment:",
-      segment,
-      "resolvedUserCount:",
-      resolvedUserCount === null ? "ALL" : resolvedUserCount,
-      "pushTable:",
-      pushDevicesTable ?? "(none)",
-      "deviceRows:",
-      subscriptions.length
-    );
+    const resolved = await fetchSubscriptionsForSegment(supabase, segment);
+    const { subscriptions, resolvedUserCount, pushDevicesTable } = resolved;
+
+    console.log("[send-push] resolved subscriptions", subscriptions?.length || 0);
+    console.log("[send-push] push table", pushDevicesTable ?? "(none)");
 
     if (!pushDevicesTable) {
       return res.status(500).json({
-        success: false,
-        error: "Failed to resolve push audience",
+        error: "send-push failed",
         details:
-          "No push device table available. Create push_subscriptions or push_tokens, or set PUSH_DEVICES_TABLE.",
+          "No Web Push device table resolved (expected push_subscriptions or push_tokens). Set PUSH_DEVICES_TABLE if your table name differs.",
       });
     }
 
     const subscriptionCount = subscriptions.length;
+
+    if (subscriptionCount === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No Web Push subscriptions matched this segment; nothing was sent.",
+        notification_id: notifRecord.id,
+        total: 0,
+        successful: 0,
+        failed: 0,
+        segment,
+        details:
+          resolvedUserCount === null
+            ? "Segment targets all users but no device rows were found (no push_subscriptions / push_tokens)."
+            : `Segment resolved ${resolvedUserCount} user(s) but none have saved Web Push keys (p256dh/auth). Users must opt in via the browser; Expo tokens are not used here.`,
+      });
+    }
 
     const payload = JSON.stringify({
       title: trimmedTitle,
@@ -176,7 +201,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       segment,
     });
   } catch (error) {
-    console.error("[send-push] Unexpected error:", error);
-    return res.status(500).json({ success: false, message: "Internal error", error: error instanceof Error ? error.message : "Unknown" });
+    console.error("[send-push] uncaught:", error);
+    if (res.headersSent) return;
+    return res.status(500).json({
+      error: "send-push failed",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }
