@@ -118,26 +118,30 @@ export async function grantTickets(userId: string, amount: number): Promise<numb
  * Standard set of query keys to invalidate after any ticket-granting action.
  */
 export const TICKET_QUERY_KEYS = [
-  ['user_stats'],
+  ['userStats'],
   ['user-stats'],
   ['survey-profile'],
   ['user_tickets'],
   ['user-tickets'],
+  ['weeklyTicketCount'],
   ['weekly-draw'],
   ['weeklyDraw', 'lotteryTicketsCount'],
   ['user_stats_shake'],
   ['home'],
   ['receipts'],
   ['deals'],
+  ['my_lottery_ballots'],
+  ['todayRewardedTickets'],
 ] as const;
 
 /**
- * Invalidate all ticket-related queries in one call.
+ * Invalidate and force refetch of all ticket-related queries.
  */
-export function invalidateTicketQueries(queryClient: {
-  invalidateQueries: (opts: { queryKey: readonly string[] }) => void;
-}) {
-  for (const key of TICKET_QUERY_KEYS) {
+export async function invalidateTicketQueries(queryClient: any) {
+  const promises = TICKET_QUERY_KEYS.map(async (key) => {
     queryClient.invalidateQueries({ queryKey: key });
-  }
+    return queryClient.refetchQueries({ queryKey: key });
+  });
+
+  await Promise.all(promises);
 }

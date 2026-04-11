@@ -7,7 +7,6 @@ import { useUserStats } from "@/hooks/useUserStats";
 import {
   useUserTickets,
   useWeeklyTicketCount,
-  USER_TICKETS_QUERY_KEY,
   useTicketsRealtime,
 } from "@/hooks/useUserTickets";
 import {
@@ -66,10 +65,6 @@ export default function Earn() {
 
   const { surveys = [], isLoading: surveysLoading } = useBitLabsSurveys(user?.id);
 
-  // DEBUG: Check user state
-  console.log('🔥 Earn is calling useTicketsRealtime NOW', { userId: user?.id, authLoading });
-
-  // Subscribe to realtime ticket & survey event updates
   useTicketsRealtime(user?.id);
 
   const displaySurveys = useMemo(() => {
@@ -129,74 +124,29 @@ export default function Earn() {
   }, [user?.id, weeklyTickets, adsWatched]);
 
   const todayAds = adsWatched ?? 0;
-  const entriesEarned = Math.floor(totalTickets / TICKETS_PER_ENTRY);
-  const progressInBatch = totalTickets % TICKETS_PER_ENTRY;
+  // FIX: These should follow weeklyTickets (the actual draw balance), not lifetime cumulative
+  const entriesEarned = Math.floor(weeklyTickets / TICKETS_PER_ENTRY);
+  const progressInBatch = weeklyTickets % TICKETS_PER_ENTRY;
 
   // Detect crossing a multiple of TICKETS_PER_ENTRY → trigger animation
   useEffect(() => {
     const prev = prevTicketsRef.current;
-    const cur = totalTickets;
+    // We stick to stats?.tiket (total) for the milestone animation logic if needed,
+    // but the progress bar below should definitely follow weeklyTickets.
+    const cur = weeklyTickets; 
     if (cur > 0 && cur > prev && Math.floor(cur / TICKETS_PER_ENTRY) > Math.floor(prev / TICKETS_PER_ENTRY)) {
       setShowEntryAnimation(true);
       const timer = setTimeout(() => setShowEntryAnimation(false), 3000);
       return () => clearTimeout(timer);
     }
     prevTicketsRef.current = cur;
-  }, [totalTickets]);
+  }, [weeklyTickets]);
 
   useEffect(() => {
     if (!authLoading && !isOnboarded) {
       navigate("/home", { replace: true, state: { requireLogin: "profile" as const } });
     }
   }, [authLoading, isOnboarded, navigate]);
-
-  // Real-time listener for survey rewards
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = queryClient.getQueryCache().config.meta?.supabase?.channel(`survey_rewards:${user.id}`) ?? 
-                    (window as any).supabase?.channel(`survey_rewards:${user.id}`);
-    
-    // Fallback to creating a client if global one isn't exposed (or use standard way if available)
-    // In this app, we usually use the supabase client from lib/supabase
-    import("@/lib/supabase").then(({ supabase }) => {
-      const sub = supabase
-        .channel(`survey_rewards_realtime_${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "survey_rewards",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            console.log("[SurveyRealtime] New reward detected:", payload);
-            const { status, tickets_granted } = payload.new as { status: string; tickets_granted: number };
-            
-            if (status === "completed") {
-              toast.success(t("earn.survey.completed"), {
-                description: t("earn.survey.ticketsEarned", { n: tickets_granted }),
-              });
-              // Invalidate all relevant queries
-              queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-              invalidateTicketQueries(queryClient);
-              invalidateLotteryPoolQueries(queryClient);
-            } else if (status === "reversed" || status === "rejected" || status === "screenout" || status === "quota_full") {
-              const reason = status.replace(/_/g, " ");
-              toast.error(t("earn.survey.rejected"), {
-                description: `Outcome: ${reason}. No tickets granted.`,
-              });
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(sub);
-      };
-    });
-  }, [user?.id, queryClient, t]);
 
   // Handle auto-open surveys when redirected from /surveys route
   useEffect(() => {

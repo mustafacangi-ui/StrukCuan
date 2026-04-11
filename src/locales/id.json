@@ -271,10 +271,11 @@
   },
   "weeklyReward": {
     "cardTitle": "Hadiah Mingguan",
-    "headline": "Menangkan Voucher Belanja Rp100.000",
+    "headline": "Menangkan Voucher Belanja Rp50.000",
     "subhead": "5 pemenang setiap minggu",
     "poolLabel": "Total Hadiah Mingguan",
-    "poolValue": "5 × voucher Rp100.000",
+    "poolValue": "5 × voucher Rp50.000",
+    "poolTotal": "Rp250.000 total hadiah mingguan",
     "rule": "Setiap 10 tiket = 1 entri undian mingguan",
     "youHave": "Kamu punya",
     "ticketsWord": "tiket",
@@ -286,10 +287,10 @@
     "countdownLabel": "Undian berikutnya dalam",
     "viewWinners": "Lihat Pemenang",
     "earnMore": "Dapatkan Lebih Banyak Tiket",
-    "amount": "Rp100.000",
+    "amount": "Rp50.000",
     "winners": {
       "title": "Pemenang Hadiah",
-      "prizeLabel": "Voucher belanja Rp100.000",
+      "prizeLabel": "Voucher Indomaret Rp50.000",
       "empty": "Belum ada pemenang"
     }
   },
@@ -504,7 +505,7 @@
     "step2Title": "Bagikan Promo Label Merah",
     "step2Body": "Temukan promo bagus? Bagikan di peta dan dapat tiket bonus.",
     "step3Title": "Menangkan Hadiah Mingguan",
-    "step3Body": "Setiap minggu, 5 pemburu beruntung menang voucher Rp100.000.",
+    "step3Body": "Setiap minggu, 5 pemburu beruntung menang voucher Rp50.000.",
     "getStarted": "Mulai",
     "alreadyHaveAccount": "Sudah punya akun?",
     "login": "Masuk"

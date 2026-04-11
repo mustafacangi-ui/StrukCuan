@@ -107,10 +107,18 @@ grant execute on function public.run_weekly_draw() to service_role;
 -- Enable pg_cron (enable in Supabase Dashboard: Database → Extensions → pg_cron)
 create extension if not exists pg_cron with schema extensions;
 
--- Remove existing job if present (idempotent)
+-- Remove existing jobs if present (idempotent)
 do $$
 begin
   perform cron.unschedule('strukcuan-weekly-draw');
+exception when others then
+  null;
+end $$;
+
+-- Drop legacy duplicate (same draw, wrong command / duplicate schedule)
+do $$
+begin
+  perform cron.unschedule('weekly-draw');
 exception when others then
   null;
 end $$;

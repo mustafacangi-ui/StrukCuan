@@ -62,7 +62,7 @@ export function useRedeemReward() {
   return useMutation({
     mutationFn: redeemReward,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
       queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
     },
   });

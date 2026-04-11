@@ -150,7 +150,7 @@ export default function CuanDashboard() {
         <div className="card-radar rounded-2xl overflow-hidden border-amber-500/20">
           <div className="p-3 border-b border-amber-500/20 bg-amber-500/10">
             <p className="text-[10px] text-muted-foreground text-center">
-              {countryCode === "DE" ? "10€ kazanan şanslı avcılar" : "100.000 Rp kazanan şanslı avcılar"}
+              {countryCode === "DE" ? "10€ kazanan şanslı avcılar" : "50.000 Rp kazanan şanslı avcılar"}
             </p>
           </div>
           {winners.length === 0 ? (
@@ -169,7 +169,7 @@ export default function CuanDashboard() {
                       {w.winner_name ?? w.user_id?.slice(0, 8) ?? "—"}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      {w.draw_date} · Rp {(w.prize_amount ?? 100000).toLocaleString("id-ID")}
+                      {w.draw_date} · Rp {(w.prize_amount ?? 50000).toLocaleString("id-ID")}
                     </p>
                   </div>
                   <Award size={16} className="text-amber-500 shrink-0" />

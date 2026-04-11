@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
+/** React Query key prefix for `useUserStats` (camelCase; matches realtime `setQueryData`). */
+export const USER_STATS_QUERY_KEY = ["userStats"] as const;
+
 export interface UserStatsRow {
   user_id: string;
   cuan: number;
@@ -36,9 +39,11 @@ async function fetchUserStats(userId: string): Promise<UserStatsRow | null> {
 
 export function useUserStats(userId: string | undefined) {
   return useQuery({
-    queryKey: ["user_stats", userId],
+    queryKey: [...USER_STATS_QUERY_KEY, userId],
     queryFn: () => fetchUserStats(userId as string),
     enabled: !!userId,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 

@@ -111,7 +111,7 @@ const Onboarding = () => {
           {[
             { emoji: "📸", text: "Foto struk belanjamu" },
             { emoji: "🎫", text: "Dapatkan tiket undian mingguan" },
-            { emoji: "🎉", text: "Menangkan voucher 100.000 Rp" },
+            { emoji: "🎉", text: "Menangkan voucher Rp50.000" },
           ].map((f) => (
             <div key={f.text} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
               <span className="text-lg">{f.emoji}</span>

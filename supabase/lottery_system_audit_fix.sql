@@ -131,7 +131,7 @@ DECLARE
   v_total        BIGINT;
   v_rnd          BIGINT;
   v_offset       BIGINT;
-  v_picked       TEXT[]  := '{}';
+  v_picked       UUID[]  := '{}';
   v_i            INTEGER;
   v_nickname     TEXT;
   v_display_id   INTEGER;
@@ -153,19 +153,19 @@ BEGIN
     v_offset := 0;
 
     FOR v_winner IN
-      SELECT lt.id, lt.user_id FROM public.lottery_tickets lt ORDER BY lt.id
+      SELECT lt.id, lt.user_id::uuid AS user_id
+      FROM public.lottery_tickets lt
+      ORDER BY lt.id
     LOOP
-      -- Defensive Casting
-      IF v_winner.user_id::text = ANY(v_picked) THEN
+      IF v_winner.user_id = ANY(v_picked) THEN
         CONTINUE;
       END IF;
 
       IF v_offset = v_rnd THEN
-        -- Get User Identity with defensive casting
         SELECT COALESCE(nickname, 'User')
           INTO v_nickname
           FROM public.user_stats
-         WHERE user_id::text = v_winner.user_id::text;
+         WHERE user_id = v_winner.user_id;
 
         v_display_id   := ABS(HASHTEXT(v_winner.user_id::text)) % 90000 + 10000;
         v_display_name := COALESCE(v_nickname, 'User') || ' #' || v_display_id::text;
@@ -173,39 +173,35 @@ BEGIN
         -- Find user's draw_code with defensive casting
         SELECT draw_code INTO v_winner_code
         FROM public.weekly_draw_entries
-        WHERE user_id::text = v_winner.user_id::text AND week_key::text = v_week_key::text
+        WHERE user_id = v_winner.user_id AND week_key::text = v_week_key::text
         ORDER BY ticket_threshold DESC
         LIMIT 1;
 
-        -- FALLBACK
         IF v_winner_code IS NULL THEN
           v_winner_code := v_winner.id::text;
         END IF;
 
-        -- Record Winner
         INSERT INTO public.weekly_winners (
           user_id, winner_name, draw_date, prize_amount, voucher_amount, winning_ballot_id, draw_code, week_key, created_at
         )
         VALUES (
-          v_winner.user_id::text, v_display_name, v_draw_date, 100000, 100000, v_winner.id, v_winner_code, v_week_key, NOW()
+          v_winner.user_id, v_display_name, v_draw_date, 50000, 50000, v_winner.id, v_winner_code, v_week_key, NOW()
         );
 
-        -- Notify Winner
         BEGIN
           INSERT INTO public.notifications (user_id, title, message)
           VALUES (
-            v_winner.user_id::text,
+            v_winner.user_id,
             'Selamat! Kamu Menang Weekly Draw! 🎉',
             'Halo ' || COALESCE(v_nickname, 'User')
-              || '! Kamu memenangkan voucher belanja Rp100.000 dari undian mingguan StrukCuan! '
+              || '! Kamu memenangkan voucher belanja Rp50.000 dari undian mingguan StrukCuan! '
               || 'Draw Code pemenang: #' || v_winner_code
           );
         EXCEPTION WHEN OTHERS THEN
           RAISE WARNING 'Notification failed for winner %: %', v_winner.user_id, SQLERRM;
         END;
 
-        -- Remove winner's tickets from current pool
-        v_picked := ARRAY_APPEND(v_picked, v_winner.user_id::text);
+        v_picked := ARRAY_APPEND(v_picked, v_winner.user_id);
         DELETE FROM public.lottery_tickets WHERE user_id::text = v_winner.user_id::text;
         v_total := (SELECT COUNT(*) FROM public.lottery_tickets);
         EXIT;

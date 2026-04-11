@@ -373,7 +373,7 @@ export default function CameraScanner({ onClose, mode }: CameraScannerProps) {
 
       // await grantDealTickets(); // REMOVED: No more automatic ticket grants on upload
       // queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-      // queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      // queryClient.invalidateQueries({ queryKey: ["userStats"] });
       // invalidateLotteryPoolQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: [...RED_LABELS_TODAY_KEY, userId] });
       toast.success(t("scanner.toast.redLabelTickets"));

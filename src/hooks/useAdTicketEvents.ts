@@ -154,7 +154,7 @@ export function useAdTicketEvents(userId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ad_ticket_events"] });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
     },
   });
 

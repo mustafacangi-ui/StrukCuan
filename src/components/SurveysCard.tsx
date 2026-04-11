@@ -202,7 +202,7 @@ export default function SurveysCard({ surveys, isLoading, onSelect, autoOpen }: 
       const checkForCompletion = setInterval(() => {
         // Refresh ticket balance and draw progress
         queryClient.invalidateQueries({ queryKey: USER_TICKETS_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+        queryClient.invalidateQueries({ queryKey: ["userStats"] });
         queryClient.invalidateQueries({ queryKey: ["user_tickets"] });
         invalidateLotteryPoolQueries(queryClient);
       }, 5000);

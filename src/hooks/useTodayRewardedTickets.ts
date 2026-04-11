@@ -144,12 +144,16 @@ export function useTodayRewardedTickets() {
     queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, "count", getTodayStartISO().slice(0, 10)],
     queryFn: () => fetchTodayRewardedCount(),
     enabled: !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const eventsQuery = useQuery({
     queryKey: [...TODAY_REWARDED_TICKETS_QUERY_KEY, user?.id, "events", getTodayStartISO().slice(0, 10)],
     queryFn: () => fetchTodayAdEvents(user!.id),
     enabled: !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const adsWatchedToday = countQuery.data ?? 0;

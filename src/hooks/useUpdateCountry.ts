@@ -17,7 +17,7 @@ export function useUpdateCountry() {
   return useMutation({
     mutationFn: updateUserCountry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
       queryClient.invalidateQueries({ queryKey: ["todayRewardedTickets"] });
       queryClient.invalidateQueries({ queryKey: ["rewards"] });
       queryClient.invalidateQueries({ queryKey: ["lottery_winners"] });

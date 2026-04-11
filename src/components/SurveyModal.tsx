@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { USER_STATS_QUERY_KEY } from "@/hooks/useUserStats";
 
 interface SurveyModalProps {
   clickUrl: string;
@@ -18,7 +19,7 @@ export default function SurveyModal({ clickUrl, onClose, userId }: SurveyModalPr
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === "bitlabs_survey_complete" || e.data?.surveyComplete) {
-        queryClient.invalidateQueries({ queryKey: ["user_stats", userId] });
+        queryClient.invalidateQueries({ queryKey: [...USER_STATS_QUERY_KEY, userId] });
         onClose();
       }
     };
@@ -27,7 +28,7 @@ export default function SurveyModal({ clickUrl, onClose, userId }: SurveyModalPr
   }, [onClose, queryClient, userId]);
 
   const handleClose = () => {
-    queryClient.invalidateQueries({ queryKey: ["user_stats", userId] });
+    queryClient.invalidateQueries({ queryKey: [...USER_STATS_QUERY_KEY, userId] });
     onClose();
   };
 

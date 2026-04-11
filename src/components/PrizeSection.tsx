@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Trophy, X, Award, Ticket } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { X, Award } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserTickets } from "@/hooks/useUserTickets";
 import { useLotteryWinners } from "@/hooks/useLotteryWinners";
@@ -24,6 +25,7 @@ function getNextDrawTime(): Date {
 }
 
 const PrizeSection = () => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const { data: ticketCount = 0 } = useUserTickets(user?.id);
   const { data: winners = [] } = useLotteryWinners(5);
@@ -67,14 +69,16 @@ const PrizeSection = () => {
             </button>
             <div className="flex items-center gap-2 mb-1">
               <Award size={16} className="text-primary" />
-              <h3 className="font-display text-base font-bold text-foreground">Pemenang Hadiah</h3>
+              <h3 className="font-display text-base font-bold text-foreground">
+                {t("weeklyReward.winners.title")}
+              </h3>
             </div>
             <p className="text-[10px] text-muted-foreground mb-4">
-              Voucher Belanja Rp100.000
+              {t("weeklyReward.winners.prizeLabel")}
             </p>
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {winners.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Belum ada pemenang</p>
+                <p className="text-xs text-muted-foreground">{t("weeklyReward.winners.empty")}</p>
               ) : (
                 winners.map((w, i) => (
                   <div
@@ -91,7 +95,7 @@ const PrizeSection = () => {
                       </div>
                     </div>
                     <span className="font-display text-[11px] font-bold text-primary">
-                      Rp100.000
+                      {t("weeklyReward.amount")}
                     </span>
                   </div>
                 ))
@@ -121,23 +125,18 @@ const PrizeSection = () => {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">🎁</span>
             <span className="text-sm font-semibold uppercase tracking-wider text-amber-900/90">
-              Hadiah Belanja Mingguan
+              {t("weeklyReward.cardTitle")}
             </span>
           </div>
 
           {/* Main title */}
           <h2 className="font-display text-2xl font-bold text-amber-950">
-            Menang Voucher Belanja
+            {t("weeklyReward.headline")}
           </h2>
-
-          {/* Prize highlight */}
-          <p className="text-2xl font-display font-bold text-amber-950 mt-1">
-            Rp100.000
-          </p>
 
           {/* Subtext */}
           <p className="text-sm text-amber-900/80 mt-0.5">
-            5 pemenang setiap minggu
+            {t("weeklyReward.subhead")}
           </p>
 
           {/* Instruction box */}
@@ -221,7 +220,7 @@ const PrizeSection = () => {
             }}
           >
             <Award size={18} />
-            Lihat Pemenang
+            {t("weeklyReward.viewWinners")}
           </button>
 
           {/* Footer */}

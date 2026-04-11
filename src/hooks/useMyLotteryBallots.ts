@@ -21,5 +21,6 @@ export function useMyLotteryBallots(userId: string | undefined) {
     queryKey: [...MY_LOTTERY_BALLOTS_QUERY_KEY, userId],
     queryFn: fetchMyBallots,
     enabled: !!userId,
+    staleTime: 0,
   });
 }

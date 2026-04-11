@@ -46,7 +46,7 @@ export function useMonetagAdTickets(userId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["monetag_ad_tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
     },
   });
 

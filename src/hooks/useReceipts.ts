@@ -425,7 +425,7 @@ export function useCreateReceipt() {
       const newTodayCount = DAILY_RECEIPT_LIMIT - remaining;
       queryClient.setQueryData([...RECEIPTS_QUERY_KEY, "today", variables.userId], newTodayCount);
       queryClient.invalidateQueries({ queryKey: RECEIPTS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["user_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["daily_mission"] });
       queryClient.invalidateQueries({ queryKey: ["referral_count"] });

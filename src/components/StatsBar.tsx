@@ -12,7 +12,8 @@ interface StatsBarProps {
 export function StatsBar({ compact }: StatsBarProps) {
   const navigate = useNavigate();
   const { user, isOnboarded, requireLogin, showDailyGiftModal } = useUser();
-  const { data: weeklyTickets = 0 } = useUserTickets(user?.id);
+  // Header badge displays the Lifetime Cumulative Balance (Universal Currency)
+  const { data: totalCumulativeTickets = 0 } = useUserTickets(user?.id);
   
   const [glowing, setGlowing] = useState(false);
 
@@ -52,7 +53,7 @@ export function StatsBar({ compact }: StatsBarProps) {
           } : {}}
           className="font-display text-xs font-semibold text-white relative"
         >
-          {weeklyTickets.toLocaleString()}
+          {totalCumulativeTickets.toLocaleString()}
           <AnimatePresence>
             {glowing && (
               <motion.span
