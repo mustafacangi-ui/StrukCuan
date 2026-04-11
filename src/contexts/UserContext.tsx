@@ -63,56 +63,19 @@ export const useUser = () => {
   return ctx;
 };
 
-async function syncUserProfile(userId: string, nickname: string, phone?: string, email?: string) {
-  console.log(`[profileSync] starting sync for user: ${userId}`);
-  
-  try {
-    const now = new Date().toISOString();
-    
-    // 1. Sync 'profiles' (Admin relationship mapping)
-    const { error: profileErr } = await supabase.from("profiles").upsert(
-      {
-        user_id: userId,
-        nickname: nickname,
-        phone: phone || null,
-        email: email || null,
-        updated_at: now,
-      },
-      { onConflict: "user_id" }
-    );
-    if (profileErr) console.warn("[profileSync] profiles table error:", profileErr.message);
+/** Upsert nickname into survey_profiles + user_stats (canonical: user_stats). */
+async function syncUserProfile(userId: string, nickname: string, _phone?: string, _email?: string) {
+  const now = new Date().toISOString();
 
-    // 2. Sync 'survey_profiles' (Legacy tickets/cuan)
-    const { error: surveyErr } = await supabase.from("survey_profiles").upsert(
-      {
-        user_id: userId,
-        nickname: nickname,
-        updated_at: now,
-      },
-      { onConflict: "user_id" }
-    );
-    if (surveyErr) console.warn("[profileSync] survey_profiles table error:", surveyErr.message);
+  await supabase.from("survey_profiles").upsert(
+    { user_id: userId, nickname, updated_at: now },
+    { onConflict: "user_id" }
+  );
 
-    // 3. Sync 'user_stats' (Primary Source for Admin Metrics & Dashboard)
-    // We use a partial upsert here to avoid overwriting existing tickets/level
-    const { error: statsErr } = await supabase.from("user_stats").upsert(
-      {
-        user_id: userId,
-        nickname: nickname,
-        // We don't set tickets/cuan here to allow defaults or existing values to persist
-      },
-      { onConflict: "user_id" }
-    );
-    if (statsErr) console.warn("[profileSync] user_stats table error:", statsErr.message);
-
-    if (!profileErr && !surveyErr && !statsErr) {
-      console.log("[profileSync] profile sync success for all tables");
-    } else {
-      console.warn("[profileSync] profile sync partially failed or tables were missing");
-    }
-  } catch (err) {
-    console.error("[profileSync] profile sync error:", err);
-  }
+  await supabase.from("user_stats").upsert(
+    { user_id: userId, nickname },
+    { onConflict: "user_id" }
+  );
 }
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {

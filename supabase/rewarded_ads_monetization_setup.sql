@@ -151,7 +151,7 @@ BEGIN
     SELECT 
         v.id,
         v.user_id,
-        p.nickname,
+        s.nickname,
         v.provider_name,
         v.status,
         v.reward_granted,
@@ -159,7 +159,7 @@ BEGIN
         v.ad_started_at,
         v.metadata
     FROM public.ad_views v
-    LEFT JOIN public.profiles p ON v.user_id = p.user_id
+    LEFT JOIN public.user_stats s ON v.user_id = s.user_id::text
     ORDER BY v.ad_started_at DESC
     LIMIT p_limit;
 END;

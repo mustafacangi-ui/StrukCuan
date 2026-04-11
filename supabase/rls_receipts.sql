@@ -5,14 +5,8 @@
 -- 1) Alter receipts.user_id to support auth.uid() (keep as text, we store uuid::text)
 -- receipts.user_id is already text - auth.uid()::text will work
 
--- 2) Create profiles table for nickname/phone (links to auth.users)
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  nickname text,
-  phone text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- 2) Nicknames and profile fields: use public.user_stats (and survey_profiles where needed).
+--    Do not create public.profiles — removed (see supabase/remove_profiles_migration.sql).
 
 -- 3) Create admin_users table for admin access
 create table if not exists public.admin_users (
@@ -41,30 +35,12 @@ create policy "Users select own receipts"
     or exists (select 1 from public.admin_users where user_id = auth.uid())
   );
 
--- 8) Enable RLS on profiles
-alter table if exists public.profiles enable row level security;
-
-create policy "Users can view own profile"
-  on public.profiles for select
-  to authenticated
-  using (id = auth.uid());
-
-create policy "Users can insert own profile"
-  on public.profiles for insert
-  to authenticated
-  with check (id = auth.uid());
-
-create policy "Users can update own profile"
-  on public.profiles for update
-  to authenticated
-  using (id = auth.uid());
-
--- 9) Storage policy for receipts bucket (run in Dashboard > Storage > receipts > Policies)
+-- 8) Storage policy for receipts bucket (run in Dashboard > Storage > receipts > Policies)
 -- Policy: "Users can upload to own folder"
 -- INSERT: (bucket_id = 'receipts') AND ((storage.foldername(name))[1] = auth.uid()::text)
 -- SELECT: allow public read
 
--- 10) user_stats and notifications - enable RLS for consistency
+-- 9) user_stats and notifications - enable RLS for consistency
 alter table if exists public.user_stats enable row level security;
 
 create policy "Users select own stats"
@@ -79,7 +55,7 @@ create policy "Users select own notifications"
   to authenticated
   using (user_id = auth.uid()::text);
 
--- 11) Notifications update: users can mark their own as read
+-- 10) Notifications update: users can mark their own as read
 create policy "Users update own notifications"
   on public.notifications for update
   to authenticated

@@ -77,18 +77,13 @@ export async function fetchPromosNearby(
   );
 
   const authorIds = [...new Set(promos.map((p) => p.user_id))];
-  const { data: profilesData } = await supabase
-    .from("survey_profiles")
-    .select("user_id")
-    .in("user_id", authorIds);
   const { data: statsData } = await supabase
     .from("user_stats")
-    .select("user_id, level")
+    .select("user_id, level, nickname")
     .in("user_id", authorIds);
 
-  const profiles = (profilesData ?? []) as { user_id: string }[];
-  const stats = (statsData ?? []) as { user_id: string; level: number }[];
-  const profileMap: Record<string, string | null> = {}; 
+  const stats = (statsData ?? []) as { user_id: string; level: number; nickname: string | null }[];
+  const nicknameMap = Object.fromEntries(stats.map((s) => [s.user_id, s.nickname ?? null]));
   const levelMap = Object.fromEntries(stats.map((s) => [s.user_id, s.level ?? 1]));
 
   const now = Date.now();
@@ -102,7 +97,7 @@ export async function fetchPromosNearby(
       positive_votes: votesByPromo[p.id]?.positive ?? 0,
       negative_votes: votesByPromo[p.id]?.negative ?? 0,
       user_vote: votesByPromo[p.id]?.userVote ?? null,
-      author_nickname: profileMap[p.user_id] ?? null,
+      author_nickname: nicknameMap[p.user_id] ?? null,
       author_level: levelMap[p.user_id] ?? 1,
       is_expired_by_time: isExpiredByTime,
     };

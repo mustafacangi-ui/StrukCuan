@@ -13,16 +13,34 @@ export default function AdminAds() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: rows, error } = await supabase
       .from("ad_views")
-      .select(`
-        *,
-        profiles:user_id (nickname)
-      `)
+      .select("*")
       .order("ad_started_at", { ascending: false })
       .limit(50);
 
-    if (!error) setLogs(data || []);
+    if (error || !rows?.length) {
+      setLogs(rows || []);
+      setLoading(false);
+      return;
+    }
+
+    const userIds = [...new Set(rows.map((r: { user_id: string }) => r.user_id).filter(Boolean))];
+    const { data: stats } = await supabase
+      .from("user_stats")
+      .select("user_id, nickname")
+      .in("user_id", userIds);
+
+    const nickByUser = Object.fromEntries(
+      (stats ?? []).map((s: { user_id: string; nickname: string | null }) => [String(s.user_id), s.nickname])
+    );
+
+    setLogs(
+      rows.map((log: { user_id: string }) => ({
+        ...log,
+        display_nickname: nickByUser[String(log.user_id)] ?? null,
+      }))
+    );
     setLoading(false);
   };
 
@@ -69,7 +87,7 @@ export default function AdminAds() {
               logs.map((log) => (
                 <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-white">{log.profiles?.[0]?.nickname || log.user_id.slice(0, 8)}</span>
+                    <span className="text-sm font-medium text-white">{log.display_nickname || log.user_id.slice(0, 8)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-md bg-zinc-800 text-[10px] font-bold text-zinc-400 border border-white/5 uppercase">
