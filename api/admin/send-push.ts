@@ -1,8 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@supabase/supabase-js";
-import webpush from "web-push";
-import { VALID_SEGMENTS, fetchSubscriptionsForSegment } from "../_lib/resolveSegment";
-import { deletePushDeviceById } from "../_lib/pushDevices";
 
 export const config = { runtime: "nodejs" };
 
@@ -15,6 +11,8 @@ interface SendPushBody {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    console.log("[send-push] handler started");
+
     if (req.method !== "POST") {
       return res.status(405).json({ success: false, message: "Method not allowed" });
     }
@@ -29,6 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    console.log("[send-push] creating supabase client");
+    const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -67,7 +67,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.trim().length > 500) {
       return res.status(400).json({ success: false, message: "Body must be ≤500 characters" });
     }
-    if (!VALID_SEGMENTS.includes(segment as any)) {
+
+    const { VALID_SEGMENTS, fetchSubscriptionsForSegment } = await import("../_lib/resolveSegment");
+    if (!VALID_SEGMENTS.includes(segment as (typeof VALID_SEGMENTS)[number])) {
       return res.status(400).json({
         success: false,
         message: `Invalid segment. Valid: ${VALID_SEGMENTS.join(", ")}`,
@@ -86,6 +88,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           "Web Push VAPID keys missing (set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT). This endpoint uses Web Push subscriptions, not Expo push tokens.",
       });
     }
+
+    console.log("[send-push] importing web-push");
+    const webpushMod = await import("web-push");
+    const webpush = (webpushMod as { default?: typeof webpushMod }).default ?? (webpushMod as unknown as typeof webpushMod);
 
     try {
       webpush.setVapidDetails(subj, pub, priv);
@@ -127,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    console.log("[send-push] resolving segment");
     const resolved = await fetchSubscriptionsForSegment(supabase, segment);
     const { subscriptions, resolvedUserCount, pushDevicesTable } = resolved;
 
@@ -158,6 +165,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             : `Segment resolved ${resolvedUserCount} user(s) but none have saved Web Push keys (p256dh/auth). Users must opt in via the browser; Expo tokens are not used here.`,
       });
     }
+
+    console.log("[send-push] sending notifications");
+    const { deletePushDeviceById } = await import("../_lib/pushDevices");
 
     const payload = JSON.stringify({
       title: trimmedTitle,
