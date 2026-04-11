@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
-import { VALID_SEGMENTS } from "./../_lib/resolveSegment";
+import { VALID_SEGMENTS } from "./../_lib/resolveSegment.js";
 
 export const config = { runtime: "nodejs" };
 

@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, message: "Body must be ≤500 characters" });
     }
 
-    const { VALID_SEGMENTS, fetchSubscriptionsForSegment } = await import("./../_lib/resolveSegment");
+    const { VALID_SEGMENTS, fetchSubscriptionsForSegment } = await import("./../_lib/resolveSegment.js");
     if (!VALID_SEGMENTS.includes(segment as (typeof VALID_SEGMENTS)[number])) {
       return res.status(400).json({
         success: false,
@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log("[send-push] sending notifications");
-    const { deletePushDeviceById } = await import("./../_lib/pushDevices");
+    const { deletePushDeviceById } = await import("./../_lib/pushDevices.js");
 
     const payload = JSON.stringify({
       title: trimmedTitle,
