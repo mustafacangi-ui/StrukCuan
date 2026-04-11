@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
-import { fetchSubscriptionsForSegment } from "../_lib/resolveSegment";
-import { deletePushDeviceById } from "../_lib/pushDevices";
+import { fetchSubscriptionsForSegment } from "../_lib/resolveSegment.js";
+import { deletePushDeviceById } from "../_lib/pushDevices.js";
 
 export const config = { runtime: "nodejs" };
 
@@ -45,7 +46,7 @@ function scheduleDayMatches(scheduleDays: string, dow: number): boolean {
 }
 
 async function sendPushToSubscribers(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   notification: { id: string; title: string; body: string; segment: string },
   tag: string
 ): Promise<{ successful: number; failed: number; total: number }> {

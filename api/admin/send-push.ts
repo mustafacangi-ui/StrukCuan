@@ -91,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("[send-push] importing web-push");
     const webpushMod = await import("web-push");
-    const webpush = (webpushMod as { default?: typeof webpushMod }).default ?? (webpushMod as unknown as typeof webpushMod);
+    const webpush: any = (webpushMod as { default?: unknown }).default ?? webpushMod;
 
     try {
       webpush.setVapidDetails(subj, pub, priv);

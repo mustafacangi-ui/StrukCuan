@@ -3,7 +3,7 @@ import {
   fetchPushDevicesForUsers,
   resolvePushDevicesTable,
   type PushDeviceRow,
-} from "./pushDevices";
+} from "./pushDevices.js";
 
 /**
  * All valid push audience segment keys (keep in sync with UI + API validators).
