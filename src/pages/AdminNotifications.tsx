@@ -246,11 +246,11 @@ export default function AdminNotifications() {
     setIsLoadingQueue(true);
     try {
       const res = await fetch("/api/admin/push-queue", { headers: await authHeaders() });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (json.success) setQueue(json.queue ?? []);
       else {
         setQueue([]);
-        toast.error(json.message ?? "Failed to load queue");
+        toast.error(json.details || json.message || json.error || `Queue failed (${res.status})`);
       }
     } catch {
       setQueue([]);
@@ -264,11 +264,11 @@ export default function AdminNotifications() {
     setIsLoadingHist(true);
     try {
       const res = await fetch("/api/admin/push-history", { headers: await authHeaders() });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (json.success) setHistory(json.history ?? []);
       else {
         setHistory([]);
-        toast.error(json.message ?? "Failed to load history");
+        toast.error(json.details || json.message || json.error || `History failed (${res.status})`);
       }
     } catch {
       setHistory([]);
@@ -282,9 +282,13 @@ export default function AdminNotifications() {
 
   // ── Auth helper ─────────────────────────────────────────────────────────────
 
-  async function authHeaders() {
+  async function authHeaders(): Promise<Record<string, string>> {
     const { data: { session } } = await supabase.auth.getSession();
-    return { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` };
+    const h: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) {
+      h.Authorization = `Bearer ${session.access_token}`;
+    }
+    return h;
   }
 
   // ── Instant send ────────────────────────────────────────────────────────────
@@ -334,9 +338,9 @@ export default function AdminNotifications() {
         method: "DELETE",
         headers: await authHeaders(),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!json.success) {
-        toast.error(json.message ?? "Failed to delete");
+        toast.error(json.details || json.message || json.error || "Failed to delete");
         return;
       }
       toast.success("Deleted");
