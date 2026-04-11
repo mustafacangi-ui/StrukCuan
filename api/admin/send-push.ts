@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 import { VALID_SEGMENTS, fetchSubscriptionsForSegment } from "../_lib/resolveSegment";
+import { deletePushDeviceById } from "../_lib/pushDevices";
 
 export const config = { runtime: "nodejs" };
 
@@ -80,14 +81,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (insertError) {
-      console.error("[send-push] Failed to save notification log:", insertError);
-      return res.status(500).json({ success: false, message: "Failed to save notification", error: insertError.message });
+      console.error("[send-push] Failed to save notification log:", JSON.stringify(insertError));
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save notification",
+        error: insertError.message,
+        details: {
+          code: (insertError as any).code,
+          hint: (insertError as any).hint,
+          details: (insertError as any).details,
+        },
+      });
     }
 
-    // Resolve subscriptions for requested segment
-    const subscriptions = await fetchSubscriptionsForSegment(supabase, segment);
+    // Resolve device rows for requested segment (never throws from resolver)
+    let subscriptions: Awaited<ReturnType<typeof fetchSubscriptionsForSegment>>["subscriptions"];
+    let resolvedUserCount: number | null;
+    let pushDevicesTable: string | null;
+    try {
+      const resolved = await fetchSubscriptionsForSegment(supabase, segment);
+      subscriptions = resolved.subscriptions;
+      resolvedUserCount = resolved.resolvedUserCount;
+      pushDevicesTable = resolved.pushDevicesTable;
+    } catch (err: any) {
+      console.error("[send-push] fetchSubscriptionsForSegment threw:", err);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to resolve push audience",
+        details: err?.message ?? String(err),
+      });
+    }
+
+    console.log(
+      "[send-push] segment:",
+      segment,
+      "resolvedUserCount:",
+      resolvedUserCount === null ? "ALL" : resolvedUserCount,
+      "pushTable:",
+      pushDevicesTable ?? "(none)",
+      "deviceRows:",
+      subscriptions.length
+    );
+
+    if (!pushDevicesTable) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to resolve push audience",
+        details:
+          "No push device table available. Create push_subscriptions or push_tokens, or set PUSH_DEVICES_TABLE.",
+      });
+    }
+
     const subscriptionCount = subscriptions.length;
-    console.log(`[send-push] Segment "${segment}" → ${subscriptionCount} subscriptions`);
 
     const payload = JSON.stringify({
       title: trimmedTitle,
@@ -109,7 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { success: true, id: sub.id };
         } catch (err: any) {
           if (err.statusCode === 404 || err.statusCode === 410) {
-            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+            await deletePushDeviceById(supabase, sub.id);
           }
           return { success: false, id: sub.id, error: err.message };
         }

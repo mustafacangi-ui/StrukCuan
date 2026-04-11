@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 import { fetchSubscriptionsForSegment } from "../_lib/resolveSegment";
+import { deletePushDeviceById } from "../_lib/pushDevices";
 
 export const config = { runtime: "nodejs" };
 
@@ -48,7 +49,7 @@ async function sendPushToSubscribers(
   notification: { id: string; title: string; body: string; segment: string },
   tag: string
 ): Promise<{ successful: number; failed: number; total: number }> {
-  const subscriptions = await fetchSubscriptionsForSegment(supabase, notification.segment);
+  const { subscriptions } = await fetchSubscriptionsForSegment(supabase, notification.segment);
   if (subscriptions.length === 0) {
     return { successful: 0, failed: 0, total: 0 };
   }
@@ -75,7 +76,7 @@ async function sendPushToSubscribers(
         return { success: true };
       } catch (err: any) {
         if (err.statusCode === 404 || err.statusCode === 410) {
-          await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          await deletePushDeviceById(supabase, sub.id);
         }
         return { success: false, error: err.message };
       }
