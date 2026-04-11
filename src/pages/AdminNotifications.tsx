@@ -245,17 +245,37 @@ export default function AdminNotifications() {
   const fetchQueue = useCallback(async () => {
     setIsLoadingQueue(true);
     try {
-      const { data } = await supabase.from("scheduled_push_notifications").select("*").eq("sent", false).order("scheduled_for");
-      setQueue(data ?? []);
-    } finally { setIsLoadingQueue(false); }
+      const res = await fetch("/api/admin/push-queue", { headers: await authHeaders() });
+      const json = await res.json();
+      if (json.success) setQueue(json.queue ?? []);
+      else {
+        setQueue([]);
+        toast.error(json.message ?? "Failed to load queue");
+      }
+    } catch {
+      setQueue([]);
+      toast.error("Failed to load queue");
+    } finally {
+      setIsLoadingQueue(false);
+    }
   }, []);
 
   const fetchHistory = useCallback(async () => {
     setIsLoadingHist(true);
     try {
-      const { data } = await supabase.from("scheduled_push_notifications").select("*").eq("sent", true).order("sent_at", { ascending: false }).limit(100);
-      setHistory(data ?? []);
-    } finally { setIsLoadingHist(false); }
+      const res = await fetch("/api/admin/push-history", { headers: await authHeaders() });
+      const json = await res.json();
+      if (json.success) setHistory(json.history ?? []);
+      else {
+        setHistory([]);
+        toast.error(json.message ?? "Failed to load history");
+      }
+    } catch {
+      setHistory([]);
+      toast.error("Failed to load history");
+    } finally {
+      setIsLoadingHist(false);
+    }
   }, []);
 
   useEffect(() => { fetchTemplates(); fetchQueue(); fetchHistory(); }, [fetchTemplates, fetchQueue, fetchHistory]);
@@ -309,10 +329,22 @@ export default function AdminNotifications() {
   // ── Delete queue ────────────────────────────────────────────────────────────
 
   async function handleDelete(id: string) {
-    const { error } = await supabase.from("scheduled_push_notifications").delete().eq("id", id);
-    if (error) { toast.error("Failed to delete"); return; }
-    toast.success("Deleted");
-    fetchQueue(); fetchHistory();
+    try {
+      const res = await fetch(`/api/admin/push-queue?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: await authHeaders(),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        toast.error(json.message ?? "Failed to delete");
+        return;
+      }
+      toast.success("Deleted");
+      fetchQueue();
+      fetchHistory();
+    } catch {
+      toast.error("Failed to delete");
+    }
   }
 
   // ── Template helpers ────────────────────────────────────────────────────────
